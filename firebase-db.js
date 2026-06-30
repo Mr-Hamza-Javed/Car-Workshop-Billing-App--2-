@@ -112,10 +112,10 @@ function billFromStore(id, d) {
   };
 }
 function actToStore(a) {
-  return { tsMs: (a.ts instanceof Date ? a.ts : new Date()).getTime(), userId: a.userId || "", userName: a.userName || "", action: a.action || "", entity: a.entity || "", entityId: a.entityId || "", entityLabel: a.entityLabel || "", summary: a.summary || "", changes: a.changes || [] };
+  return { tsMs: (a.ts instanceof Date ? a.ts : new Date()).getTime(), userId: a.userId || "", userName: a.userName || "", action: a.action || "", entity: a.entity || "", entityId: a.entityId || "", entityLabel: a.entityLabel || "", summary: a.summary || "", changes: a.changes || [], ip: a.ip || null, location: a.location || null };
 }
 function actFromStore(id, d) {
-  return { id, ts: new Date(d.tsMs || nowMs()), userId: d.userId, userName: d.userName, action: d.action, entity: d.entity, entityId: d.entityId, entityLabel: d.entityLabel, summary: d.summary, changes: d.changes || [] };
+  return { id, ts: new Date(d.tsMs || nowMs()), userId: d.userId, userName: d.userName, action: d.action, entity: d.entity, entityId: d.entityId, entityLabel: d.entityLabel, summary: d.summary, changes: d.changes || [], ip: d.ip || null, location: d.location || null };
 }
 function userPublic(id, d) {
   return { id, email: d.email, fullName: d.fullName, role: d.role, perms: d.perms || {}, activityScope: d.activityScope || "own", disabled: !!d.disabled, createdAtMs: d.createdAtMs || 0 };
@@ -210,6 +210,19 @@ function makeLocalAdapter() {
     async setPassword(id, password) { const salt = randomSalt(); const hash = await hashPassword(password, salt); await this.update("users/" + id, { salt, hash }); return { ok: true }; },
     async setDisabled(id, disabled) { await this.update("users/" + id, { disabled: !!disabled }); return { ok: true }; },
     async deleteUser(id) { await this.del("users/" + id); return { ok: true }; },
+    async getClientGeo() {
+      // no Cloud Function in offline/local mode — best-effort free client-side lookup
+      try {
+        const res = await fetch("https://ipwho.is/");
+        const data = await res.json();
+        if (data && data.success !== false) {
+          const parts = [data.city, data.region].filter(Boolean).join(", ");
+          const location = [parts, data.country].filter(Boolean).join(" · ");
+          return { ip: data.ip || null, location: location || null };
+        }
+      } catch (e) {}
+      return null;
+    },
   };
   return A;
 }
@@ -310,6 +323,7 @@ async function makeFirebaseAdapter() {
     async setPassword(id, password) { try { await call("adminSetPassword")({ uid: id, password }); return { ok: true }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
     async setDisabled(id, disabled) { try { await call("adminSetDisabled")({ uid: id, disabled: !!disabled }); return { ok: true }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
     async deleteUser(id) { try { await call("adminDeleteUser")({ uid: id }); return { ok: true }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
+    async getClientGeo() { try { const r = await call("getClientGeo")({}); return r.data || null; } catch (e) { return null; } },
   };
 }
 function friendlyFn(e) {
@@ -331,16 +345,27 @@ function makeDB(A) {
     return { sub, disc, total, paid, pending, status };
   };
 
-  async function applyStatsDelta(api, oldStore, newStore) {
+  // Firestore transactions require ALL reads before ANY writes. These helpers split a stats
+  // update into a read phase (call first, while only reads have happened) and a write phase
+  // (call after — once every read in the transaction is done).
+  function statsBuckets(oldStore, newStore) {
     const buckets = {};
     const add = (key, fld, v) => { buckets[key] = buckets[key] || {}; buckets[key][fld] = (buckets[key][fld] || 0) + v; };
     const counts = (s) => s && !s.deleted;
     if (counts(oldStore)) { ["d:" + dayKey(oldStore.tsMs), "m:" + monthKey(oldStore.tsMs)].forEach((k) => { add(k, "billed", -oldStore.total); add(k, "paid", -oldStore.paid); add(k, "pending", -oldStore.pending); add(k, "count", -1); }); }
     if (counts(newStore)) { ["d:" + dayKey(newStore.tsMs), "m:" + monthKey(newStore.tsMs)].forEach((k) => { add(k, "billed", newStore.total); add(k, "paid", newStore.paid); add(k, "pending", newStore.pending); add(k, "count", 1); }); }
-    for (const k of Object.keys(buckets)) {
-      const path = (k[0] === "d" ? "stats/" : "stats_m/") + k.slice(2);
-      const cur = (await api.get(path)) || { billed: 0, paid: 0, pending: 0, count: 0 };
-      await api.set(path, { billed: (cur.billed || 0) + (buckets[k].billed || 0), paid: (cur.paid || 0) + (buckets[k].paid || 0), pending: (cur.pending || 0) + (buckets[k].pending || 0), count: (cur.count || 0) + (buckets[k].count || 0) });
+    return buckets;
+  }
+  function statsPath(key) { return (key[0] === "d" ? "stats/" : "stats_m/") + key.slice(2); }
+  async function readStats(api, buckets) {
+    const cur = {};
+    for (const key of Object.keys(buckets)) { const path = statsPath(key); cur[path] = (await api.get(path)) || { billed: 0, paid: 0, pending: 0, count: 0 }; }
+    return cur;
+  }
+  async function writeStats(api, buckets, cur) {
+    for (const key of Object.keys(buckets)) {
+      const path = statsPath(key); const c = cur[path]; const b = buckets[key];
+      await api.set(path, { billed: (c.billed || 0) + (b.billed || 0), paid: (c.paid || 0) + (b.paid || 0), pending: (c.pending || 0) + (b.pending || 0), count: (c.count || 0) + (b.count || 0) });
     }
   }
 
@@ -370,6 +395,7 @@ function makeDB(A) {
     setPassword: (id, pw) => A.setPassword(id, pw),
     setDisabled: (id, d) => A.setDisabled(id, d),
     deleteUser: (id) => A.deleteUser(id),
+    getClientGeo: () => A.getClientGeo(),
 
     /* ---------- settings ---------- */
     async getSettings() { return (await A.get("app/settings")) || null; },
@@ -428,14 +454,18 @@ function makeDB(A) {
     async saveNewBill(bill) {
       const tmp = { ...bill };
       const result = await A.txn(async (t) => {
+        // ---- READS (must all happen before any write in this transaction) ----
         const c = (await t.get("app/counter")) || { value: 1000 };
         const value = c.value;
-        await t.set("app/counter", { value: value + 1 });
         tmp.no = (bill.prefix || "MSA") + "-" + value;
         const id = bill.id || ("b_" + rid(""));
         const store = billToStore(tmp, derive);
+        const buckets = statsBuckets(null, store);
+        const cur = await readStats(t, buckets);
+        // ---- WRITES ----
+        await t.set("app/counter", { value: value + 1 });
         await t.set("bills/" + id, store);
-        await applyStatsDelta(t, null, store);
+        await writeStats(t, buckets, cur);
         return { id, store };
       });
       await ensureProducts((bill.lines || []).map((l) => l.name));
@@ -444,14 +474,24 @@ function makeDB(A) {
     async updateBill(id, bill, oldBill) {
       const oldStore = oldBill ? billToStore(oldBill, derive) : await A.get("bills/" + id);
       const store = billToStore(bill, derive);
-      await A.txn(async (t) => { await t.set("bills/" + id, store); await applyStatsDelta(t, oldStore, store); });
+      await A.txn(async (t) => {
+        const buckets = statsBuckets(oldStore, store);
+        const cur = await readStats(t, buckets);            // reads first
+        await t.set("bills/" + id, store);                  // then writes
+        await writeStats(t, buckets, cur);
+      });
       await ensureProducts((bill.lines || []).map((l) => l.name));
       return billFromStore(id, store);
     },
     async _flagBill(id, oldBill, patch) {
       const oldStore = billToStore(oldBill, derive);
       const newStore = { ...oldStore, ...patch };
-      await A.txn(async (t) => { await t.set("bills/" + id, newStore); await applyStatsDelta(t, oldStore, newStore); });
+      await A.txn(async (t) => {
+        const buckets = statsBuckets(oldStore, newStore);
+        const cur = await readStats(t, buckets);            // reads first
+        await t.set("bills/" + id, newStore);                // then writes
+        await writeStats(t, buckets, cur);
+      });
       return billFromStore(id, newStore);
     },
     archiveBill(id, oldBill, archived) { return this._flagBill(id, oldBill, { archived: !!archived }); },
@@ -461,7 +501,12 @@ function makeDB(A) {
     async addHistory(id, oldBill, entry) {
       const oldStore = billToStore(oldBill, derive);
       const newStore = billToStore({ ...oldBill, history: [...(oldBill.history || []), entry] }, derive);
-      await A.txn(async (t) => { await t.set("bills/" + id, newStore); await applyStatsDelta(t, oldStore, newStore); });
+      await A.txn(async (t) => {
+        const buckets = statsBuckets(oldStore, newStore);
+        const cur = await readStats(t, buckets);            // reads first
+        await t.set("bills/" + id, newStore);                // then writes
+        await writeStats(t, buckets, cur);
+      });
       return billFromStore(id, newStore);
     },
 

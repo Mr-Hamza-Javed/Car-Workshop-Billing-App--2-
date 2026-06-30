@@ -10,6 +10,13 @@
      adminSetPassword — set/reset a user's password
      adminSetDisabled — enable / disable a user
      adminDeleteUser  — delete a user (Auth + profile)
+     getClientGeo     — resolves the caller's IP + city/region/country for
+                         the Activity log, using the real connecting IP
+                         (server-side — no CORS, no client geo permission).
+                         The app calls this ONCE per login session and
+                         reuses the result for every activity entry, so it
+                         costs one function call per session, not one per
+                         action.
 
    Authorization model
      • A user may manage OTHER users if they are Admin (token.admin === true)
@@ -195,4 +202,32 @@ exports.adminDeleteUser = onCall(opts, async (request) => {
   try { await auth.deleteUser(uid); } catch (e) { /* may already be gone */ }
   await db.doc("users/" + uid).delete();
   return { ok: true };
+});
+
+/* =====================================================================
+   getClientGeo — IP + city/region/country for the Activity log.
+   Uses the real connecting IP (from the request, not the client's own
+   guess) and a free, keyless geo-IP lookup (ip-api.com). Called once per
+   login session by the app and cached client-side — never once per action.
+   ===================================================================== */
+exports.getClientGeo = onCall(opts, async (request) => {
+  requireAuth(request);
+  const req = request.rawRequest;
+  let ip = (req && req.headers && req.headers["x-forwarded-for"]) || (req && req.ip) || "";
+  ip = String(ip).split(",")[0].trim();
+  // strip IPv6-mapped-IPv4 prefix if present
+  ip = ip.replace(/^::ffff:/, "");
+  if (!ip || ip === "::1" || ip.startsWith("127.") || ip.startsWith("10.") || ip.startsWith("192.168.")) {
+    return { ip: ip || null, location: null };
+  }
+  try {
+    const res = await fetch("http://ip-api.com/json/" + encodeURIComponent(ip) + "?fields=status,city,regionName,country");
+    const data = await res.json();
+    if (data && data.status === "success") {
+      const parts = [data.city, data.regionName].filter(Boolean).join(", ");
+      const location = [parts, data.country].filter(Boolean).join(" · ");
+      return { ip, location: location || null };
+    }
+  } catch (e) { /* geo lookup is best-effort */ }
+  return { ip, location: null };
 });

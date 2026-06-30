@@ -7,8 +7,6 @@
 </head>
 <body>
 <x-dc>
-
-  
 <helmet>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15161b">
@@ -61,18 +59,7 @@
     .invoice-page:last-child{ break-after:auto; page-break-after:auto; }
   }
 </style>
-<script>
-  // PWA service worker — only on a real http(s) host (not file:// or sandboxed preview)
-  (function(){
-    try{
-      if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-        window.addEventListener('load', function(){
-          navigator.serviceWorker.register('service-worker.js').catch(function(e){ console.warn('SW register failed', e && e.message); });
-        });
-      }
-    }catch(e){}
-  })();
-</script>
+<script src="sw-register.js"></script>
 </helmet>
 
 <div style="display:flex; height:100vh; width:100%; overflow:hidden; background:#efe9e0; color:#1a1d24">
@@ -1792,19 +1779,36 @@ class Component extends DCLogic {
     this._r = ()=>{ const m = window.innerWidth < 820; if(m!==this.state.isMobile) this.setState({isMobile:m}); };
     window.addEventListener('resize', this._r);
     this._key=(e)=>this._onKey(e); window.addEventListener('keydown', this._key);
+    this._vis=()=>{ if(document.visibilityState==='visible') this._healStuckAnimations(); };
+    document.addEventListener('visibilitychange', this._vis);
     this._init();
   }
-  componentWillUnmount(){ clearInterval(this._t); window.removeEventListener('resize', this._r); window.removeEventListener('keydown', this._key); if(this._unsub) this._unsub(); }
-  componentDidUpdate(pp, ps){ this._doMeasure(); this._restoreScroll(ps); this._updatePresetArrows(); this._maybePersistSettings(ps); this._applyAnimVar(); this._animateRoute(ps); }
+  componentWillUnmount(){ clearInterval(this._t); window.removeEventListener('resize', this._r); window.removeEventListener('keydown', this._key); document.removeEventListener('visibilitychange', this._vis); if(this._unsub) this._unsub(); }
+  componentDidUpdate(){
+    const prev = this._prevSnap || {};
+    this._doMeasure(); this._restoreScroll(prev); this._updatePresetArrows(); this._maybePersistSettings(); this._applyAnimVar(); this._animateRoute(prev);
+    this._prevSnap = { route:this.state.route, viewId:this.state.viewId, billsSecondary:this.state.billsSecondary };
+  }
   _animateRoute(ps){
-    if(!ps) return;
+    if(!ps || ps.route===undefined) return;
     const changed = (ps.route!==this.state.route) || (ps.billsSecondary!==this.state.billsSecondary);
     if(!changed || this.state.route==='view') return;   // bill-view has its own slide animation
+    if(typeof document!=='undefined' && document.visibilityState && document.visibilityState!=='visible') return;   // never start an animation while backgrounded
     const sc=this._asScale(); if(sc<=0) return;
     const m=this._main(); if(!m) return;
-    try{ m.animate([{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'none'}],{duration:Math.round(320*sc),easing:'cubic-bezier(.2,.7,.2,1)'}); }catch(e){}
+    // transform-only — NEVER animates opacity on this persistent container. If the tab/iframe is
+    // backgrounded, WAAPI can leave an animation permanently "pending" (startTime stays null); an
+    // opacity:0 start keyframe would then leave the page blank forever. Without opacity in the
+    // keyframes, a stuck animation is at worst a few px of static offset — content stays visible.
+    try{ this._watchStuck(m.animate([{transform:'translateY(8px)'},{transform:'none'}],{duration:Math.round(320*sc),easing:'cubic-bezier(.2,.7,.2,1)'})); }catch(e){}
   }
   _applyAnimVar(){ try{ const v=this._asScale(); if(this._lastAs!==v){ this._lastAs=v; document.documentElement.style.setProperty('--as', String(v)); } }catch(e){} }
+  // ---- animation safety net (defense in depth) ----
+  // Tracks WAAPI animations we start; if the document is/becomes hidden before one ever actually
+  // begins (startTime stays null), we snap it straight to its end state so nothing can stay stuck
+  // mid-transition (e.g. partially transformed) indefinitely. Also runs on every visibilitychange.
+  _watchStuck(anim){ if(!anim) return; this._liveAnims=(this._liveAnims||[]).filter(a=>a.playState!=='finished'); this._liveAnims.push(anim); setTimeout(()=>this._healStuckAnimations(), 700); }
+  _healStuckAnimations(){ try{ (this._liveAnims||[]).forEach(a=>{ try{ if(a.playState==='running' && a.startTime==null) a.finish(); }catch(e){} }); this._liveAnims=(this._liveAnims||[]).filter(a=>a.playState!=='finished'); }catch(e){} }
 
   // ===================== DATA + AUTH FOUNDATION =====================
   async _init(){
@@ -1834,6 +1838,7 @@ class Component extends DCLogic {
     this.setState({ authReady:true });
     this._loadBills(true);
     this._loadDash();
+    this._ensureGeo();   // session-resume case (page refresh) — warms the cache for later activity entries
   }
   async _loadShell(){
     const st = await this.db.getSettings();
@@ -1855,11 +1860,17 @@ class Component extends DCLogic {
     try{ r = await this.db.login(email, pw); }catch(e){ r={ ok:false, error:'Login nahi ho saka — internet check karein' }; }
     if(!r || !r.ok){ this.setState({ loggingIn:false, loginErr:(r&&r.error)||'Login nahi hua' }); return; }
     try{ await this.db.bootstrap(); }catch(e){}
+    await this._ensureGeo();   // resolve once before the first activity entry so login carries IP/location
     this.logActivity({ action:'login', entity:'auth', entityId:r.user.id, entityLabel:r.user.fullName, summary:'Signed in', userId:r.user.id, userName:r.user.fullName });
     this.setState({ loggingIn:false, loginPw:'' });
   }
+  _ensureGeo(){
+    if(this._geoPromise) return this._geoPromise;
+    this._geoPromise=(async()=>{ try{ this._geo = (await this.db.getClientGeo())||null; }catch(e){ this._geo=null; } return this._geo; })();
+    return this._geoPromise;
+  }
   askLogout(){ this.askConfirm({ title:'Log out?', message:'Aap apne account se logout ho jayenge.', confirmLabel:'Log out', danger:false, onConfirm:()=>this.doLogout() }); }
-  async doLogout(){ this.setState({ userMenuOpen:false, navOpen:false }); try{ await this.db.logout(); }catch(e){} }
+  async doLogout(){ this.setState({ userMenuOpen:false, navOpen:false }); this._geo=null; this._geoPromise=null; try{ await this.db.logout(); }catch(e){} }
   can(perm){ const u=this.state.authUser; if(!u) return false; if(u.role==='Admin') return true; return !!(u.perms && u.perms[perm]); }
 
   // ---- loading model ----
@@ -1877,13 +1888,16 @@ class Component extends DCLogic {
   isBusy(key){ return !!this.state.busy[key]; }
   togglePrivacy(){
     this.setState(s=>({ privacy:!s.privacy }));
-    // animate every money value hiding/revealing — Web Animations API so scroll is preserved
+    // animate every money value hiding/revealing — Web Animations API so scroll is preserved.
+    // Floor of .45 opacity (never 0) + visibility guard + stuck-animation watchdog: even in the
+    // worst case (tab backgrounded mid-toggle) a number is at most dimmed, never invisible.
+    if(typeof document!=='undefined' && document.visibilityState && document.visibilityState!=='visible') return;
     const sc=this._asScale(); if(sc<=0) return;
     try{
       const m=this._main(); if(!m) return;
       requestAnimationFrame(()=>{
         const nodes=m.querySelectorAll('.tnum, [data-money]');
-        nodes.forEach((el,i)=>{ try{ el.animate([{opacity:.15,filter:'blur(5px)',transform:'translateY(2px)'},{opacity:1,filter:'blur(0)',transform:'none'}],{duration:Math.round(360*sc),delay:Math.min(120,i*8),easing:'cubic-bezier(.2,.8,.2,1)'}); }catch(e){} });
+        nodes.forEach((el,i)=>{ try{ this._watchStuck(el.animate([{opacity:.45,filter:'blur(5px)',transform:'translateY(2px)'},{opacity:1,filter:'blur(0)',transform:'none'}],{duration:Math.round(360*sc),delay:Math.min(120,i*8),easing:'cubic-bezier(.2,.8,.2,1)'})); }catch(e){} });
       });
     }catch(e){}
   }
@@ -1981,13 +1995,13 @@ class Component extends DCLogic {
 
   // ---- per-route scroll preservation ----
   _restoreScroll(ps){
-    if(!ps) return; const r=this.state.route; const m=this._main(); if(!m) return;
+    if(!ps || ps.route===undefined) return; const r=this.state.route; const m=this._main(); if(!m) return;
     if(r==='view'){ if(ps.route!=='view' || ps.viewId!==this.state.viewId) m.scrollTop=0; return; }
     if(ps.route!==r){ const sc=(this._scrollPos&&this._scrollPos[r])||0; const apply=()=>{ const m2=this._main(); if(m2) m2.scrollTop=sc; }; apply(); requestAnimationFrame(apply); setTimeout(apply,40); setTimeout(apply,140); }
   }
 
   // ---- settings persistence (debounced, silent header spinner) ----
-  _maybePersistSettings(ps){
+  _maybePersistSettings(){
     if(!this.db || !this.state.authUser) return;
     const j=JSON.stringify(this._settingsDoc());
     if(this._settingsJSON===undefined){ this._settingsJSON=j; return; }
@@ -2432,8 +2446,8 @@ class Component extends DCLogic {
 
   // ---------- activity log ----------
   logActivity(o){
-    const u=this.state.authUser;
-    const entry={ ts:new Date(), userId:o.userId||(u&&u.id)||'', userName:o.userName||(u&&u.fullName)||'', action:o.action, entity:o.entity, entityId:o.entityId||'', entityLabel:o.entityLabel||'', summary:o.summary||'', changes:o.changes||[] };
+    const u=this.state.authUser; const geo=this._geo;
+    const entry={ ts:new Date(), userId:o.userId||(u&&u.id)||'', userName:o.userName||(u&&u.fullName)||'', action:o.action, entity:o.entity, entityId:o.entityId||'', entityLabel:o.entityLabel||'', summary:o.summary||'', changes:o.changes||[], ip:(geo&&geo.ip)||null, location:(geo&&geo.location)||null };
     this.setState(s=> s.actLoaded ? ({ activity:[{ id:'tmp_'+Date.now()+'_'+Math.floor(Math.random()*1e6), ...entry }, ...s.activity] }) : {});
     if(this.db) this.db.logActivity(entry).catch(e=>console.warn('logActivity', e));
   }
