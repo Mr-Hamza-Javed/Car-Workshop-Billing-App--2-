@@ -30,22 +30,22 @@
   input,button,select,textarea{font-family:inherit}
   input:focus,textarea:focus,select:focus{outline:none}
   .tnum{font-variant-numeric:tabular-nums}
-  @keyframes popIn{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes popIn{from{opacity:.5;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+  @keyframes fadeIn{from{opacity:.5}to{opacity:1}}
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-  @keyframes billOpen{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes billOpen{from{opacity:.5;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
   @keyframes billClose{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px) scale(.98)}}
   @keyframes blink{50%{opacity:.25}}
   @keyframes logoPulse{0%,100%{transform:scale(1);box-shadow:0 12px 40px rgba(31,111,235,.45)}50%{transform:scale(1.06);box-shadow:0 18px 56px rgba(31,111,235,.6)}}
   @keyframes barFill{0%{width:6%}60%{width:78%}100%{width:100%}}
   @keyframes spinRing{to{transform:rotate(360deg)}}
   @keyframes fadeOut{to{opacity:0;visibility:hidden}}
-  @keyframes loginRise{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
-  @keyframes billNext{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
-  @keyframes billPrev{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
-  @keyframes routeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-  @keyframes listpop{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
-  @keyframes eyeReveal{from{opacity:0;filter:blur(5px)}to{opacity:1;filter:blur(0)}}
+  @keyframes loginRise{from{opacity:.5;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes billNext{from{opacity:.5;transform:translateX(40px)}to{opacity:1;transform:none}}
+  @keyframes billPrev{from{opacity:.5;transform:translateX(-40px)}to{opacity:1;transform:none}}
+  @keyframes panelIn{from{transform:translateY(10px)}to{transform:none}}
+  @keyframes listpop{from{opacity:.5;transform:translateY(9px)}to{opacity:1;transform:none}}
+  @keyframes eyeReveal{from{opacity:.5;filter:blur(5px)}to{opacity:1;filter:blur(0)}}
   @keyframes barGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
   @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important} }
   @media print{
@@ -804,7 +804,7 @@
             </div>
             </sc-if>
             <sc-if value="{{ report.sel }}" hint-placeholder-val="{{ false }}">
-              <div style="margin-top:16px; padding:16px 18px; background:linear-gradient(160deg,#faf7f1,#f3eee5); border:1px solid #ece2d2; border-radius:14px; animation:routeIn calc(var(--as,1) * .28s) ease both">
+              <div style="margin-top:16px; padding:16px 18px; background:linear-gradient(160deg,#faf7f1,#f3eee5); border:1px solid #ece2d2; border-radius:14px; animation:panelIn calc(var(--as,1) * .28s) ease both">
                 <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px">
                   <div style="display:flex; align-items:center; gap:9px; min-width:0">
                     <span style="display:flex; width:34px; height:34px; border-radius:10px; background:#1f6feb; color:#fff; align-items:center; justify-content:center; flex:none">{{ icons.calendar }}</span>
@@ -958,7 +958,7 @@
                   </sc-if>
                 </div>
               </sc-if>
-              <sc-if value="{{ selUser.isAdmin }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ selUser.isPrimary }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex; align-items:flex-start; gap:8px; font-size:11.5px; color:#8a6d2e; font-weight:500; background:#fdf6e7; border:1px solid #f0e2c8; border-radius:11px; padding:10px 12px; margin-top:6px; line-height:1.45">{{ icons.lock }} <span>Yeh primary <b>Admin</b> account hai — iske paas har permission hai. Sirf iska naam aur password change ho sakta hai; role, permissions ya disable nahi.</span></div>
               </sc-if>
             </div>
@@ -1749,6 +1749,7 @@ class Component extends DCLogic {
     printBill: null, printCfg: null, invMeasure: {}, printZoom:1, printTab:'preview',
     // ---- data caches (progressively loaded; NOT the full DB) ----
     bills: [], billsCursor:null, billsHasMore:false, billsLoading:true, billsLoaded:false,
+    archivedBills: [], archivedCursor:null, archivedHasMore:false, archivedLoading:false, archivedLoaded:false,
     binBills: [], binCursor:null, binHasMore:false, binLoading:false, binLoaded:false,
     pendingBills: [], pendingCursor:null, pendingHasMore:false, pendingLoading:false, pendingLoaded:false, pendingTotal:0,
     activity: [], actCursor:null, actHasMore:false, actLoading:false, actLoaded:false,
@@ -1838,6 +1839,7 @@ class Component extends DCLogic {
     this.setState({ authReady:true });
     this._loadBills(true);
     this._loadDash();
+    if(!this.state.productsLoaded) this._loadProducts();   // needed for the New Bill autocomplete dropdown right away, not just after visiting Products
     this._ensureGeo();   // session-resume case (page refresh) — warms the cache for later activity entries
   }
   async _loadShell(){
@@ -1886,6 +1888,17 @@ class Component extends DCLogic {
     return err? undefined : res;
   }
   isBusy(key){ return !!this.state.busy[key]; }
+  // ---- activity bill link: only navigate if the bill still exists (not permanently purged) ----
+  openActivityBillLink(id){
+    const cached=this._bill(id);
+    if(cached){ this.openView(id,[id],null,'bills'); return; }
+    if(!this.db) return;
+    this.runAction('actlink-'+id, async()=>{
+      const b=await this.db.getBill(id);
+      if(b){ this.setState(s=>({ viewCache:{ ...(s.viewCache||{}), [id]:b } })); this.openView(id,[id],null,'bills'); }
+      else { this.toastMsg('Yeh bill permanently delete ho chuka hai','warn'); }
+    }, {});
+  }
   togglePrivacy(){
     this.setState(s=>({ privacy:!s.privacy }));
     // animate every money value hiding/revealing — Web Animations API so scroll is preserved.
@@ -1923,7 +1936,13 @@ class Component extends DCLogic {
       this.setState(s=>({ bills: reset? r.bills : this._mergeById(s.bills, r.bills), billsCursor:r.cursor, billsHasMore:r.hasMore, billsLoading:false, billsLoaded:true }));
     }catch(e){ console.warn('loadBills', e); this.setState({ billsLoading:false, billsLoaded:true }); }
   }
-  loadMoreBills(){ if(this.state.billsHasMore && !this.state.billsLoading) this._loadBills(false); }
+  loadMoreBills(){ if(this.state.billFlt.status==='archived'){ if(this.state.archivedHasMore && !this.state.archivedLoading) this._loadArchived(false); return; } if(this.state.billsHasMore && !this.state.billsLoading) this._loadBills(false); }
+  async _loadArchived(reset){
+    if(this.state.archivedLoading) return;
+    this.setState({ archivedLoading:true });
+    try{ const r=await this.db.loadBillsPage({ mode:'archived', batch:this._batch(), startAfter: reset? null : this.state.archivedCursor }); this.setState(s=>({ archivedBills: reset? r.bills : this._mergeById(s.archivedBills, r.bills), archivedCursor:r.cursor, archivedHasMore:r.hasMore, archivedLoading:false, archivedLoaded:true })); }
+    catch(e){ console.warn('loadArchived', e); this.setState({ archivedLoading:false, archivedLoaded:true }); }
+  }
   async _loadBin(reset){
     if(this.state.binLoading) return;
     this.setState({ binLoading:true });
@@ -2344,7 +2363,7 @@ class Component extends DCLogic {
   applyBillSearch(){ const q=(this.state.billSearch.q||'').trim(); this.setState(s=>({ billSearch:{...s.billSearch, applied:q} })); this._runSearch(q); }
   async _runSearch(q){ if(!q){ this.setState({ searchResults:null, searching:false }); return; } this.setState({ searching:true }); try{ const r=await this.db.searchBills(q); if((this.state.billSearch.applied||'')===q) this.setState({ searchResults:r, searching:false }); }catch(e){ this.setState({ searching:false }); this.toastMsg('Search nahi ho saki','warn'); } }
   clearBillSearch(){ this.setState({ billSearch:{q:'',applied:''}, searchResults:null, searching:false }); }
-  setFlt(patch){ this.setState(s=>({ billFlt:{...s.billFlt, ...patch} })); }
+  setFlt(patch){ this.setState(s=>({ billFlt:{...s.billFlt, ...patch} })); if(patch.status==='archived' && !this.state.archivedLoaded && !this.state.archivedLoading) this._loadArchived(true); }
   clearFlt(){ this.setState({ billFlt:{ status:'all', from:'', to:'', amtOp:'any', amtVal:'', penOp:'any', penVal:'', hasComment:false, hasNote:false }, billSearch:{q:'',applied:''}, searchResults:null }); }
   toggleFltPanel(){ this.setState(s=>({ fltOpen:!s.fltOpen })); }
   _loadPresets(){ try{ const r=localStorage.getItem('msa_billing_presets_v1'); return r?JSON.parse(r):[]; }catch(e){ return []; } }
@@ -2477,20 +2496,22 @@ class Component extends DCLogic {
   runConfirm(){ const c=this.state.confirm; this.setState({ confirm:null }); if(c&&c.onConfirm) c.onConfirm(); }
   // ---------- delete / archive / restore / bin ----------
   // ---- bill lookup across all loaded caches ----
-  _bill(id){ const s=this.state; return s.bills.find(x=>x.id===id) || s.binBills.find(x=>x.id===id) || s.pendingBills.find(x=>x.id===id) || (s.searchResults&&s.searchResults.find(x=>x.id===id)) || (s.viewCache&&s.viewCache[id]) || null; }
-  _replaceBill(b){ this.setState(s=>({ bills:s.bills.map(x=>x.id===b.id?b:x), binBills:s.binBills.map(x=>x.id===b.id?b:x), pendingBills:s.pendingBills.map(x=>x.id===b.id?b:x).filter(x=> x.id!==b.id || this.derive(b).pending>0), searchResults: s.searchResults? s.searchResults.map(x=>x.id===b.id?b:x):s.searchResults, viewCache:{ ...(s.viewCache||{}), [b.id]:b } })); }
+  _bill(id){ const s=this.state; return s.bills.find(x=>x.id===id) || s.archivedBills.find(x=>x.id===id) || s.binBills.find(x=>x.id===id) || s.pendingBills.find(x=>x.id===id) || (s.searchResults&&s.searchResults.find(x=>x.id===id)) || (s.viewCache&&s.viewCache[id]) || null; }
+  _replaceBill(b){ this.setState(s=>({ bills:s.bills.map(x=>x.id===b.id?b:x), archivedBills:s.archivedBills.map(x=>x.id===b.id?b:x), binBills:s.binBills.map(x=>x.id===b.id?b:x), pendingBills:s.pendingBills.map(x=>x.id===b.id?b:x).filter(x=> x.id!==b.id || this.derive(b).pending>0), searchResults: s.searchResults? s.searchResults.map(x=>x.id===b.id?b:x):s.searchResults, viewCache:{ ...(s.viewCache||{}), [b.id]:b } })); }
   _removeFromActive(id){ this.setState(s=>({ bills:s.bills.filter(x=>x.id!==id) })); }
   _upsertActive(b){ this.setState(s=>({ bills: s.bills.find(x=>x.id===b.id)? s.bills.map(x=>x.id===b.id?b:x) : [b, ...s.bills] })); }
+  _removeFromArchived(id){ this.setState(s=>({ archivedBills:s.archivedBills.filter(x=>x.id!==id) })); }
+  _upsertArchived(b){ this.setState(s=>({ archivedBills: s.archivedBills.find(x=>x.id===b.id)? s.archivedBills.map(x=>x.id===b.id?b:x) : [b, ...s.archivedBills] })); }
 
   archiveBill(id){ const b=this._bill(id); if(!b) return; const arch=!b.archived;
-    this.runAction('arch-'+id, async()=>{ const nb=await this.db.archiveBill(id, b, arch); this._replaceBill(nb); if(arch){ this._removeFromActive(id); } else { this._upsertActive(nb); } this.logActivity({ action:arch?'archive':'unarchive', entity:'bill', entityId:id, entityLabel:b.no, summary:arch?'Archived bill':'Unarchived bill' }); this.toastMsg(arch?'Bill archive ho gaya':'Bill unarchive ho gaya','ok'); if(arch) this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block: arch?'Archiving…':'Restoring…' });
+    this.runAction('arch-'+id, async()=>{ const nb=await this.db.archiveBill(id, b, arch); this._replaceBill(nb); if(arch){ this._removeFromActive(id); this._upsertArchived(nb); } else { this._upsertActive(nb); this._removeFromArchived(id); } this.logActivity({ action:arch?'archive':'unarchive', entity:'bill', entityId:id, entityLabel:b.no, summary:arch?'Archived bill':'Unarchived bill' }); this.toastMsg(arch?'Bill archive ho gaya':'Bill unarchive ho gaya','ok'); if(arch) this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block: arch?'Archiving…':'Restoring…' });
   }
   deleteBill(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete this bill?', message:b.no+' Recycle bin me chala jayega — kabhi bhi restore kar sakte hain.', confirmLabel:'Delete bill', danger:true, onConfirm:()=>this._doDeleteBill(id) }); }
   _doDeleteBill(id){ const b=this._bill(id); if(!b) return;
-    this.runAction('del-'+id, async()=>{ await this.db.softDeleteBill(id, b); this._removeFromActive(id); this.setState(s=>({ pendingBills:s.pendingBills.filter(x=>x.id!==id), binLoaded:false })); this.logActivity({ action:'delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Moved bill to Recycle bin' }); this.toastMsg('Bill Recycle bin me chala gaya','ok'); this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block:'Deleting…' });
+    this.runAction('del-'+id, async()=>{ await this.db.softDeleteBill(id, b); this._removeFromActive(id); this.setState(s=>({ pendingBills:s.pendingBills.filter(x=>x.id!==id), archivedBills:s.archivedBills.filter(x=>x.id!==id), binLoaded:false })); this.logActivity({ action:'delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Moved bill to Recycle bin' }); this.toastMsg('Bill Recycle bin me chala gaya','ok'); this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block:'Deleting…' });
   }
   restoreBill(id){ const b=this._bill(id); if(!b) return;
-    this.runAction('rest-'+id, async()=>{ await this.db.restoreBill(id, b); this.setState(s=>({ binBills:s.binBills.filter(x=>x.id!==id), billsLoaded:false })); this.logActivity({ action:'restore', entity:'bill', entityId:id, entityLabel:b.no, summary:'Restored bill from Recycle bin' }); this.toastMsg('Bill restore ho gaya','ok'); this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block:'Restoring…' });
+    this.runAction('rest-'+id, async()=>{ await this.db.restoreBill(id, b); this.setState(s=>({ binBills:s.binBills.filter(x=>x.id!==id), billsLoaded:false, archivedLoaded: b.archived? false : s.archivedLoaded })); this.logActivity({ action:'restore', entity:'bill', entityId:id, entityLabel:b.no, summary:'Restored bill from Recycle bin' }); this.toastMsg('Bill restore ho gaya','ok'); this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block:'Restoring…' });
   }
   permanentDelete(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this.setState(s=>({ binBills:s.binBills.filter(x=>x.id!==id) })); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._afterRemoveFromView(id); }, { block:'Deleting…' }) }); }
   emptyBin(){ if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin · '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); }, { block:'Emptying bin…' }) }); }
@@ -2507,7 +2528,7 @@ class Component extends DCLogic {
   }
   _saveScopeDebounced(uid, scope, label){ clearTimeout(this._scopeT); this._scopeQ={uid,scope,label}; this._scopeT=setTimeout(()=>{ const q=this._scopeQ; this._scopeQ=null; this.runAction('scope-'+q.uid, async()=>{ const r=await this.db.updateUser(q.uid, { activityScope:q.scope }); if(!r.ok){ this.toastMsg(r.error||'Save nahi hua','warn'); await this._loadUsers(); return; } this.logActivity({ action:'update', entity:'user', entityId:q.uid, entityLabel:q.label, summary:'Updated activity visibility' }); }, { headerSave:true }); }, 600); }
   // ---------- settings (debounced single log entry) ----------
-  setSetting(field, val, label){ this.setState(s=>({ settings:{...s.settings, [field]:val} })); this._dirty=this._dirty||new Set(); this._dirty.add(label); clearTimeout(this._setT); this._setT=setTimeout(()=>{ const fields=[...(this._dirty||[])]; this._dirty=new Set(); if(fields.length) this.logActivity({ action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated settings · '+fields.join(', ') }); }, 1500); }
+  setSetting(field, val, label){ this.setState(s=>({ settings:{...s.settings, [field]:val} })); this._dirty=this._dirty||new Set(); this._dirty.add(label); clearTimeout(this._setT); this._setT=setTimeout(()=>{ const fields=[...(this._dirty||[])]; this._dirty=new Set(); if(fields.length) this.logActivity({ action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated settings · '+fields.join(', ') }); }, 1500); if(field==='startNo' && this.db){ const n=Number(val); if(n>0) this.db.bumpCounterIfHigher(n).then(()=>this.db.peekCounter()).then(c=>{ if(c!=null) this.setState({ counter:c }); }).catch(()=>{}); } }
 
   // ---------- logo upload ----------
   onLogoUpload(file){
@@ -2749,16 +2770,16 @@ class Component extends DCLogic {
       if(flt.hasNote && !(b.note&&b.note.trim())) return false;
       return true; };
     const useArchived = flt.status==='archived';
-    // base = search results when a query is applied, else the loaded active page
+    // base = search results when a query is applied, else the loaded active/archived page
     const searchActive = !!bq && Array.isArray(S.searchResults);
-    const baseList = searchActive ? S.searchResults.slice().sort((a,b)=>b.ts-a.ts) : sorted;
+    const baseList = searchActive ? S.searchResults.slice().sort((a,b)=>b.ts-a.ts) : (useArchived ? S.archivedBills.slice().sort((a,b)=>b.ts-a.ts) : sorted);
     const filtered = baseList.filter(b=> (searchActive? !b.deleted : true) && inRange(b) && passFlt(b) && (useArchived? b.archived : !b.archived));
     const fullIds = filtered.map(b=>b.id);
     const allBillsView = withCtx(filtered.map(mkCard), fullIds, S.billsSecondary?'secondary':'bills');
-    const billsHasMore = S.billsSecondary? false : (searchActive? false : S.billsHasMore);
+    const billsHasMore = S.billsSecondary? false : (searchActive? false : (useArchived? S.archivedHasMore : S.billsHasMore));
     const billsRemaining = 0;
-    const billsLoadingMore = S.billsLoading && S.billsLoaded;
-    const billsListLoading = (S.billsLoading && !S.billsLoaded) || (searchActive && S.searching);
+    const billsLoadingMore = useArchived? (S.archivedLoading && S.archivedLoaded) : (S.billsLoading && S.billsLoaded);
+    const billsListLoading = useArchived? (S.archivedLoading && !S.archivedLoaded) : ((S.billsLoading && !S.billsLoaded) || (searchActive && S.searching));
     const billsCountLabel = `${filtered.length}${billsHasMore?'+':''} ${useArchived?'archived ':''}bill${filtered.length===1?'':'s'}`;
     const billsShownLabel = '';
     // active filter chips
@@ -2945,7 +2966,7 @@ class Component extends DCLogic {
         colStyle:'flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:0; cursor:pointer',
         trackStyle:'position:relative; width:100%; max-width:30px; height:158px; display:flex; align-items:flex-end; justify-content:center',
         fillWrap:'position:relative; width:100%; max-width:30px; height:100%; display:flex; align-items:flex-end; justify-content:center; border-radius:7px; background:repeating-linear-gradient(0deg,transparent,transparent 30px,rgba(60,40,10,.04) 30px,rgba(60,40,10,.04) 31px)',
-        fillStyle:`width:100%; border-radius:6px 6px 2px 2px; height:${hpct}%; min-height:${hasData?'4px':'0'}; background:${seld?'linear-gradient(180deg,#23252c,#1a1d24)':'linear-gradient(180deg,#3f8bff,#2f7bf6)'}; box-shadow:${seld?'0 4px 12px rgba(0,0,0,.2)':'0 2px 8px rgba(47,123,246,.28)'}; transform-origin:bottom; animation:barGrow calc(var(--as,1) * .45s) cubic-bezier(.2,.8,.2,1) both; transition:background .15s, box-shadow .15s`,
+        fillStyle:`width:100%; border-radius:6px 6px 2px 2px; height:${hpct}%; min-height:${hasData?'4px':'0'}; background:${seld?'linear-gradient(180deg,#23252c,#1a1d24)':'linear-gradient(180deg,#3f8bff,#2f7bf6)'}; box-shadow:${seld?'0 4px 12px rgba(0,0,0,.2)':'0 2px 8px rgba(47,123,246,.28)'}; transition:height calc(var(--as,1) * .45s) cubic-bezier(.2,.8,.2,1), background .15s, box-shadow .15s`,
         pendMark: b.pending>0, markStyle:'position:absolute; top:-9px; left:50%; transform:translateX(-50%); width:7px; height:7px; border-radius:50%; background:#e8820c; box-shadow:0 0 0 2px #fff; z-index:2',
         labelBandStyle:'height:18px; display:flex; align-items:center; justify-content:center; margin-top:7px',
         tickStyle:`width:1.5px; height:6px; border-radius:2px; background:${hasData?'#c9bda9':'transparent'}`,
@@ -2993,7 +3014,8 @@ class Component extends DCLogic {
     const roleColors={Admin:'#5b3df5',Manager:'#1f6feb',Cashier:'#0f7a52',Viewer:'#8a8175'};
     const ADMIN_EMAIL='admin@msa.com';
     const isAdminUser=(u)=> u && (u.role==='Admin' || String(u.email||'').toLowerCase()===ADMIN_EMAIL);
-    const me=S.authUser; const iCanManage=this.can('users');
+    const isPrimaryUser=(u)=> u && String(u.email||'').toLowerCase()===ADMIN_EMAIL;
+    const me=S.authUser; const iCanManage=this.can('users'); const iAmPrimary=isPrimaryUser(me);
     const selUserObj=S.users.find(u=>u.id===S.selUserId)||S.users[0]||null;
     const hasSelUser=!!selUserObj && S.users.length>0;
     const initialsOf=(nm)=>(nm||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();
@@ -3007,11 +3029,14 @@ class Component extends DCLogic {
     });
     // selected user detail
     const selIsAdmin=isAdminUser(selUserObj);
+    const selIsPrimary=isPrimaryUser(selUserObj);
+    const selIsCoAdmin=selIsAdmin && !selIsPrimary;
     const selIsSelf=selUserObj&&me&&selUserObj.id===me.id;
-    const canEditSel=iCanManage && !!selUserObj;
+    // primary: only itself, name-only. co-admin: only the primary can act. regular: normal perms gate.
+    const canEditSel = !selUserObj ? false : selIsPrimary ? (iAmPrimary && selIsSelf) : selIsCoAdmin ? iAmPrimary : iCanManage;
     const selUser=selUserObj?{ name:selUserObj.fullName||selUserObj.email, email:selUserObj.email, role:selUserObj.role, initials:initialsOf(selUserObj.fullName||selUserObj.email),
-      isAdmin:selIsAdmin, canEdit:canEditSel, showPerms:!selIsAdmin && !!selUserObj,
-      canDisable: canEditSel && !selIsAdmin && !selIsSelf, canDelete: canEditSel && !selIsAdmin && !selIsSelf,
+      isAdmin:selIsAdmin, isPrimary:selIsPrimary, canEdit:canEditSel, showPerms:!selIsPrimary && !!selUserObj,
+      canDisable: canEditSel && !selIsPrimary && !selIsSelf, canDelete: canEditSel && !selIsPrimary && !selIsSelf,
       disableLabel: selUserObj.disabled?'Enable account':'Disable account',
       disableBtnStyle: selUserObj.disabled? 'display:flex;align-items:center;gap:6px;padding:8px 13px;background:#e7f5ee;border:1px solid #cdeadb;border-radius:10px;font-size:12.5px;font-weight:600;color:#0f7a52;cursor:pointer' : 'display:flex;align-items:center;gap:6px;padding:8px 13px;background:#fdf2e0;border:1px solid #f0e2c8;border-radius:10px;font-size:12.5px;font-weight:600;color:#b8740a;cursor:pointer',
       roleBadge:roleBadgeOf(selUserObj.role),
@@ -3019,7 +3044,7 @@ class Component extends DCLogic {
     const presets=['Admin','Manager','Cashier','Viewer'];
     const pbase='padding:7px 14px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid;transition:all .14s';
     const curRole=selUserObj?selUserObj.role:'';
-    const rolePresets=presets.map(r=>({ key:r, label:r, rk:r+(curRole===r?'-on':'-off'), onClick:()=> (canEditSel && !(r==='Admin'&&me&&me.role!=='Admin'))? this.applyPreset(selUserObj.id,r):this.toastMsg('Sirf admin kisi ko Admin bana sakta hai','warn'), style: curRole===r?`${pbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${pbase} #ece4d7;background:#fff;color:#3f4753` }));
+    const rolePresets=presets.map(r=>({ key:r, label:r, rk:r+(curRole===r?'-on':'-off'), onClick:()=> !canEditSel? null : (r==='Admin'&&!iAmPrimary)? this.toastMsg('Sirf primary admin kisi ko Admin bana sakta hai','warn') : this.applyPreset(selUserObj.id,r), style: curRole===r?`${pbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${pbase} #ece4d7;background:#fff;color:#3f4753` }));
     // flat permission list
     const featDefs=[['bills_create','Create bills','Naye bills bana sake'],['bills_edit','Edit bills','Mojooda bills edit kar sake'],['bills_delete','Delete bills','Bills delete kar sake (Recycle bin)'],['bills_archive','Archive bills','Bills archive/unarchive kar sake'],['payments','Record payments','Payments & adjustments add kar sake'],['products','Manage products','Products delete/manage kar sake'],['reports','View reports','Reports & trends dekh sake'],['recycle','Recycle bin','Bin dekh kar restore/empty kar sake'],['users','Manage users','Team add/edit/delete kar sake'],['settings','Edit settings','Settings & print templates badle']];
     const permFlat=(selUserObj&&selUserObj.perms)||{};
@@ -3028,7 +3053,7 @@ class Component extends DCLogic {
     const nu=S.newUser||{name:'',email:'',password:'',role:'Cashier'};
     const nuRoleBtns=presets.map(r=>({ rk:'nur'+r+(nu.role===r?'1':'0'), label:r, onClick:()=>this.setNewUser({role:r}), style: nu.role===r?`${pbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${pbase} #ece4d7;background:#fff;color:#3f4753` }));
     // activity visibility
-    const selScope = selUserObj? (selUserObj.activityScope || (selIsAdmin?'all':'self')) : 'self';
+    const selScope = selUserObj? (selUserObj.activityScope || (selIsPrimary?'all':'self')) : 'self';
     const scopeMode = selScope==='all'?'all':(selScope==='self'?'self':'specific');
     const scopeOpts=[['all','Everyone'],['self','Only themselves'],['specific','Specific users']];
     const sbtn='padding:7px 12px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid';
@@ -3105,8 +3130,8 @@ class Component extends DCLogic {
         summary:e.summary, userName:e.userName, time:this.dateStrFull(e.ts), entityTag:entLabel[e.entity]||e.entity, entityLabel:e.entityLabel||'',
         tagStyle:`font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${bg};color:${ink}`, refLabel:(e.entity==='bill'||e.entity==='product'||e.entity==='user')?(e.entityLabel||''):'',
         hasChanges:(e.changes&&e.changes.length>0), changes:(e.changes||[]).map((c,i)=>({rk:e.id+'c'+i, field:c.field, from:c.from, to:c.to})),
-        isLogin:e.action==='login', ip:e.ip||'', location:e.location||'',
-        clickable:!!billLink, onClick: billLink? (()=>this.openView(e.entityId,[e.entityId],null,'bills')) : null, rowCursor: billLink?'pointer':'default' };
+        isLogin:e.action==='login', ip:e.ip||'0.0.0.0', location:e.location||"Location couldn't found!",
+        clickable:!!billLink, onClick: billLink? (()=>this.openActivityBillLink(e.entityId)) : null, rowCursor: billLink?'pointer':'default' };
     });
     const actUserOpts=[{v:'all',label:'All users'}].concat(S.users.map(u=>({v:u.id,label:u.fullName||u.email})));
     const actEntityOpts=[{v:'all',label:'All types'},{v:'bill',label:'Bills'},{v:'product',label:'Products'},{v:'user',label:'Users'},{v:'settings',label:'Settings'},{v:'auth',label:'Logins'}];
@@ -3306,6 +3331,11 @@ class Component extends DCLogic {
     return set([]);
   }
   _isAdminUser(u){ return u && (u.role==='Admin' || String(u.email||'').toLowerCase()==='admin@msa.com'); }
+  _isPrimary(u){ return u && String(u.email||'').toLowerCase()==='admin@msa.com'; }
+  _iAmPrimary(){ return this._isPrimary(this.state.authUser); }
+  // can the logged-in user act on this target? primary acts on everyone except itself (name/pw only there);
+  // a co-admin (Admin role, not primary) can only be acted on BY the primary; regular users follow normal perms.
+  _canActOn(u){ if(!u) return false; if(this._isPrimary(u)) return false; if(this._isAdminUser(u)) return this._iAmPrimary(); return this.can('users'); }
   // ---- create ----
   openAddUser(){ if(!this.can('users')){ this.toastMsg('Aapko users manage karne ki ijazat nahi','warn'); return; } this.setState({ addUserModal:true, newUser:{name:'',email:'',password:'',role:'Cashier'} }); }
   closeAddUser(){ this.setState({ addUserModal:false }); }
@@ -3316,7 +3346,7 @@ class Component extends DCLogic {
     if(!name){ this.toastMsg('Full name likhein','warn'); return; }
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ this.toastMsg('Sahi email likhein','warn'); return; }
     if(pwd.length<6){ this.toastMsg('Password kam az kam 6 characters ka ho','warn'); return; }
-    if(role==='Admin' && !(this.state.authUser&&this.state.authUser.role==='Admin')){ this.toastMsg('Sirf admin naya admin bana sakta hai','warn'); return; }
+    if(role==='Admin' && !this._iAmPrimary()){ this.toastMsg('Sirf primary admin naya admin bana sakta hai','warn'); return; }
     this.runAction('createuser', async()=>{
       const r=await this.db.createUser({ email, password:pwd, fullName:name, role, perms:this._rolePerms(role), activityScope: role==='Admin'?'all':'self' });
       if(!r.ok){ this.toastMsg(r.error||'User nahi bana','warn'); return; }
@@ -3326,14 +3356,14 @@ class Component extends DCLogic {
     }, { block:'Creating user…' });
   }
   // ---- edit details (full name + role) ----
-  openEditUser(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; if(!this.can('users')){ this.toastMsg('Ijazat nahi','warn'); return; } const adminTarget=this._isAdminUser(u); this.setState({ editUserModal:true, editDraft:{ id:u.id, fullName:u.fullName||'', email:u.email, role:u.role, editRole: !adminTarget } }); }
+  openEditUser(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; if(this._isPrimary(u)){ if(!this._iAmPrimary()){ this.toastMsg('Sirf primary admin apni profile edit kar sakta hai','warn'); return; } } else if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } const isPrimaryTarget=this._isPrimary(u); this.setState({ editUserModal:true, editDraft:{ id:u.id, fullName:u.fullName||'', email:u.email, role:u.role, editRole: !isPrimaryTarget } }); }
   setEditDraft(patch){ this.setState(s=>({ editDraft:{...s.editDraft, ...patch} })); }
   closeEditUser(){ this.setState({ editUserModal:false, editDraft:null }); }
   saveEditUser(){
     const d=this.state.editDraft; if(!d) return; const name=(d.fullName||'').trim();
     if(!name){ this.toastMsg('Full name khali nahi ho sakta','warn'); return; }
-    const u=this.state.users.find(x=>x.id===d.id); const adminTarget=this._isAdminUser(u);
-    const patch={ fullName:name }; if(d.editRole && !adminTarget){ patch.role=d.role; patch.perms=this._rolePerms(d.role); }
+    const u=this.state.users.find(x=>x.id===d.id); const isPrimaryTarget=this._isPrimary(u);
+    const patch={ fullName:name }; if(d.editRole && !isPrimaryTarget){ patch.role=d.role; patch.perms=this._rolePerms(d.role); }
     this.runAction('edituser', async()=>{
       const r=await this.db.updateUser(d.id, patch);
       if(!r.ok){ this.toastMsg(r.error||'Update nahi hua','warn'); return; }
@@ -3343,21 +3373,21 @@ class Component extends DCLogic {
     }, { block:'Saving…' });
   }
   // ---- password ----
-  openPwModal(uid){ if(!this.can('users')){ this.toastMsg('Ijazat nahi','warn'); return; } this.setState({ pwModal:uid, pwDraft:'' }); }
+  openPwModal(uid){ const u=this.state.users.find(x=>x.id===uid); if(this._isPrimary(u)){ if(!this._iAmPrimary()){ this.toastMsg('Sirf primary admin apna password set kar sakta hai','warn'); return; } } else if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } this.setState({ pwModal:uid, pwDraft:'' }); }
   submitPw(){ const uid=this.state.pwModal; const pw=this.state.pwDraft||''; if(pw.length<6){ this.toastMsg('Password kam az kam 6 characters','warn'); return; } const u=this.state.users.find(x=>x.id===uid);
     this.runAction('setpw', async()=>{ const r=await this.db.setPassword(uid, pw); if(!r.ok){ this.toastMsg(r.error||'Password set nahi hua','warn'); return; } this.logActivity({ action:'update', entity:'user', entityId:uid, entityLabel:u?(u.fullName||u.email):uid, summary:'Set new password' }); this.setState({ pwModal:null, pwDraft:'' }); this.toastMsg('Password set ho gaya','ok'); }, { block:'Setting password…' });
   }
   // ---- disable / delete ----
-  toggleDisable(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; const dis=!u.disabled;
+  toggleDisable(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; if(this._isPrimary(u)){ this.toastMsg('Primary admin disable nahi ho sakta','warn'); return; } if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } const dis=!u.disabled;
     this.runAction('disable-'+uid, async()=>{ const r=await this.db.setDisabled(uid, dis); if(!r.ok){ this.toastMsg(r.error||'Nahi ho saka','warn'); return; } this.logActivity({ action:'update', entity:'user', entityId:uid, entityLabel:u.fullName||u.email, summary:(dis?'Disabled':'Enabled')+' account' }); await this._loadUsers(); this.toastMsg(dis?'Account disable ho gaya':'Account enable ho gaya','ok'); }, { block: dis?'Disabling…':'Enabling…' });
   }
-  confirmDeleteUser(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; this.askConfirm({ title:'Delete this user?', message:(u.fullName||u.email)+' ka account hamesha ke liye delete ho jayega.', confirmLabel:'Delete user', danger:true, onConfirm:()=> this.runAction('deluser-'+uid, async()=>{ const r=await this.db.deleteUser(uid); if(!r.ok){ this.toastMsg(r.error||'Delete nahi hua','warn'); return; } this.logActivity({ action:'delete', entity:'user', entityId:uid, entityLabel:u.fullName||u.email, summary:'Deleted user · '+(u.fullName||u.email) }); await this._loadUsers(); this.setState(s=>({ selUserId: (s.users[0]&&s.users[0].id)||null })); this.toastMsg('User delete ho gaya','ok'); }, { block:'Deleting user…' }) }); }
+  confirmDeleteUser(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; if(this._isPrimary(u)){ this.toastMsg('Primary admin delete nahi ho sakta','warn'); return; } if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } this.askConfirm({ title:'Delete this user?', message:(u.fullName||u.email)+' ka account hamesha ke liye delete ho jayega.', confirmLabel:'Delete user', danger:true, onConfirm:()=> this.runAction('deluser-'+uid, async()=>{ const r=await this.db.deleteUser(uid); if(!r.ok){ this.toastMsg(r.error||'Delete nahi hua','warn'); return; } this.logActivity({ action:'delete', entity:'user', entityId:uid, entityLabel:u.fullName||u.email, summary:'Deleted user · '+(u.fullName||u.email) }); await this._loadUsers(); this.setState(s=>({ selUserId: (s.users[0]&&s.users[0].id)||null })); this.toastMsg('User delete ho gaya','ok'); }, { block:'Deleting user…' }) }); }
   // ---- permissions (flat) + role preset ----
-  togglePerm(uid, key){ const u=this.state.users.find(x=>x.id===uid); if(!u || this._isAdminUser(u)) return; const nextPerms={...(u.perms||{}), [key]: !(u.perms&&u.perms[key])};
+  togglePerm(uid, key){ const u=this.state.users.find(x=>x.id===uid); if(!u || !this._canActOn(u)) return; const nextPerms={...(u.perms||{}), [key]: !(u.perms&&u.perms[key])};
     this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, role:'Custom', perms:nextPerms}:x) }));   // optimistic
     this._savePermsDebounced(uid, 'Custom', nextPerms, u.fullName||u.email);
   }
-  applyPreset(uid, role){ const u=this.state.users.find(x=>x.id===uid); if(!u || this._isAdminUser(u)) return; const perms=this._rolePerms(role);
+  applyPreset(uid, role){ const u=this.state.users.find(x=>x.id===uid); if(!u || !this._canActOn(u)) return; const perms=this._rolePerms(role);
     this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, role, perms}:x) }));                       // optimistic
     this._savePermsDebounced(uid, role, perms, u.fullName||u.email, 'applied '+role+' preset');
   }

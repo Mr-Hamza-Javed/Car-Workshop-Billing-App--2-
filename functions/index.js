@@ -18,12 +18,23 @@
                          costs one function call per session, not one per
                          action.
 
-   Authorization model
-     • A user may manage OTHER users if they are Admin (token.admin === true)
-       OR their profile grants perms.users === true.
-     • The admin account (admin@msa.com) can only be modified by an Admin.
-     • Nobody can delete / disable / demote themselves into lockout, and a
-       non-admin can never create or edit an Admin.
+   Authorization model (admin hierarchy)
+     • admin@msa.com is THE primary admin — identified strictly by EMAIL,
+       never by role label or custom claim alone (so a second "Admin" role
+       user can never impersonate this tier).
+     • The primary admin has full control over every OTHER user, INCLUDING
+       other Admin-role accounts: create, edit, disable, delete, reset
+       password — all of it.
+     • On its OWN account, the primary admin may change ONLY its full name
+       and password. Nothing else about admin@msa.com is ever editable by
+       anyone (including itself) — not role, not perms, not disable, not
+       delete.
+     • Any OTHER Admin-role account ("co-admin") is fully manageable ONLY
+       by the primary admin — a co-admin cannot touch the primary, and
+       cannot touch other co-admins either.
+     • A regular (non-admin) user-manager — anyone whose profile grants
+       perms.users === true — may manage regular, non-admin users, exactly
+       as before. They can never touch the primary admin or any co-admin.
    ===================================================================== */
 
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
@@ -54,13 +65,27 @@ async function loadProfile(uid) {
   const snap = await db.doc("users/" + uid).get();
   return snap.exists ? snap.data() : null;
 }
-/* caller must be Admin or have perms.users */
+function emailOf(profileOrNull, fallback) {
+  return ((profileOrNull && profileOrNull.email) || fallback || "").toLowerCase();
+}
+/* The ONE true check for "is this the untouchable primary admin" — strictly by email,
+   never by role label or custom claim (those can be granted to other accounts too). */
+async function callerEmail(a) {
+  if (a.token && a.token.email) return String(a.token.email).toLowerCase();
+  try { const u = await auth.getUser(a.uid); return (u.email || "").toLowerCase(); } catch (e) { return ""; }
+}
+
+/* Caller must be the primary admin, OR an Admin-role/perms.users holder (for managing
+   REGULAR users only — admin-tier targets are gated separately, per-function, below). */
 async function requireUserManager(request) {
   const a = requireAuth(request);
-  if (a.token && a.token.admin === true) return { uid: a.uid, isAdmin: true };
+  const email = await callerEmail(a);
+  const isPrimary = email === ADMIN_EMAIL;
+  if (isPrimary) return { uid: a.uid, email, isPrimary: true };
+  if (a.token && a.token.admin === true) return { uid: a.uid, email, isPrimary: false }; // co-admin: can manage regular users only
   const prof = await loadProfile(a.uid);
   if (prof && prof.disabled) throw new HttpsError("permission-denied", "Account band hai");
-  if (prof && prof.perms && prof.perms.users === true) return { uid: a.uid, isAdmin: false, prof };
+  if (prof && prof.perms && prof.perms.users === true) return { uid: a.uid, email, isPrimary: false, prof };
   throw new HttpsError("permission-denied", "Aapko users manage karne ki ijazat nahi");
 }
 function cleanPerms(p) {
@@ -95,7 +120,8 @@ exports.bootstrapAdmin = onCall(opts, async (request) => {
 });
 
 /* =====================================================================
-   adminCreateUser
+   adminCreateUser — only the primary admin may create another Admin-role
+   account; anyone with perms.users may create a regular (non-admin) user.
    ===================================================================== */
 exports.adminCreateUser = onCall(opts, async (request) => {
   const caller = await requireUserManager(request);
@@ -103,7 +129,7 @@ exports.adminCreateUser = onCall(opts, async (request) => {
   if (!validEmail(email)) throw new HttpsError("invalid-argument", "Email theek nahi");
   if (!password || String(password).length < 6) throw new HttpsError("invalid-argument", "Password kam az kam 6 characters");
   const wantAdmin = role === "Admin" || (email || "").toLowerCase() === ADMIN_EMAIL;
-  if (wantAdmin && !caller.isAdmin) throw new HttpsError("permission-denied", "Sirf admin, naya admin bana sakta hai");
+  if (wantAdmin && !caller.isPrimary) throw new HttpsError("permission-denied", "Sirf primary admin naya admin bana sakta hai");
 
   let userRecord;
   try {
@@ -124,6 +150,14 @@ exports.adminCreateUser = onCall(opts, async (request) => {
 
 /* =====================================================================
    adminUpdateUser — fullName / role / perms / activityScope (NOT email)
+
+   Target tiers:
+     • primary (target.email === admin@msa.com): ONLY the primary itself
+       may call this on its own account, and ONLY fullName may change —
+       role/perms/activityScope are silently ignored even if sent.
+     • co-admin (target.role === 'Admin', not primary): only the primary
+       admin may edit — full edit (name/role/perms/scope).
+     • regular user: any caller who passed requireUserManager may edit.
    ===================================================================== */
 exports.adminUpdateUser = onCall(opts, async (request) => {
   const caller = await requireUserManager(request);
@@ -131,22 +165,33 @@ exports.adminUpdateUser = onCall(opts, async (request) => {
   if (!uid) throw new HttpsError("invalid-argument", "uid chahiye");
   const target = await loadProfile(uid);
   if (!target) throw new HttpsError("not-found", "User nahi mila");
-  const targetIsAdmin = target.role === "Admin" || (target.email || "").toLowerCase() === ADMIN_EMAIL;
-  if (targetIsAdmin && !caller.isAdmin) throw new HttpsError("permission-denied", "Admin ki settings sirf admin change kar sakta hai");
+  const targetEmail = emailOf(target, null);
+  const targetIsPrimary = targetEmail === ADMIN_EMAIL;
+  const targetIsCoAdmin = !targetIsPrimary && target.role === "Admin";
 
   const patch = {};
-  if (typeof fullName === "string" && fullName.trim()) patch.fullName = fullName.trim();
-  if (!targetIsAdmin) {
+  if (targetIsPrimary) {
+    if (!caller.isPrimary) throw new HttpsError("permission-denied", "Sirf primary admin apni profile edit kar sakta hai");
+    // self-edit, name only — role/perms/activityScope/disable are never touched here
+    if (typeof fullName === "string" && fullName.trim()) patch.fullName = fullName.trim();
+    if (Object.keys(patch).length === 0) throw new HttpsError("permission-denied", "Admin ka sirf naam change ho sakta hai");
+  } else if (targetIsCoAdmin) {
+    if (!caller.isPrimary) throw new HttpsError("permission-denied", "Doosre admin ko sirf primary admin manage kar sakta hai");
+    if (typeof fullName === "string" && fullName.trim()) patch.fullName = fullName.trim();
+    if (typeof role === "string") patch.role = role; // primary may change a co-admin's role freely, incl. demoting
+    if (perms && typeof perms === "object") patch.perms = cleanPerms(perms);
+    if (typeof activityScope === "string") patch.activityScope = activityScope;
+  } else {
+    // regular (non-admin) target — existing perms.users-gated behaviour
+    if (typeof fullName === "string" && fullName.trim()) patch.fullName = fullName.trim();
     if (typeof role === "string") {
-      if (role === "Admin" && !caller.isAdmin) throw new HttpsError("permission-denied", "Sirf admin kisi ko admin bana sakta hai");
+      if (role === "Admin" && !caller.isPrimary) throw new HttpsError("permission-denied", "Sirf primary admin kisi ko admin bana sakta hai");
       patch.role = role;
     }
     if (perms && typeof perms === "object") patch.perms = cleanPerms(perms);
     if (typeof activityScope === "string") patch.activityScope = activityScope;
-  } else {
-    // editing the admin: only the display name may change
-    if (Object.keys(patch).length === 0) throw new HttpsError("permission-denied", "Admin ka sirf naam change ho sakta hai");
   }
+
   await db.doc("users/" + uid).set(patch, { merge: true });
   if (patch.perms || patch.role) {
     const newPerms = patch.perms || target.perms || {};
@@ -159,6 +204,9 @@ exports.adminUpdateUser = onCall(opts, async (request) => {
 
 /* =====================================================================
    adminSetPassword
+     • primary target: only the primary itself may set its own password.
+     • co-admin target: only the primary admin may reset it.
+     • regular user: any caller who passed requireUserManager may reset it.
    ===================================================================== */
 exports.adminSetPassword = onCall(opts, async (request) => {
   const caller = await requireUserManager(request);
@@ -166,14 +214,20 @@ exports.adminSetPassword = onCall(opts, async (request) => {
   if (!uid) throw new HttpsError("invalid-argument", "uid chahiye");
   if (!password || String(password).length < 6) throw new HttpsError("invalid-argument", "Password kam az kam 6 characters");
   const target = await loadProfile(uid);
-  const targetIsAdmin = target && (target.role === "Admin" || (target.email || "").toLowerCase() === ADMIN_EMAIL);
-  if (targetIsAdmin && !caller.isAdmin) throw new HttpsError("permission-denied", "Admin ka password sirf admin set kar sakta hai");
+  const targetEmail = emailOf(target, null);
+  const targetIsPrimary = targetEmail === ADMIN_EMAIL;
+  const targetIsCoAdmin = !targetIsPrimary && target && target.role === "Admin";
+  if (targetIsPrimary && !caller.isPrimary) throw new HttpsError("permission-denied", "Admin ka password sirf admin khud set kar sakta hai");
+  if (targetIsCoAdmin && !caller.isPrimary) throw new HttpsError("permission-denied", "Doosre admin ka password sirf primary admin set kar sakta hai");
   await auth.updateUser(uid, { password: String(password) });
   return { ok: true };
 });
 
 /* =====================================================================
    adminSetDisabled
+     • primary target: never allowed, for anyone, ever.
+     • co-admin target: only the primary admin may disable/enable.
+     • regular user: any caller who passed requireUserManager may toggle.
    ===================================================================== */
 exports.adminSetDisabled = onCall(opts, async (request) => {
   const caller = await requireUserManager(request);
@@ -181,8 +235,11 @@ exports.adminSetDisabled = onCall(opts, async (request) => {
   if (!uid) throw new HttpsError("invalid-argument", "uid chahiye");
   if (uid === caller.uid) throw new HttpsError("permission-denied", "Aap khud ko disable nahi kar sakte");
   const target = await loadProfile(uid);
-  const targetIsAdmin = target && (target.role === "Admin" || (target.email || "").toLowerCase() === ADMIN_EMAIL);
-  if (targetIsAdmin) throw new HttpsError("permission-denied", "Admin account disable nahi ho sakta");
+  const targetEmail = emailOf(target, null);
+  const targetIsPrimary = targetEmail === ADMIN_EMAIL;
+  const targetIsCoAdmin = !targetIsPrimary && target && target.role === "Admin";
+  if (targetIsPrimary) throw new HttpsError("permission-denied", "Primary admin account disable nahi ho sakta");
+  if (targetIsCoAdmin && !caller.isPrimary) throw new HttpsError("permission-denied", "Doosre admin ko sirf primary admin disable kar sakta hai");
   await auth.updateUser(uid, { disabled: !!disabled });
   await db.doc("users/" + uid).set({ disabled: !!disabled }, { merge: true });
   return { ok: true };
@@ -190,6 +247,9 @@ exports.adminSetDisabled = onCall(opts, async (request) => {
 
 /* =====================================================================
    adminDeleteUser
+     • primary target: never allowed, for anyone, ever.
+     • co-admin target: only the primary admin may delete.
+     • regular user: any caller who passed requireUserManager may delete.
    ===================================================================== */
 exports.adminDeleteUser = onCall(opts, async (request) => {
   const caller = await requireUserManager(request);
@@ -197,8 +257,11 @@ exports.adminDeleteUser = onCall(opts, async (request) => {
   if (!uid) throw new HttpsError("invalid-argument", "uid chahiye");
   if (uid === caller.uid) throw new HttpsError("permission-denied", "Aap khud ko delete nahi kar sakte");
   const target = await loadProfile(uid);
-  const targetIsAdmin = target && (target.role === "Admin" || (target.email || "").toLowerCase() === ADMIN_EMAIL);
-  if (targetIsAdmin) throw new HttpsError("permission-denied", "Admin account delete nahi ho sakta");
+  const targetEmail = emailOf(target, null);
+  const targetIsPrimary = targetEmail === ADMIN_EMAIL;
+  const targetIsCoAdmin = !targetIsPrimary && target && target.role === "Admin";
+  if (targetIsPrimary) throw new HttpsError("permission-denied", "Primary admin account delete nahi ho sakta");
+  if (targetIsCoAdmin && !caller.isPrimary) throw new HttpsError("permission-denied", "Doosre admin ko sirf primary admin delete kar sakta hai");
   try { await auth.deleteUser(uid); } catch (e) { /* may already be gone */ }
   await db.doc("users/" + uid).delete();
   return { ok: true };
@@ -209,6 +272,8 @@ exports.adminDeleteUser = onCall(opts, async (request) => {
    Uses the real connecting IP (from the request, not the client's own
    guess) and a free, keyless geo-IP lookup (ip-api.com). Called once per
    login session by the app and cached client-side — never once per action.
+   Always returns under the field name "location" (never any other key) —
+   the single source of truth the client stores activity entries under.
    ===================================================================== */
 exports.getClientGeo = onCall(opts, async (request) => {
   requireAuth(request);

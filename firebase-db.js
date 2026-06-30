@@ -115,7 +115,10 @@ function actToStore(a) {
   return { tsMs: (a.ts instanceof Date ? a.ts : new Date()).getTime(), userId: a.userId || "", userName: a.userName || "", action: a.action || "", entity: a.entity || "", entityId: a.entityId || "", entityLabel: a.entityLabel || "", summary: a.summary || "", changes: a.changes || [], ip: a.ip || null, location: a.location || null };
 }
 function actFromStore(id, d) {
-  return { id, ts: new Date(d.tsMs || nowMs()), userId: d.userId, userName: d.userName, action: d.action, entity: d.entity, entityId: d.entityId, entityLabel: d.entityLabel, summary: d.summary, changes: d.changes || [], ip: d.ip || null, location: d.location || null };
+  // normalize against any legacy/inconsistent field name a record may have been written with —
+  // current code always WRITES under "location" (see actToStore), but old/foreign records may not.
+  const loc = (d.location != null ? d.location : (d.__cpLocation != null ? d.__cpLocation : (d.locationName != null ? d.locationName : null)));
+  return { id, ts: new Date(d.tsMs || nowMs()), userId: d.userId, userName: d.userName, action: d.action, entity: d.entity, entityId: d.entityId, entityLabel: d.entityLabel, summary: d.summary, changes: d.changes || [], ip: d.ip || null, location: loc };
 }
 function userPublic(id, d) {
   return { id, email: d.email, fullName: d.fullName, role: d.role, perms: d.perms || {}, activityScope: d.activityScope || "own", disabled: !!d.disabled, createdAtMs: d.createdAtMs || 0 };
@@ -404,6 +407,15 @@ function makeDB(A) {
     /* ---------- counter (atomic bill number) ---------- */
     async peekCounter() { const c = await A.get("app/counter"); return c ? c.value : null; },
     async initCounter(start) { const c = await A.get("app/counter"); if (!c) await A.set("app/counter", { value: Number(start) || 1000 }); },
+    // Only RAISES the counter when the new starting number is ahead of where billing already is —
+    // never rewinds it (so existing bill numbers are never reused). No-op if newStart <= current.
+    async bumpCounterIfHigher(newStart) {
+      const ns = Number(newStart) || 0; if (ns <= 0) return;
+      await A.txn(async (t) => {
+        const c = (await t.get("app/counter")) || { value: 1000 };
+        if (ns > (c.value || 0)) await t.set("app/counter", { value: ns });
+      });
+    },
 
     /* ---------- bills ---------- */
     async loadBillsPage({ mode, batch, startAfter }) {
