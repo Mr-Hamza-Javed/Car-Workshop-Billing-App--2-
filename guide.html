@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MSA Billing — Setup Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#efe9e0;color:#1a1d24;-webkit-font-smoothing:antialiased;line-height:1.6}
+  .wrap{max-width:860px;margin:0 auto;padding:0 22px 100px}
+  header.hero{background:radial-gradient(circle at 50% -10%,#23252c,#15161b 80%);color:#fff;padding:54px 22px 60px;text-align:center;margin-bottom:-32px}
+  .logo{width:64px;height:64px;border-radius:18px;overflow:hidden;margin:0 auto 18px;box-shadow:0 12px 36px rgba(31,111,235,.45)}
+  .logo img{width:100%;height:100%;object-fit:cover}
+  h1{font-family:'Bricolage Grotesque';font-weight:700;font-size:34px;letter-spacing:-.8px;margin:0 0 8px}
+  .hero p{color:rgba(255,255,255,.6);font-size:15px;max-width:520px;margin:0 auto;font-weight:500}
+  .card{background:#fff;border:1px solid #e7ddcd;border-radius:20px;padding:28px 30px;margin:22px 0;box-shadow:0 10px 30px -18px rgba(60,40,10,.25)}
+  .step{display:flex;gap:18px;align-items:flex-start}
+  .num{flex:none;width:38px;height:38px;border-radius:11px;background:#1f6feb;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque';font-weight:700;font-size:17px;box-shadow:0 6px 16px rgba(31,111,235,.35)}
+  h2{font-family:'Bricolage Grotesque';font-weight:700;font-size:21px;letter-spacing:-.4px;margin:2px 0 4px}
+  h3{font-size:15px;font-weight:700;margin:20px 0 8px;color:#3f4753}
+  p{margin:8px 0}
+  a{color:#1f6feb;font-weight:600;text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:'JetBrains Mono',monospace;font-size:13px;background:#f3eee5;border:1px solid #e7ddcd;border-radius:6px;padding:2px 7px;color:#b8431e}
+  pre{background:#15161b;color:#e8e6e1;border-radius:14px;padding:16px 18px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;margin:12px 0}
+  pre .c{color:#7d8590}
+  pre .k{color:#79c0ff}
+  ul,ol{margin:8px 0;padding-left:22px}
+  li{margin:6px 0}
+  .pill{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:3px 10px;border-radius:20px;background:#eef4ff;color:#1f6feb;margin-bottom:10px}
+  .note{display:flex;gap:11px;background:#fdf6e7;border:1px solid #f0e2c8;border-radius:13px;padding:13px 15px;margin:14px 0;font-size:13.5px;color:#7a5f1e}
+  .note.ok{background:#e9f6ef;border-color:#cdeadb;color:#0f6b46}
+  .note.warn{background:#fdecea;border-color:#f4d3ce;color:#a5311f}
+  .note b{font-weight:700}
+  .ico{flex:none;font-size:18px;line-height:1.3}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;margin:10px 0}
+  .kv b{color:#3f4753}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0}
+  .toc a{font-size:13px;font-weight:600;background:#fff;border:1px solid #e7ddcd;padding:7px 13px;border-radius:10px;color:#3f4753}
+  footer{text-align:center;color:#a59c8c;font-size:13px;margin-top:40px}
+  .check{color:#0f7a52;font-weight:700}
+  hr{border:none;border-top:1px solid #f0e9de;margin:22px 0}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="logo"><img src="assets/logo-256.png" alt="MSA"></div>
+  <h1>MSA Billing — Setup Guide</h1>
+  <p>Is app ko apne Firebase project se jaibanane (connect) aur GitHub par host karne ki mukammal guide. Ek dafa ka setup — phir app khud chalti rahegi.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <span class="pill">Shuru karne se pehle</span>
+    <h2>Aapke paas kya hona chahiye</h2>
+    <ul>
+      <li>Ek <b>Google account</b> jisse Firebase project bana hua hai (<code>mirza-bills</code> — pehle se mojood).</li>
+      <li>Computer par <b>Node.js 20+</b> (<a href="https://nodejs.org" target="_blank">nodejs.org</a>).</li>
+      <li>Ye project ki files (ye folder) computer par.</li>
+      <li>~20 minute. Mostly copy-paste.</li>
+    </ul>
+    <div class="toc">
+      <a href="#s1">1 · Firestore</a>
+      <a href="#s2">2 · Authentication</a>
+      <a href="#s3">3 · Admin user</a>
+      <a href="#s4">4 · Blaze plan</a>
+      <a href="#s5">5 · Firebase CLI</a>
+      <a href="#s6">6 · Deploy</a>
+      <a href="#s7">7 · Authorized domains</a>
+      <a href="#s8">8 · GitHub Pages</a>
+      <a href="#s9">9 · Pehla login</a>
+    </div>
+  </div>
+
+  <div class="card" id="s1">
+    <div class="step"><div class="num">1</div><div>
+      <h2>Cloud Firestore enable karein</h2>
+      <p>Saara data (bills, products, users, settings, reports) Firestore me save hota hai.</p>
+      <ol>
+        <li><a href="https://console.firebase.google.com/project/mirza-bills/firestore" target="_blank">Firebase Console → Firestore Database</a> kholein.</li>
+        <li><b>Create database</b> dabayein.</li>
+        <li>Location: <code>asia-southeast1</code> (ya jo aapke qareeb ho) — <b>ek dafa set hone ke baad change nahi hoti</b>.</li>
+        <li>Mode: <b>Production mode</b> chunein (rules hum khud deploy karenge — step 6).</li>
+      </ol>
+      <div class="note ok"><span class="ico">✓</span><div>Empty database theek hai — aap apna asli data app ke andar se daalenge.</div></div>
+    </div></div>
+  </div>
+
+  <div class="card" id="s2">
+    <div class="step"><div class="num">2</div><div>
+      <h2>Authentication enable karein</h2>
+      <p>Login email + password se hota hai.</p>
+      <ol>
+        <li><a href="https://console.firebase.google.com/project/mirza-bills/authentication/providers" target="_blank">Authentication → Sign-in method</a> kholein.</li>
+        <li><b>Email/Password</b> ko enable karein (pehla toggle on). “Email link” ki zaroorat nahi.</li>
+        <li><b>Save</b> dabayein.</li>
+      </ol>
+    </div></div>
+  </div>
+
+  <div class="card" id="s3">
+    <div class="step"><div class="num">3</div><div>
+      <h2>Admin account</h2>
+      <p>Aap ne pehle hi bana liya hai: <code>admin@msa.com</code>. Yehi app ka primary <b>Admin</b> hoga.</p>
+      <div class="kv">
+        <b>Email</b><span>admin@msa.com</span>
+        <b>Password</b><span>123456 <span style="color:#a59c8c">(baad me app ke andar se change kar lijiyega)</span></span>
+        <b>Display name</b><span>Asif Shakoor <span style="color:#a59c8c">(pehle login par khud set ho jata hai)</span></span>
+      </div>
+      <div class="note"><span class="ico">ℹ︎</span><div>Agar abhi tak nahi banaya: <a href="https://console.firebase.google.com/project/mirza-bills/authentication/users" target="_blank">Authentication → Users → Add user</a> se <code>admin@msa.com</code> / <code>123456</code> add kar dein.</div></div>
+      <div class="note"><span class="ico">🔑</span><div>Baqi sab users (cashier, manager…) aap app ke andar <b>Users</b> page se add karenge — Firebase Console me haath lagane ki zaroorat nahi. Unke passwords bhi admin wahin set/reset karega.</div></div>
+    </div></div>
+  </div>
+
+  <div class="card" id="s4">
+    <div class="step"><div class="num">4</div><div>
+      <h2>Blaze (pay-as-you-go) plan</h2>
+      <p>User management ke liye <b>Cloud Functions</b> chahiye, jiske liye Blaze plan zaroori hai.</p>
+      <ol>
+        <li><a href="https://console.firebase.google.com/project/mirza-bills/usage/details" target="_blank">Firebase Console → Upgrade</a> par jayein.</li>
+        <li><b>Blaze</b> select karein, card add karein.</li>
+      </ol>
+      <div class="note ok"><span class="ico">₨</span><div>Aap jaisi chhoti workshop ki usage Firebase ke <b>free tier</b> ke andar rehti hai — mahine ka kharcha taqreeban <b>Rs. 0</b>. Aap chahein to budget alert bhi laga sakte hain.</div></div>
+    </div></div>
+  </div>
+
+  <div class="card" id="s5">
+    <div class="step"><div class="num">5</div><div>
+      <h2>Firebase CLI install + login</h2>
+      <p>Computer par terminal kholein aur:</p>
+<pre><span class="c"># Firebase CLI install (ek dafa)</span>
+npm install -g firebase-tools
+
+<span class="c"># Google account se login</span>
+firebase login</pre>
+      <p>Phir is project folder me jayein (jahan <code>firebase.json</code> hai):</p>
+<pre>cd <span class="c">"raasta/is/folder/ka"</span>
+firebase use mirza-bills</pre>
+      <h3>Functions ki dependencies install karein</h3>
+<pre>cd functions
+npm install
+cd ..</pre>
+    </div></div>
+  </div>
+
+  <div class="card" id="s6">
+    <div class="step"><div class="num">6</div><div>
+      <h2>Rules, indexes &amp; functions deploy karein</h2>
+      <p>Sab kuch ek command se:</p>
+<pre>firebase deploy --only firestore:rules,firestore:indexes,functions</pre>
+      <p>Ye deploy karta hai:</p>
+      <ul>
+        <li><code>firestore.rules</code> — <span class="check">security rules</span> (permission-aware, sirf logged-in users).</li>
+        <li><code>firestore.indexes.json</code> — bills ki sorting/filtering ke liye indexes.</li>
+        <li><code>functions/index.js</code> — secure user-management (create/update/disable/delete/reset-password) Admin SDK se.</li>
+      </ul>
+      <div class="note"><span class="ico">⏳</span><div>Pehli dafa functions deploy hone me 2–3 minute lag sakte hain. Region <code>us-central1</code> hai (app isi se match karta hai).</div></div>
+      <div class="note warn"><span class="ico">!</span><div>Agar indexes “building” dikhayein, thoda intezar karein — bills list tab tak khali lag sakti hai. <a href="https://console.firebase.google.com/project/mirza-bills/firestore/indexes" target="_blank">Index status yahan</a> dekhein.</div></div>
+    </div></div>
+  </div>
+
+  <div class="card" id="s7">
+    <div class="step"><div class="num">7</div><div>
+      <h2>Authorized domain add karein</h2>
+      <p>Jis domain par app host hogi, usay Firebase Auth ki authorized list me daalna zaroori hai — warna login block ho jayega.</p>
+      <ol>
+        <li><a href="https://console.firebase.google.com/project/mirza-bills/authentication/settings" target="_blank">Authentication → Settings → Authorized domains</a>.</li>
+        <li><b>Add domain</b> → apna GitHub Pages domain daalein, e.g. <code>your-username.github.io</code>.</li>
+      </ol>
+      <div class="note ok"><span class="ico">✓</span><div><code>localhost</code> aur <code>*.firebaseapp.com</code> pehle se allowed hote hain.</div></div>
+    </div></div>
+  </div>
+
+  <div class="card" id="s8">
+    <div class="step"><div class="num">8</div><div>
+      <h2>GitHub Pages par host karein</h2>
+      <p>App khud <b>static</b> hai — sirf functions Firebase par chalte hain. Hosting ke do aasaan tareeqe:</p>
+      <h3>Option A — GitHub Pages (jaisa aap chahte hain)</h3>
+      <ol>
+        <li>Is project ko ek GitHub repo me push karein.</li>
+        <li>Repo → <b>Settings → Pages</b> → Source: <code>main</code> branch, <code>/ (root)</code>.</li>
+        <li>Thodi der baad URL milega: <code>https://your-username.github.io/repo-name/</code>.</li>
+        <li>App khulay: <code>.../Workshop%20Billing.dc.html</code></li>
+      </ol>
+      <div class="note"><span class="ico">ℹ︎</span><div>App khud detect kar leti hai ke wo <code>github.io</code> par hai aur asli Firebase backend use karti hai. (Preview/localhost par ye offline “demo” data use karti hai taake aap bina internet test kar sakein.)</div></div>
+      <h3>Option B — Firebase Hosting (ek command)</h3>
+<pre>firebase deploy --only hosting</pre>
+      <p>URL: <code>https://mirza-bills.web.app/Workshop%20Billing.dc.html</code></p>
+    </div></div>
+  </div>
+
+  <div class="card" id="s9">
+    <div class="step"><div class="num">9</div><div>
+      <h2>Pehla login &amp; phone par install</h2>
+      <ol>
+        <li>App kholein, login karein: <code>admin@msa.com</code> / <code>123456</code>.</li>
+        <li>Pehle login par admin ka profile khud ban jata hai (Asif Shakoor, saari permissions).</li>
+        <li><b>Settings</b> me ja kar business name, currency, bill prefix waghaira set karein.</li>
+        <li><b>Users</b> page se apni team add karein aur permissions dein.</li>
+        <li>Phone par: browser menu → <b>Add to Home Screen</b> — app icon ban jayega, full-screen khulega.</li>
+      </ol>
+      <div class="note warn"><span class="ico">🔒</span><div><b>Zaroori:</b> Pehle login ke baad admin ka password ek strong password se badal dein (Users → admin → Set password).</div></div>
+      <div class="note ok"><span class="ico">✓</span><div>Bas! Ab app live hai. Data Firestore me mehfooz hai, offline bhi chalti hai, aur khud sync hoti rehti hai.</div></div>
+    </div></div>
+  </div>
+
+  <div class="card">
+    <span class="pill">Reference</span>
+    <h2>Project ki files</h2>
+    <div class="kv">
+      <b>Workshop&nbsp;Billing.dc.html</b><span>Poori app (UI + logic).</span>
+      <b>firebase-db.js</b><span>Data + auth layer (Firestore + Functions + offline).</span>
+      <b>functions/</b><span>Cloud Functions — secure user management.</span>
+      <b>firestore.rules</b><span>Security rules.</span>
+      <b>firestore.indexes.json</b><span>Query indexes.</span>
+      <b>manifest.webmanifest</b> + <b>service-worker.js</b><span>PWA (installable + offline shell).</span>
+      <b>firebase.json</b> / <b>.firebaserc</b><span>Deploy config (project = mirza-bills).</span>
+    </div>
+    <hr>
+    <h3>App naye code par update karna ho?</h3>
+    <p>Files badal kar dobara push/deploy karein. PWA users ke liye <code>service-worker.js</code> me <code>CACHE_VERSION</code> badha dein (e.g. <code>msa-v2</code>) taake naya version aaye.</p>
+    <h3>Aam masail</h3>
+    <ul>
+      <li><b>Login “unauthorized domain”:</b> Step 7 (authorized domains) doobara check karein.</li>
+      <li><b>“Permission denied” / data nahi aata:</b> rules deploy hui? user logged-in hai? (Step 6)</li>
+      <li><b>User create nahi hota:</b> functions deploy hue? Blaze on hai? (Steps 4 &amp; 6)</li>
+      <li><b>Bills list khali / “index building”:</b> indexes ban rahe hain, thodi der baad.</li>
+    </ul>
+  </div>
+
+  <footer>MSA Billing · Setup Guide · Made for MSA Auto Workshop</footer>
+</div>
+</body>
+</html>

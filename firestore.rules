@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ---------- helpers ---------- */
+    function signedIn() { return request.auth != null; }
+    function isAdmin()  { return signedIn() && request.auth.token.admin == true; }
+    // permission from custom claims, e.g. perm('bills_create')
+    function perm(p) {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        (request.auth.token.perms != null && request.auth.token.perms[p] == true)
+      );
+    }
+
+    /* ---------- users: read by any signed-in user; writes only via Cloud Functions (Admin SDK bypasses rules) ---------- */
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow write: if false;   // all user admin goes through callable functions
+    }
+
+    /* ---------- app: settings + counter ---------- */
+    match /app/{doc} {
+      allow read: if signedIn();
+      // counter is written transactionally whenever a bill is created
+      allow write: if doc == 'counter' ? perm('bills_create') : perm('settings');
+    }
+
+    /* ---------- bills ---------- */
+    match /bills/{id} {
+      allow read:   if signedIn();
+      allow create: if perm('bills_create');
+      // edits, archive flips, soft-delete + restore all land as updates
+      allow update: if perm('bills_edit') || perm('bills_archive') || perm('bills_delete') || perm('payments');
+      allow delete: if perm('bills_delete');   // permanent delete (empty bin)
+    }
+
+    /* ---------- products ---------- */
+    match /products/{id} {
+      allow read:   if signedIn();
+      allow create: if perm('bills_create') || perm('products');
+      allow update: if perm('bills_create') || perm('products');
+      allow delete: if perm('products');
+    }
+
+    /* ---------- activity log (append-only; never edited/deleted from client) ---------- */
+    match /activity/{id} {
+      allow read:   if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    /* ---------- stats aggregates (day + month) ---------- */
+    match /stats/{day}    { allow read: if signedIn(); allow write: if perm('bills_create') || perm('bills_edit') || perm('bills_delete') || perm('bills_archive') || perm('payments'); }
+    match /stats_m/{month}{ allow read: if signedIn(); allow write: if perm('bills_create') || perm('bills_edit') || perm('bills_delete') || perm('bills_archive') || perm('payments'); }
+  }
+}
