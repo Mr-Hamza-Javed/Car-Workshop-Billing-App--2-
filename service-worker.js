@@ -3,7 +3,12 @@
    App-shell cache for an installable, fast-loading PWA.
 
    Strategy
-     • App shell (HTML, JS, manifest, logos)  → stale-while-revalidate
+     • App CODE (HTML navigations, index.html, support.js, firebase-db.js,
+       app-config.js, settings.json)          → NETWORK-FIRST (cache fallback
+       when offline). Guarantees users always run the LATEST deployed code —
+       stale-while-revalidate here meant every deploy showed up one full
+       reload late (users kept seeing the old app on first load).
+     • Other same-origin assets (logos, etc.) → stale-while-revalidate
        (instant load from cache, refresh in background)
      • Google Fonts                           → cache-first
      • Firebase SDK / Firestore / Auth / APIs → NEVER cached here
@@ -13,7 +18,7 @@
    Bump CACHE_VERSION whenever you ship new app code so clients update.
    ===================================================================== */
 
-const CACHE_VERSION = "msa-v1";
+const CACHE_VERSION = "msa-v2";
 const SHELL_CACHE = CACHE_VERSION + "-shell";
 const FONT_CACHE = CACHE_VERSION + "-fonts";
 
@@ -51,6 +56,12 @@ function isFirebase(url) {
 function isFont(url) {
   return /fonts\.googleapis\.com|fonts\.gstatic\.com/.test(url);
 }
+// App code: must always be fresh when online (network-first)
+function isAppCode(req, url) {
+  if (req.mode === "navigate") return true;
+  const p = new URL(url).pathname;
+  return /\.html$|\/support\.js$|\/firebase-db\.js$|\/app-config\.js$|\/sw-register\.js$|\/settings\.json$|\/$/.test(p);
+}
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
@@ -73,8 +84,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3) Same-origin app shell — stale-while-revalidate
+  // 3) Same-origin — app CODE is network-first (always latest when online,
+  //    cache fallback offline); other assets stale-while-revalidate.
   if (new URL(url).origin === self.location.origin) {
+    if (isAppCode(req, url)) {
+      event.respondWith(
+        caches.open(SHELL_CACHE).then(async (cache) => {
+          try {
+            const res = await fetch(req);
+            if (res && res.status === 200 && res.type === "basic") cache.put(req, res.clone());
+            return res;
+          } catch (e) {
+            const hit = await cache.match(req, { ignoreSearch: true });
+            return hit || Response.error();
+          }
+        })
+      );
+      return;
+    }
     event.respondWith(
       caches.open(SHELL_CACHE).then(async (cache) => {
         const hit = await cache.match(req, { ignoreSearch: false });

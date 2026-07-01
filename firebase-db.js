@@ -276,6 +276,23 @@ async function makeFirebaseAdapter() {
   return {
     mode: "firebase", _fs: fs, _db: db, _auth: auth, _authMod: authMod,
 
+    /* ---- Recalculate job: Cloud Function + RTDB live progress ----
+       Firestore stays the primary DB; RTDB carries ONLY the temporary live job state + logs
+       (fast fan-out to every watching client, no Firestore read strain). */
+    async startRecalcJob(range) { const res = await call("recalcStats")(range); return (res && res.data) || res; },
+    async cancelRecalcJob(jobId) { const res = await call("cancelRecalc")({ jobId }); return (res && res.data) || res; },
+    subscribeRecalcJob(jobId, cb) {
+      let un = null, dead = false;
+      import(SDK + "firebase-database.js").then((m) => {
+        if (dead) return;
+        const inst = m.getDatabase(app);
+        un = m.onValue(m.ref(inst, "recalcJobs/" + jobId),
+          (snap) => { try { cb(snap.val()); } catch (e) {} },
+          (err) => { try { cb({ status: "error", error: String((err && err.message) || err) }); } catch (e) {} });
+      }).catch((e) => { try { cb({ status: "error", error: String((e && e.message) || e) }); } catch (_) {} });
+      return () => { dead = true; if (un) { try { un(); } catch (e) {} } };
+    },
+
     /* ---- data primitives ---- */
     async get(path) { const s = await fs.getDoc(ref(path)); return s.exists() ? s.data() : null; },
     async set(path, data) { await fs.setDoc(ref(path), data); },
@@ -421,6 +438,10 @@ function makeDB(A) {
     mode: A.mode,
     derive,
     raw: A,
+    // cloud recalc facade — null in local/demo mode so the frontend keeps its local engine
+    startRecalcJob: A.startRecalcJob ? (r) => A.startRecalcJob(r) : null,
+    cancelRecalcJob: A.cancelRecalcJob ? (id) => A.cancelRecalcJob(id) : null,
+    subscribeRecalcJob: A.subscribeRecalcJob ? (id, cb) => A.subscribeRecalcJob(id, cb) : null,
 
     /* ---------- auth passthrough ---------- */
     initAuth: (cb) => A.initAuth(cb),
