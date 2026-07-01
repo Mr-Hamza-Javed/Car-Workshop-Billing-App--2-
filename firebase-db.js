@@ -37,7 +37,11 @@ const LS_PREFIX = "msa_fs_";                   // local-adapter document store
 const SESSION_KEY = "msa_session_v1";          // local-adapter session
 const ADMIN_EMAIL = "admin@msa.com";           // self-bootstrap allowed only for this
 
-/* Hosts that should use the real Firebase backend. Add your custom domain. */
+import { APP_CONFIG } from "./app-config.js";
+
+/* Hosts that should use the real Firebase backend when APP_CONFIG.MODE is "auto". Add your custom
+   domain here too if you'd rather rely on auto-detection — but setting MODE to "production" in
+   app-config.js is the more reliable choice for a custom domain. */
 const FIREBASE_HOSTS = [
   "mirza-bills.firebaseapp.com",
   "mirza-bills.web.app",
@@ -46,6 +50,10 @@ function pickMode() {
   let forced = null;
   try { forced = localStorage.getItem("msa_mode"); } catch (e) {}
   if (forced === "firebase" || forced === "local") return forced;
+  const cfgMode = (APP_CONFIG && APP_CONFIG.MODE) || "auto";
+  if (cfgMode === "production") return "firebase";
+  if (cfgMode === "demo") return "local";
+  // "auto" (or an unrecognized value) — fall back to hostname heuristics
   const h = (location.hostname || "").toLowerCase();
   if (h.endsWith(".github.io") || FIREBASE_HOSTS.includes(h)) return "firebase";
   return "local";

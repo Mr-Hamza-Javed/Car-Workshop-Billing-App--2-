@@ -3036,7 +3036,7 @@ class Component extends DCLogic {
     let repSel=null;
     if(S.report.sel!=null && repB.buckets[S.report.sel]){ const bk=repB.buckets[S.report.sel]; const selLong=repLong(bk.key); const isLeaf=(repView==='day'||repView==='month'); const canDrill=(repView==='year'||repView==='total');
       let actionLabel='', onAction=null, showAction=false;
-      if(bk.count>0 && isLeaf){ actionLabel=bk.count+' bill'+(bk.count===1?'':'s')+' kholo'; onAction=()=>this.repOpenBills(S.report.sel); showAction=true; }
+      if(bk.count>0 && isLeaf){ actionLabel=bk.count+' bill'+(bk.count===1?'':'s')+' kholें'; onAction=()=>this.repOpenBills(S.report.sel); showAction=true; }
       else if(canDrill && bk.count>0){ actionLabel='Open '+selLong; onAction=()=>this.repDrill(S.report.sel); showAction=true; }
       repSel={ label:selLong, amount:this.money(bk.amount), pending:this.money(bk.pending), count: S.privacy?'••':String(bk.count), hasPending:bk.pending>0, hasBills:bk.count>0, showAction, actionLabel, onAction }; }
     const report={ viewBtns:repViewBtns, view:repView, periodLabel:repPeriodLabel, bars:repBars, totAmount:this.money(repTotAmt), totPending:this.money(repTotPen), totCount: S.privacy?'••':String(repTotCnt), canNav:repView!=='total', onPrev:()=>this.repNav(-1), onNext:()=>this.repNav(1), hint:(repView==='day'?'Har bar = ek ghanta. Bar par click se detail.':(repView==='total'?'Har bar = ek saal. Double-click ya “Open” se us saal ke months.':'Bar par click = detail, double-click ya “Open” se androni view.')), sel:repSel, loading:repLoading, showChart:(!repLoading && repB.buckets.length>0), empty:(!repLoading && repTotCnt===0) };

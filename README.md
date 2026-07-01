@@ -73,9 +73,12 @@ Every action gives clear feedback and is protected against double-submit:
 | **Indexes** | `firestore.indexes.json` | Composite indexes for bills (active/archived/bin/pending) and search. |
 | **PWA** | `manifest.webmanifest`, `service-worker.js` | Installable; app-shell cached (Firestore handles its own offline sync). |
 
-**Mode selection:** on a real host (`*.github.io`, `*.web.app`, `*.firebaseapp.com`) the app uses the
-live Firebase backend; on localhost/preview it uses the offline demo store. Override with
-`localStorage.msa_mode = 'firebase' | 'local'`.
+**Mode selection:** controlled explicitly by **`app-config.js`** — set `MODE` to `"production"` (real
+Firebase, needed for any real deployment including a custom domain), `"demo"` (always offline demo
+data), or `"auto"` (guesses from hostname — only recognizes `*.github.io` / `*.web.app` /
+`*.firebaseapp.com`, so it will silently stay in demo mode on a custom domain unless you set
+`"production"` explicitly). Override per-browser without editing the file via
+`localStorage.msa_mode = 'firebase' | 'local'` in the console.
 
 ### Efficiency (core requirement)
 - Bills are **paginated** (batch from Settings, default 25) and cached; opening a loaded bill is

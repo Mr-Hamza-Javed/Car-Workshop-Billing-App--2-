@@ -194,6 +194,29 @@ cd ..</pre>
     </div></div>
   </div>
 
+  <div class="card" id="s8b">
+    <div class="step"><div class="num">8b</div><div>
+      <h2>Custom domain? Set the mode explicitly</h2>
+      <p>Hostname-based auto-detection (step 8's "khud detect kar leti hai") only recognizes
+         <code>github.io</code>, <code>web.app</code> and <code>firebaseapp.com</code> — it has
+         <b>no way to know your own custom domain</b>. Agar aap app ko apni custom domain (jaise
+         <code>billing.yourshop.com</code>) par host kar rahe hain, wahan yeh detection kaam nahi
+         karega aur app khamoshi se offline "demo" mode me chal jayegi — asli data save/load nahi hoga.</p>
+      <p>Isi liye <code>app-config.js</code> file hai — yahan seedha, explicit control hai:</p>
+<pre><span class="c">// app-config.js</span>
+<span class="k">export const</span> APP_CONFIG = {
+  MODE: <span class="c">"production"</span>, <span class="c">// "production" | "demo" | "auto"</span>
+};</pre>
+      <ul>
+        <li><code>"production"</code> — hamesha asli Firebase backend use ho (real login, real data). <b>Custom domain ke liye yehi set karein.</b></li>
+        <li><code>"demo"</code> — hamesha offline demo data (koi Firebase call nahi) — dikhane/testing ke liye.</li>
+        <li><code>"auto"</code> — sirf jaani-pehchani Firebase hosts par auto-detect; custom domain par yeh demo mode me chala jayega.</li>
+      </ul>
+      <div class="note ok"><span class="ico">✓</span><div>Yeh file already <code>"production"</code> par set hai. Agar kabhi demo dikhana ho to isay <code>"demo"</code> kar dein, phir dobara <code>"production"</code> kar dein aur redeploy karein.</div></div>
+      <div class="note"><span class="ico">ℹ︎</span><div>Quick per-browser test ke liye (bina file badle): browser console me <code>localStorage.msa_mode = 'firebase'</code> ya <code>'local'</code> likh dein — yeh hamesha <code>app-config.js</code> se pehle check hota hai.</div></div>
+    </div></div>
+  </div>
+
   <div class="card" id="s9">
     <div class="step"><div class="num">9</div><div>
       <h2>Pehla login &amp; phone par install</h2>
