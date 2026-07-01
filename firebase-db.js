@@ -491,8 +491,16 @@ function makeDB(A) {
     async billsForDay(dayMs) {
       const start = new Date(dayMs); start.setHours(0, 0, 0, 0);
       const end = new Date(dayMs); end.setHours(23, 59, 59, 999);
-      const { rows } = await A.query("bills", { where: [["deleted", "==", false], ["tsMs", ">=", start.getTime()], ["tsMs", "<=", end.getTime()]], orderBy: ["tsMs", "desc"], limit: 200 });
-      return rows.map((r) => billFromStore(r.id, r));
+      try {
+        const { rows } = await A.query("bills", { where: [["deleted", "==", false], ["tsMs", ">=", start.getTime()], ["tsMs", "<=", end.getTime()]], orderBy: ["tsMs", "desc"], limit: 200 });
+        return rows.map((r) => billFromStore(r.id, r));
+      } catch (e) {
+        // composite index (deleted, tsMs DESC) not deployed — fall back to the single-field
+        // tsMs range (needs no composite index) and filter deleted in code. Day reports must
+        // NEVER break because of a missing index.
+        const { rows } = await A.query("bills", { where: [["tsMs", ">=", start.getTime()], ["tsMs", "<=", end.getTime()]], orderBy: ["tsMs", "desc"], limit: 250 });
+        return rows.filter((r) => !r.deleted).map((r) => billFromStore(r.id, r));
+      }
     },
     async searchBills(q) {
       q = (q || "").trim(); if (!q) return [];
@@ -655,7 +663,10 @@ function makeDB(A) {
       const bump = (map, key, d) => { const m = map[key] || (map[key] = blank()); m.billed += d.total; m.paid += d.paid; m.pending += d.pending; m.count += 1; };
       let startAfter = null, scanned = 0, guard = 0;
       while (guard++ < 5000) {
-        const { rows, hasMore } = await A.query("bills", { where: [["deleted", "==", false]], orderBy: ["tsMs", "desc"], limit: 400, startAfter });
+        // Paginate by document name with a single equality filter — needs NO composite index,
+        // so the full repair can never fail with "query requires an index" (which is exactly
+        // what happened when the (deleted, tsMs) index wasn't deployed).
+        const { rows, hasMore } = await A.query("bills", { where: [["deleted", "==", false]], orderBy: ["__name__", "asc"], limit: 400, startAfter });
         if (!rows.length) break;
         for (const r of rows) {
           const ts = Number(r.tsMs); if (!Number.isFinite(ts) || ts <= 0) continue;   // skip corrupt timestamps
@@ -665,7 +676,7 @@ function makeDB(A) {
         scanned += rows.length;
         if (onProgress) { try { onProgress(scanned); } catch (e) {} }
         if (!hasMore) break;
-        startAfter = rows[rows.length - 1].tsMs;
+        startAfter = rows[rows.length - 1].id;
       }
       // Write fresh totals, and ZERO any existing aggregate doc that no longer has bills
       // (e.g. every bill in a day was deleted/moved) so stale numbers can't linger.

@@ -367,11 +367,13 @@ exports.recalcStats = onCall({ ...opts, timeoutSeconds: 540, memory: "512MiB" },
   await log("info", "Recalculation shuru (" + from + " se " + to + ")");
 
   try {
+    // Single-field tsMs range query + in-code `deleted` filter — deliberately avoids the
+    // (deleted, tsMs) composite index so this NEVER fails with "query requires an index"
+    // (that's exactly how the first deployment broke: index not deployed -> internal error).
     const snap = await db.collection("bills")
-      .where("deleted", "==", false)
       .where("tsMs", ">=", fromMs).where("tsMs", "<=", toMs)
       .orderBy("tsMs", "asc").get();
-    const bills = snap.docs;
+    const bills = snap.docs.filter((doc) => doc.data().deleted !== true);
     const totalBills = bills.length;
     await jobRef.child("bills").set({ done: 0, total: totalBills });
     await log("info", totalBills + " bills, " + totalMonths + " months, " + totalDays + " days process karne hain");

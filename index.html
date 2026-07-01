@@ -2798,7 +2798,12 @@ class Component extends DCLogic {
       const monthsSet={}; for(let i=0;i<totalDays;i++){ const d=new Date(fromD.getTime()+i*dayMs); monthsSet[d.getFullYear()+'-'+(d.getMonth()+1)]=1; }
       const totalMonths=Math.max(1, Object.keys(monthsSet).length);
       let bills=[];
-      try{ if(this.db.raw && this.db.raw.query){ const res=await this.db.raw.query('bills',{ where:[['deleted','==',false],['tsMs','>=',fromD.getTime()],['tsMs','<=',toD.getTime()]], orderBy:['tsMs','asc'], limit:3000 }); bills=res.rows||[]; } }catch(e){ this._recalcLog('error','Bills fetch nahi ho saki: '+(e&&e.message||e)); }
+      try{ if(this.db.raw && this.db.raw.query){ const res=await this.db.raw.query('bills',{ where:[['deleted','==',false],['tsMs','>=',fromD.getTime()],['tsMs','<=',toD.getTime()]], orderBy:['tsMs','asc'], limit:3000 }); bills=res.rows||[]; } }
+      catch(e){
+        // composite index missing - fall back to the single-field tsMs range (no index needed)
+        try{ const res=await this.db.raw.query('bills',{ where:[['tsMs','>=',fromD.getTime()],['tsMs','<=',toD.getTime()]], orderBy:['tsMs','asc'], limit:3000 }); bills=(res.rows||[]).filter(r=>!r.deleted); }
+        catch(e2){ this._recalcLog('error','Bills fetch nahi ho saki: '+(e2&&e2.message||e2)); }
+      }
       this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), bills:{done:0,total:bills.length}, months:{done:0,total:totalMonths}, days:{done:0,total:totalDays} } }));
       this._recalcLog('info', bills.length+' bills, '+totalMonths+' months, '+totalDays+' days process karne hain');
       let bi=0, mi=0, di=0; const seenMonth={};
@@ -2814,21 +2819,35 @@ class Component extends DCLogic {
           this.setState(s=>({ recalc:{ ...s.recalc, bills:{done:bi,total:bills.length}, months:{done:Math.min(mi,totalMonths),total:totalMonths}, days:{done:di,total:totalDays}, progress } }));
           this._recalcTimer=setTimeout(tick, 55);
         } else {
-          try{ if(this.db.recomputeStats) await this.db.recomputeStats(); }catch(e){ this._recalcLog('error','Repair write failed: '+(e&&e.message||e)); }
+          let repairOk=true;
+          try{ if(this.db.recomputeStats) await this.db.recomputeStats(); }catch(e){ repairOk=false; this._recalcLog('error','Repair write failed: '+(e&&e.message||e)); }
           this._loadDash(); if(this.state.route==='reports') this._loadReport();
           const errCount=((this.state.recalc&&this.state.recalc.logs)||[]).filter(l=>l.level==='error').length;
-          this.setState(s=>({ recalc:{ ...s.recalc, phase:'done', progress:100, bills:{done:bills.length,total:bills.length}, months:{done:totalMonths,total:totalMonths}, days:{done:totalDays,total:totalDays}, summary:{ bills:bills.length, months:totalMonths, days:totalDays, errors:errCount } } }));
-          this._recalcLog('ok','Recalculation mukammal');
-          this.toastMsg('Recalculation mukammal','ok');
-          try{ this.logActivity({ action:'settings', entity:'settings', entityId:'reports', entityLabel:'Reports', summary:'Recalculated report totals ('+bills.length+' bills)' }); }catch(e){}
+          if(repairOk){
+            this.setState(s=>({ recalc:{ ...s.recalc, phase:'done', progress:100, bills:{done:bills.length,total:bills.length}, months:{done:totalMonths,total:totalMonths}, days:{done:totalDays,total:totalDays}, summary:{ bills:bills.length, months:totalMonths, days:totalDays, errors:errCount } } }));
+            this._recalcLog('ok','Recalculation mukammal');
+            this.toastMsg('Recalculation mukammal','ok');
+          } else {
+            // totals were NOT corrected - never claim success
+            this.setState(s=>({ recalc:{ ...s.recalc, phase:'error', error:'repair write failed', summary:{ bills:bills.length, months:totalMonths, days:totalDays, errors:errCount } } }));
+            this._recalcLog('error','Recalculation FAIL - totals update nahi hue');
+            this.toastMsg('Recalculation fail ho gayi - dobara try karein','warn');
+          }
+          try{ this.logActivity({ action:'settings', entity:'settings', entityId:'reports', entityLabel:'Reports', summary:(repairOk?'Recalculated report totals (':'Recalculation FAILED (')+bills.length+' bills)' }); }catch(e){}
         }
       };
       if(bills.length){ this._recalcTimer=setTimeout(tick, 80); }
       else {
-        try{ if(this.db.recomputeStats) await this.db.recomputeStats(); }catch(e){ this._recalcLog('error','Repair write failed: '+(e&&e.message||e)); }
+        let repairOk=true;
+        try{ if(this.db.recomputeStats) await this.db.recomputeStats(); }catch(e){ repairOk=false; this._recalcLog('error','Repair write failed: '+(e&&e.message||e)); }
         this._loadDash(); if(this.state.route==='reports') this._loadReport();
-        this.setState(s=>({ recalc:{ ...s.recalc, phase:'done', progress:100, summary:{ bills:0, months:totalMonths, days:totalDays, errors:0 } } }));
-        this._recalcLog('ok','Is range me koi bill nahi mila; aggregates saaf kar diye');
+        if(repairOk){
+          this.setState(s=>({ recalc:{ ...s.recalc, phase:'done', progress:100, summary:{ bills:0, months:totalMonths, days:totalDays, errors:0 } } }));
+          this._recalcLog('ok','Is range me koi bill nahi mila; aggregates saaf kar diye');
+        } else {
+          this.setState(s=>({ recalc:{ ...s.recalc, phase:'error', error:'repair write failed' } }));
+          this._recalcLog('error','Recalculation FAIL - totals update nahi hue');
+        }
       }
     }catch(e){ this._recalcLog('error','Fatal: '+(e&&e.message||e)); this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), phase:'error', error:(e&&e.message)||'error' } })); }
   }
