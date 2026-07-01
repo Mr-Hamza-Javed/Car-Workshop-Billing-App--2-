@@ -8,6 +8,7 @@
 <body>
 <x-dc>
 <helmet>
+  
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15161b">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2381,25 +2382,169 @@ class Component extends DCLogic {
   openPrint(id){ const b=this.state.bills.find(x=>x.id===id); if(!b){ this.toastMsg('Open a saved bill first','warn'); return; } this.setState({ printBill:id, printCfg: JSON.parse(JSON.stringify(this.state.tpl)) }); }
   closePrint(){ this.setState({ printBill:null, printCfg:null }); }
   setPrintCfg(patch){ this.setState(s=> ({ printCfg:{ ...s.printCfg, ...patch }, tpl:{ ...s.tpl, ...patch } })); }
-  doPrint(){
-    try{
-      const src=document.getElementById('print-area');
-      if(!src){ window.print(); return; }
-      let root=document.getElementById('__printRoot');
-      if(!root){ root=document.createElement('div'); root.id='__printRoot'; document.body.appendChild(root); }
-      root.innerHTML='';
-      const clone=src.cloneNode(true);
-      clone.style.transform='none';
-      clone.style.boxShadow='none';
-      const meas=clone.querySelector('.inv-measure'); if(meas&&meas.parentNode) meas.parentNode.removeChild(meas);
-      root.appendChild(clone);
-      const cleanup=()=>{ const r=document.getElementById('__printRoot'); if(r&&r.parentNode) r.parentNode.removeChild(r); window.removeEventListener('afterprint',cleanup); };
-      window.addEventListener('afterprint',cleanup);
-      window.print();
-      setTimeout(cleanup, 2000);
-    }catch(e){ this.toastMsg('Print dialog unavailable in preview','warn'); }
+  // Meaningful, filesystem-safe PDF file name: bill no + customer name + car number + date.
+  // Chrome/Edge/Safari all suggest document.title (sanitized) as the Save-as-PDF file name,
+  // so we swap the tab title just before printing and restore it right after.
+  _pdfFileName(bill){
+    const safe=(s)=> String(s==null?'':s).trim().replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,' ').trim();
+    const parts=[];
+    if(bill){
+      if(bill.no) parts.push('Bill '+safe(bill.no));
+      if(bill.name) parts.push(safe(bill.name));
+      if(bill.car) parts.push(safe(bill.car));
+    }
+    if(!parts.length) parts.push('Bill');
+    const d=(bill&&bill.ts)?new Date(bill.ts):new Date();
+    parts.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+    const biz=safe((this.state.settings&&this.state.settings.businessName)||'');
+    if(biz) parts.unshift(biz);
+    return parts.join(' - ');
   }
-  doSavePdf(){ this.toastMsg('In the dialog, choose “Save as PDF” as the destination','ok'); this.doPrint(); }
+  // Prints via a dedicated hidden iframe that contains ONLY the invoice. The old
+  // approach (append a clone to <body> + a `@media print` visibility hack that hides
+  // every other element) is unreliable on mobile: Android's print framework and iOS
+  // AirPrint frequently snapshot the page before the visibility flip has taken effect,
+  // producing a blank print/PDF preview — even though desktop (and desktop's simulated
+  // mobile viewport) handle it fine. Giving the invoice its own document sidesteps the
+  // whole visibility trick: the iframe has nothing to hide, so it prints identically on
+  // desktop and phones.
+  async doPrint(){
+    const src=document.getElementById('print-area');
+    if(!src){ try{ window.print(); }catch(e){} return; }
+    try{
+      const pb=this._bill(this.state.printBill);
+      const title=this._pdfFileName(pb);
+      const clone=src.cloneNode(true);
+      clone.style.transform='none'; clone.style.boxShadow='none'; clone.style.margin='0';
+      const meas=clone.querySelector('.inv-measure'); if(meas&&meas.parentNode) meas.parentNode.removeChild(meas);
+      // strip page-break shadows/margins so nothing bleeds
+      clone.querySelectorAll('.invoice-page').forEach(p=>{ p.style.boxShadow='none'; p.style.margin='0'; });
+
+      const cfg=this.state.printCfg||this.state.tpl;
+      const thermalW = cfg.size==='58mm'?'58mm' : cfg.size==='80mm'?'80mm' : null;
+      const pageCss = thermalW
+        ? '@page{ size:'+thermalW+' auto; margin:0 }'
+        : '@page{ size:'+({A4:'A4',A5:'A5',Letter:'letter'}[cfg.size]||'A4')+'; margin:8mm }';
+
+      // remove any previous print frame
+      const old=document.getElementById('__printFrame'); if(old&&old.parentNode) old.parentNode.removeChild(old);
+      const frame=document.createElement('iframe');
+      frame.id='__printFrame';
+      frame.setAttribute('aria-hidden','true');
+      frame.style.cssText='position:fixed; right:0; bottom:0; width:1px; height:1px; border:0; opacity:0; pointer-events:none; z-index:-1';
+      document.body.appendChild(frame);
+
+      const doc=frame.contentDocument||frame.contentWindow.document;
+      doc.open();
+      doc.write('<!DOCTYPE html><html><head><meta charset="utf-8">'
+        + '<title>'+title.replace(/</g,'&lt;')+'</title>'
+        + '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+        + '<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'
+        + '<style>*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+        + 'html,body{margin:0;padding:0;background:#fff;font-family:\'Plus Jakarta Sans\',system-ui,sans-serif}'
+        + '.print-area,.invoice-pages{display:flex;flex-direction:column;align-items:center}'
+        + '.invoice-page{break-after:page;page-break-after:always}'
+        + '.invoice-page:last-child{break-after:auto;page-break-after:auto}'
+        + pageCss + '</style></head><body></body></html>');
+      doc.close();
+      doc.body.appendChild(doc.importNode(clone, true));
+
+      const win=frame.contentWindow;
+      // wait for fonts + images inside the iframe to be ready so nothing prints blank
+      const ready=async()=>{
+        try{ if(doc.fonts&&doc.fonts.ready) await Promise.race([doc.fonts.ready, new Promise(r=>setTimeout(r,2500))]); }catch(e){}
+        const imgs=[...doc.images].filter(im=>!im.complete);
+        if(imgs.length) await Promise.race([ Promise.all(imgs.map(im=>new Promise(r=>{im.onload=im.onerror=r;}))), new Promise(r=>setTimeout(r,2500)) ]);
+        await new Promise(r=> requestAnimationFrame(()=> requestAnimationFrame(r)));
+      };
+      await ready();
+
+      let done=false;
+      const cleanup=()=>{ if(done) return; done=true; const f=document.getElementById('__printFrame'); if(f&&f.parentNode) f.parentNode.removeChild(f); window.removeEventListener('focus',cleanup); };
+      // clean up when the user comes back to the tab after the native dialog closes
+      window.addEventListener('focus', cleanup, {once:true});
+      try{ win.addEventListener('afterprint', cleanup, {once:true}); }catch(e){}
+      try{ win.focus(); }catch(e){}
+      try{ win.print(); }
+      catch(e){ try{ window.print(); }catch(_){}}
+      setTimeout(cleanup, 60000); // safety net only — long enough for a slow mobile dialog
+    }catch(e){ this.toastMsg('Print dialog is unavailable here','warn'); }
+  }
+  // lazily loads the PDF libraries (html2canvas + jsPDF) the first time a PDF is exported
+  _ensurePdfLib(){
+    if(this.__pdfLibP) return this.__pdfLibP;
+    const load=(src)=> new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>res(); s.onerror=()=>rej(new Error('Failed to load '+src)); document.head.appendChild(s); });
+    this.__pdfLibP=(async()=>{
+      if(!window.html2canvas) await load('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      if(!(window.jspdf && window.jspdf.jsPDF)) await load('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      if(!window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) throw new Error('PDF libraries unavailable');
+    })().catch(err=>{ this.__pdfLibP=null; throw err; });
+    return this.__pdfLibP;
+  }
+  // Generates a real PDF file and downloads it directly (no browser print menu).
+  async doSavePdf(){
+    if(this.__pdfBusy) return;
+    const src=document.getElementById('print-area');
+    if(!src){ this.toastMsg('Pehle koi bill kholein','warn'); return; }
+    const pb=this._bill(this.state.printBill);
+    const cfg=this.state.printCfg||this.state.tpl;
+    this.__pdfBusy=true;
+    this.toastMsg('PDF ban rahi hai…','ok');
+    let stage=null;
+    try{
+      await this._ensurePdfLib();
+      // Render an off-screen, full-scale copy of the invoice so the capture isn't affected
+      // by the preview's zoom transform.
+      stage=document.getElementById('__pdfStage');
+      if(!stage){ stage=document.createElement('div'); stage.id='__pdfStage'; document.body.appendChild(stage); }
+      stage.setAttribute('style','position:fixed; left:-99999px; top:0; background:#fff; z-index:-1');
+      stage.innerHTML='';
+      const clone=src.cloneNode(true);
+      clone.style.transform='none'; clone.style.boxShadow='none'; clone.style.margin='0';
+      const meas=clone.querySelector('.inv-measure'); if(meas&&meas.parentNode) meas.parentNode.removeChild(meas);
+      stage.appendChild(clone);
+      void stage.offsetHeight;
+      if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+      await new Promise(r=> requestAnimationFrame(()=> requestAnimationFrame(r)));
+
+      let pages=[...clone.querySelectorAll('.invoice-page')];
+      if(!pages.length) pages=[clone];
+      pages.forEach(p=>{ p.style.boxShadow='none'; p.style.margin='0'; });
+
+      const jsPDF=window.jspdf.jsPDF;
+      const sizeMap={ A4:[210,297], A5:[148,210], Letter:[215.9,279.4] };
+      const thermalW = cfg.size==='58mm'?58 : cfg.size==='80mm'?80 : null;
+      const scale=Math.min(2.5, Math.max(2, (window.devicePixelRatio||1)*1.5));
+
+      let pdf=null;
+      for(let i=0;i<pages.length;i++){
+        const canvas=await window.html2canvas(pages[i],{ scale, backgroundColor:'#ffffff', useCORS:true, logging:false });
+        const imgData=canvas.toDataURL('image/png');
+        const imgRatio=canvas.height/canvas.width;
+        let pw, ph;
+        if(thermalW){ pw=thermalW; ph=Math.max(1, thermalW*imgRatio); }
+        else { const dims=sizeMap[cfg.size]||sizeMap.A4; pw=dims[0]; ph=dims[1]; }
+        const orient = pw>ph ? 'landscape' : 'portrait';
+        if(!pdf) pdf=new jsPDF({ orientation:orient, unit:'mm', format:[pw,ph], compress:true });
+        else pdf.addPage([pw,ph], orient);
+        if(thermalW){ pdf.addImage(imgData,'PNG',0,0,pw,ph); }
+        else {
+          // A4/A5/Letter — fit to page width, keep aspect ratio, top-aligned
+          let drawW=pw, drawH=pw*imgRatio;
+          if(drawH>ph){ drawH=ph; drawW=ph/imgRatio; }
+          pdf.addImage(imgData,'PNG',(pw-drawW)/2, 0, drawW, drawH);
+        }
+      }
+      pdf.save(this._pdfFileName(pb)+'.pdf');
+      this.toastMsg('PDF download ho gayi','ok');
+    }catch(e){
+      console.error('PDF export failed', e);
+      this.toastMsg('PDF nahi ban saki — internet connection check karein','warn');
+    }finally{
+      if(stage) stage.innerHTML='';
+      this.__pdfBusy=false;
+    }
+  }
   // ---------- preferences (persisted per user; Firestore-backed in production) ----------
   _loadPrefs(){ try{ const r=localStorage.getItem('msa_billing_prefs_v1'); return r?JSON.parse(r):null; }catch(e){ return null; } }
   _savePrefs(){ try{ localStorage.setItem('msa_billing_prefs_v1', JSON.stringify({ tpl:this.state.tpl, listBatch:this.state.settings.listBatch, autoLoad:this.state.settings.autoLoad })); }catch(e){} }

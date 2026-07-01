@@ -32,5 +32,5 @@
    ===================================================================== */
 
 export const APP_CONFIG = {
-  MODE: "production", // "production" | "demo" | "auto" 
+  MODE: "production", // "production" | "demo" | "auto"
 };
