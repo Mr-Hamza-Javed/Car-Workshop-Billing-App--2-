@@ -2742,10 +2742,12 @@ class Component extends DCLogic {
     this._recalcRun(r.from, r.to);
   }
   _recalcJobIdKey(){ return 'msa_recalc_job'; }
-  // CLOUD PATH: run the recalculation as a Cloud Function — it keeps running even if the app
-  // is closed. Live progress + event log stream in via RTDB (Firestore stays the primary DB;
-  // RTDB carries only temporary job state). Automatically falls back to the local engine if
-  // the function isn't deployed/reachable, so the feature always works.
+  // CLOUD PATH: the recalculation runs ONLY as a Cloud Function — it keeps running even if
+  // the app is closed, and live progress + event log stream in via RTDB. There is NO local
+  // fallback in firebase mode (user requirement): if the function is unreachable (not
+  // deployed / CORS / offline), the job fails LOUDLY with the real error in the log — it
+  // never silently switches engines. The local engine below is used only in demo/local mode,
+  // where no cloud exists at all.
   async _recalcRun(from, to){
     if(this.db && this.db.startRecalcJob && this.db.subscribeRecalcJob){
       const jobId=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -2757,12 +2759,16 @@ class Component extends DCLogic {
         .then(()=>{ this._loadDash(); if(this.state.route==='reports') this._loadReport(); })
         .catch(e=>{
           const cur=this.state.recalc; if(!cur || cur.phase!=='running') return;
-          this._recalcLog('error','Cloud function unavailable: '+((e&&e.message)||e));
-          this._recalcLog('info','Local engine par switch ho raha hai...');
+          const msg=(e&&e.message)||String(e);
+          this._recalcLog('error','ERROR: Cloud function call fail — '+msg);
+          if(/internal|cors|failed to fetch|network/i.test(msg)){
+            this._recalcLog('error','Mumkina wajah: function deploy nahi hui ya purani version deployed hai (CORS). Fix: `firebase deploy --only functions` chala kar dobara try karein.');
+          }
           if(this._recalcUnsub){ try{ this._recalcUnsub(); }catch(_){} this._recalcUnsub=null; }
           this._recalcJobId=null;
           try{ localStorage.removeItem(this._recalcJobIdKey()); }catch(_){}
-          this._recalcRunLocal(from,to);
+          this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), phase:'error', error:msg } }));
+          this.toastMsg('Recalculation fail — event log dekhein','warn');
         });
       return;
     }
