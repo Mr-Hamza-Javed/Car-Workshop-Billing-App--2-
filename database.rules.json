@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "recalcJobs": {
+      ".read": "auth != null",
+      ".write": false,
+      "$jobId": {
+        ".read": "auth != null"
+      }
+    }
+  }
+}

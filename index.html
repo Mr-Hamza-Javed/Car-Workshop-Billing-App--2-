@@ -8,7 +8,6 @@
 <body>
 <x-dc>
 <helmet>
-  
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15161b">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -75,8 +74,8 @@
         </div>
       </div>
       <div style="text-align:center">
-        <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:22px; letter-spacing:-.4px; color:#fff">MSA Billing</div>
-        <div style="font-size:12.5px; color:rgba(255,255,255,.5); font-weight:500; margin-top:3px">{{ businessName }}</div>
+        <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:22px; letter-spacing:-.4px; color:#fff">{{ appName }}</div>
+        <div style="font-size:12.5px; color:rgba(255,255,255,.5); font-weight:500; margin-top:3px">{{ appSubtitle }}</div>
       </div>
       <div style="width:180px; height:4px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden">
         <div style="height:100%; border-radius:4px; background:linear-gradient(90deg,#2f7bf6,#5b9dff); animation:barFill 1.6s ease-out forwards"></div>
@@ -92,7 +91,7 @@
         <div style="display:flex; flex-direction:column; align-items:center; gap:14px">
           <div style="width:72px; height:72px; border-radius:20px; overflow:hidden; box-shadow:0 12px 36px rgba(192,57,43,.5); display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#c0392b,#7a1f16); color:#fff">{{ icons.blockBig }}</div>
           <div style="text-align:center">
-            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:25px; letter-spacing:-.5px; color:#fff">MSA Billing</div>
+            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:25px; letter-spacing:-.5px; color:#fff">{{ appName }}</div>
             <div style="font-size:13px; color:rgba(255,255,255,.5); font-weight:500; margin-top:3px">Access unavailable</div>
           </div>
         </div>
@@ -117,8 +116,8 @@
             <img src="assets/logo-256.png" alt="MSA" style="width:100%; height:100%; object-fit:cover">
           </div>
           <div style="text-align:center">
-            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:25px; letter-spacing:-.5px; color:#fff">MSA Billing</div>
-            <div style="font-size:13px; color:rgba(255,255,255,.5); font-weight:500; margin-top:3px">{{ businessName }}</div>
+            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:25px; letter-spacing:-.5px; color:#fff">{{ appName }}</div>
+            <div style="font-size:13px; color:rgba(255,255,255,.5); font-weight:500; margin-top:3px">{{ appSubtitle }}</div>
           </div>
         </div>
         <form onSubmit="{{ onLoginSubmit }}" style="width:100%; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09); backdrop-filter:blur(18px); border-radius:20px; padding:24px 22px; display:flex; flex-direction:column; gap:14px; box-shadow:0 24px 64px rgba(0,0,0,.45)">
@@ -165,8 +164,8 @@
           <img src="assets/logo-256.png" alt="MSA" style="width:100%; height:100%; object-fit:cover">
         </div>
         <div>
-          <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:15.5px; letter-spacing:-.2px; line-height:1.1">MSA Billing</div>
-          <div style="font-size:11px; color:rgba(255,255,255,.42); font-weight:500">{{ businessName }}</div>
+          <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:15.5px; letter-spacing:-.2px; line-height:1.1">{{ appName }}</div>
+          <div style="font-size:11px; color:rgba(255,255,255,.42); font-weight:500">{{ appSubtitle }}</div>
         </div>
       </div>
       <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="10">
@@ -1119,6 +1118,54 @@
             <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#a59c8c; font-weight:600; margin-top:5px"><span>Off</span><span>Slow</span><span>Standard</span><span>Fast</span></div>
             <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:9px; line-height:1.4">Poori app ki animations ki raftaar. Standard professional default hai — slider se slow/fast ya bilkul off kar sakte hain.</div>
           </div>
+          <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
+            <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px">Reports maintenance</div>
+            <div style="font-size:13.5px; color:#3f4753; font-weight:500; line-height:1.5; margin-bottom:13px">Report ke totals ko chuni hui date range ke liye asli bills se dobara calculate karein. Reports kabhi galat lagein to yahan se theek karein.</div>
+            <button onClick="{{ recalcOpen }}" style="display:flex; align-items:center; gap:8px; padding:11px 16px; background:#1f6feb; color:#fff; border:none; border-radius:11px; font-size:13.5px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(31,111,235,.28)">{{ icons.chart }} Recalculate reports</button>
+            <sc-if value="{{ recalc.active }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ recalc.onToggleDetail }}" style="margin-top:15px; cursor:pointer">
+                <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:#3f4753; margin-bottom:6px"><span>Recalculation {{ recalc.statusText }}</span><span class="tnum">{{ recalc.progressLabel }}</span></div>
+                <div style="height:10px; border-radius:6px; background:#eee7db; overflow:hidden"><div style="height:100%; width:{{ recalc.progressLabel }}; border-radius:6px; background:linear-gradient(90deg,#2f7bf6,#5b9dff); transition:width .4s cubic-bezier(.2,.7,.2,1)"></div></div>
+                <div style="font-size:11px; color:#a59c8c; font-weight:600; margin-top:6px">Tafseel dekhne ke liye click karein</div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== RECALCULATE: WARNING DIALOG ===================== -->
+      <sc-if value="{{ recalc.isConfirm }}" hint-placeholder-val="{{ false }}">
+        <div style="position:fixed; inset:0; z-index:300; background:rgba(15,17,22,.55); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:20px" onClick="{{ recalc.onCancel }}">
+          <div onClick="{{ stop }}" style="width:100%; max-width:450px; background:#fff; border-radius:18px; padding:24px; box-shadow:0 24px 70px rgba(0,0,0,.4); animation:panelIn calc(var(--as,1) * .28s) cubic-bezier(.2,.7,.2,1)">
+            <div style="display:flex; align-items:center; gap:11px; margin-bottom:13px"><span style="width:40px; height:40px; border-radius:11px; background:#fdecec; color:#c0392b; display:flex; align-items:center; justify-content:center; flex:none">{{ icons.info }}</span><div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:18px; color:#1a1d24">Recalculate reports</div></div>
+            <div style="background:#fdf2f2; border:1px solid #f3caca; border-radius:12px; padding:11px 13px; font-size:13px; font-weight:700; color:#b0342a; margin-bottom:14px">Yeh process database ke liye expensive hai.</div>
+            <div style="font-size:13px; color:#3f4753; font-weight:500; line-height:1.5; margin-bottom:15px">Neeche di gayi date range ke saare din aur mahine dobara calculate honge. Choti range chunein taake database reads kam hon.</div>
+            <div style="display:flex; gap:9px; margin-bottom:11px"><label style="flex:1; display:flex; flex-direction:column; gap:5px"><span style="font-size:11.5px; font-weight:600; color:#8a8175">From</span><input type="date" value="{{ recalc.from }}" onChange="{{ recalc.onFrom }}" style="{{ inputStyle }}"></label><label style="flex:1; display:flex; flex-direction:column; gap:5px"><span style="font-size:11.5px; font-weight:600; color:#8a8175">To</span><input type="date" value="{{ recalc.to }}" onChange="{{ recalc.onTo }}" style="{{ inputStyle }}"></label></div>
+            <div style="display:flex; gap:7px; margin-bottom:18px"><button onClick="{{ recalc.preset7 }}" style="flex:1; padding:8px; border-radius:9px; border:1px solid #ece4d7; background:#faf7f1; font-size:12px; font-weight:600; color:#3f4753; cursor:pointer">7 din</button><button onClick="{{ recalc.preset1m }}" style="flex:1; padding:8px; border-radius:9px; border:1px solid #ece4d7; background:#faf7f1; font-size:12px; font-weight:600; color:#3f4753; cursor:pointer">1 mahina</button><button onClick="{{ recalc.preset1y }}" style="flex:1; padding:8px; border-radius:9px; border:1px solid #ece4d7; background:#faf7f1; font-size:12px; font-weight:600; color:#3f4753; cursor:pointer">1 saal</button></div>
+            <div style="display:flex; gap:10px"><button onClick="{{ recalc.onCancel }}" style="flex:1; padding:12px; border-radius:11px; border:1px solid #e6ddd0; background:#fff; font-size:13.5px; font-weight:700; color:#3f4753; cursor:pointer">Cancel</button><button onClick="{{ recalc.onStart }}" style="flex:1; padding:12px; border-radius:11px; border:none; background:#c0392b; color:#fff; font-size:13.5px; font-weight:700; cursor:pointer">Start recalculation</button></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== RECALCULATE: DETAILED MODAL ===================== -->
+      <sc-if value="{{ recalc.open }}" hint-placeholder-val="{{ false }}">
+        <div style="position:fixed; inset:0; z-index:300; background:rgba(15,17,22,.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:16px" onClick="{{ recalc.onToggleDetail }}">
+          <div onClick="{{ stop }}" style="width:100%; max-width:560px; max-height:88vh; overflow:auto; background:#14161b; border:1px solid #262a33; border-radius:18px; padding:22px; box-shadow:0 24px 70px rgba(0,0,0,.5); animation:panelIn calc(var(--as,1) * .28s) cubic-bezier(.2,.7,.2,1)">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px"><div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:18px; color:#fff">Recalculation {{ recalc.statusText }}</div><button onClick="{{ recalc.onToggleDetail }}" style="width:34px; height:34px; border-radius:10px; border:1px solid #2a2f3a; background:transparent; color:#8a93a6; cursor:pointer; display:flex; align-items:center; justify-content:center">{{ icons.x }}</button></div>
+            <div style="margin-bottom:6px; display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:#9fb4d6"><span>Overall progress</span><span class="tnum">{{ recalc.progressLabel }}</span></div>
+            <div style="height:12px; border-radius:7px; background:#20242d; overflow:hidden; margin-bottom:18px"><div style="height:100%; width:{{ recalc.progressLabel }}; border-radius:7px; background:linear-gradient(90deg,#2f7bf6,#5b9dff); transition:width .4s cubic-bezier(.2,.7,.2,1)"></div></div>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px">
+              <div style="background:#1b1f27; border:1px solid #262a33; border-radius:11px; padding:11px"><div style="font-size:10.5px; color:#8a93a6; font-weight:700; text-transform:uppercase; letter-spacing:.3px">Bills</div><div class="tnum" style="font-size:15px; font-weight:700; color:#fff; margin-top:3px">{{ recalc.billsLabel }}</div><div style="height:5px; border-radius:4px; background:#262a33; overflow:hidden; margin-top:7px"><div style="height:100%; width:{{ recalc.billsPct }}%; background:#2f7bf6; transition:width .4s"></div></div><div style="font-size:10.5px; color:#6f7a8c; margin-top:5px">{{ recalc.billsRem }} baaqi</div></div>
+              <div style="background:#1b1f27; border:1px solid #262a33; border-radius:11px; padding:11px"><div style="font-size:10.5px; color:#8a93a6; font-weight:700; text-transform:uppercase; letter-spacing:.3px">Months</div><div class="tnum" style="font-size:15px; font-weight:700; color:#fff; margin-top:3px">{{ recalc.monthsLabel }}</div><div style="height:5px; border-radius:4px; background:#262a33; overflow:hidden; margin-top:7px"><div style="height:100%; width:{{ recalc.monthsPct }}%; background:#7c5cff; transition:width .4s"></div></div><div style="font-size:10.5px; color:#6f7a8c; margin-top:5px">{{ recalc.monthsRem }} baaqi</div></div>
+              <div style="background:#1b1f27; border:1px solid #262a33; border-radius:11px; padding:11px"><div style="font-size:10.5px; color:#8a93a6; font-weight:700; text-transform:uppercase; letter-spacing:.3px">Days</div><div class="tnum" style="font-size:15px; font-weight:700; color:#fff; margin-top:3px">{{ recalc.daysLabel }}</div><div style="height:5px; border-radius:4px; background:#262a33; overflow:hidden; margin-top:7px"><div style="height:100%; width:{{ recalc.daysPct }}%; background:#2ec27e; transition:width .4s"></div></div><div style="font-size:10.5px; color:#6f7a8c; margin-top:5px">{{ recalc.daysRem }} baaqi</div></div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px"><div style="font-size:12px; font-weight:700; color:#8a93a6; text-transform:uppercase; letter-spacing:.4px">Event log</div><div style="display:flex; gap:6px"><sc-for list="{{ recalc.filterBtns }}" as="f" hint-placeholder-count="3"><button key="{{ f.rk }}" onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button></sc-for></div></div>
+            <div style="background:#0c0e12; border:1px solid #20242d; border-radius:11px; padding:11px 13px; height:180px; overflow:auto; display:flex; flex-direction:column"><sc-for list="{{ recalc.logs }}" as="l" hint-placeholder-count="6"><div key="{{ l.rk }}" style="{{ l.style }}">{{ l.msg }}</div></sc-for></div>
+            <sc-if value="{{ recalc.summary }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:16px; background:#12241a; border:1px solid #1f4a33; border-radius:12px; padding:14px"><div style="font-size:13px; font-weight:700; color:#7ee2a8; margin-bottom:9px">Summary report</div><div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px; font-size:12.5px; color:#cfe6d8; font-weight:500"><div>Bills processed: <b style="color:#fff">{{ recalc.summary.bills }}</b></div><div>Months: <b style="color:#fff">{{ recalc.summary.months }}</b></div><div>Days: <b style="color:#fff">{{ recalc.summary.days }}</b></div><div>Errors: <b style="color:#fff">{{ recalc.summary.errors }}</b></div></div></div>
+            </sc-if>
+            <div style="display:flex; gap:10px; margin-top:18px"><sc-if value="{{ recalc.canStop }}" hint-placeholder-val="{{ false }}"><button onClick="{{ recalc.onStop }}" style="flex:1; padding:12px; border-radius:11px; border:none; background:#c0392b; color:#fff; font-size:13.5px; font-weight:700; cursor:pointer">Stop process</button></sc-if><button onClick="{{ recalc.onClear }}" style="flex:1; padding:12px; border-radius:11px; border:1px solid #2a2f3a; background:transparent; color:#c9d3e0; font-size:13.5px; font-weight:700; cursor:pointer">Clear</button></div>
+          </div>
         </div>
       </sc-if>
 
@@ -1234,20 +1281,20 @@
           <div style="background:linear-gradient(150deg,#1b1d23,#26282f); border-radius:18px; padding:30px 24px; color:#fff; text-align:center; position:relative; overflow:hidden">
             <div style="position:absolute; right:-40px; top:-40px; width:180px; height:180px; border-radius:50%; background:radial-gradient(circle,rgba(47,123,246,.32),transparent 70%)"></div>
             <div style="width:78px; height:78px; border-radius:20px; overflow:hidden; margin:0 auto 16px; box-shadow:0 10px 30px rgba(31,111,235,.4)"><img src="assets/logo-256.png" alt="MSA" style="width:100%; height:100%; object-fit:cover"></div>
-            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:24px; letter-spacing:-.4px">MSA Billing</div>
-            <div style="font-size:13.5px; color:rgba(255,255,255,.55); font-weight:500; margin-top:3px">{{ businessName }}</div>
+            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:24px; letter-spacing:-.4px">{{ appName }}</div>
+            <div style="font-size:13.5px; color:rgba(255,255,255,.55); font-weight:500; margin-top:3px">{{ appSubtitle }}</div>
             <div style="display:inline-block; margin-top:14px; font-size:12px; font-weight:600; color:#9cc2ff; background:rgba(47,123,246,.16); border:1px solid rgba(47,123,246,.3); padding:5px 13px; border-radius:20px">Version {{ appVersion }}</div>
           </div>
 
           <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:20px">
             <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:14px">Developer</div>
             <div style="display:flex; align-items:center; gap:14px">
-              <div style="width:52px; height:52px; border-radius:14px; background:#eef4ff; color:#1f6feb; display:flex; align-items:center; justify-content:center; font-family:'Bricolage Grotesque'; font-weight:700; font-size:20px; flex:none">HJ</div>
+              <div style="width:52px; height:52px; border-radius:14px; background:#eef4ff; color:#1f6feb; display:flex; align-items:center; justify-content:center; font-family:'Bricolage Grotesque'; font-weight:700; font-size:20px; flex:none">{{ aboutDevInitials }}</div>
               <div style="flex:1; min-width:0">
-                <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:17px; color:#1a1d24">Hamza Javed</div>
-                <div style="font-size:13px; color:#8a8175; font-weight:500">App developer &amp; designer</div>
+                <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:17px; color:#1a1d24">{{ aboutDevName }}</div>
+                <div style="font-size:13px; color:#8a8175; font-weight:500">{{ aboutDevRole }}</div>
               </div>
-              <a href="tel:03072924105" style="display:flex; align-items:center; gap:8px; padding:10px 15px; background:#1f6feb; color:#fff; border-radius:11px; font-size:13.5px; font-weight:700; text-decoration:none; box-shadow:0 4px 12px rgba(31,111,235,.3); flex:none">{{ icons.phone }} 0307-2924105</a>
+              <a href="{{ aboutDevPhoneHref }}" style="display:flex; align-items:center; gap:8px; padding:10px 15px; background:#1f6feb; color:#fff; border-radius:11px; font-size:13.5px; font-weight:700; text-decoration:none; box-shadow:0 4px 12px rgba(31,111,235,.3); flex:none">{{ icons.phone }} {{ aboutDevPhone }}</a>
             </div>
           </div>
 
@@ -1265,7 +1312,7 @@
             </div>
           </div>
 
-          <div style="text-align:center; font-size:11.5px; color:#a59c8c; font-weight:500; padding:4px 0 8px; line-height:1.5">© 2026 {{ businessName }}. All rights reserved.<br>Crafted for car workshops — fast billing, clear payments, beautiful prints.</div>
+          <div style="text-align:center; font-size:11.5px; color:#a59c8c; font-weight:500; padding:4px 0 8px; line-height:1.5">© 2026 {{ appName }}. All rights reserved.<br>{{ aboutTagline }}</div>
         </div>
       </sc-if>
 
@@ -1276,7 +1323,7 @@
             <div style="width:46px; height:46px; border-radius:50%; background:{{ userColor }}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex:none; font-family:'Bricolage Grotesque'">{{ userInitials }}</div>
             <div style="flex:1; min-width:0">
               <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:16px">{{ userName }}</div>
-              <div style="font-size:12px; color:rgba(255,255,255,.5)">{{ userRole }} · {{ businessName }}</div>
+              <div style="font-size:12px; color:rgba(255,255,255,.5)">{{ userRole }} · {{ appSubtitle }}</div>
             </div>
             <button onClick="{{ onLogout }}" title="Log out" style="width:40px; height:40px; flex:none; border-radius:11px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#ff9a8f; display:flex; align-items:center; justify-content:center; cursor:pointer">{{ icons.logout }}</button>
           </div>
@@ -1768,7 +1815,7 @@ class Component extends DCLogic {
     busy:{},            // {key:true} -> per-action in-flight guard (disables buttons, anti double-submit)
     headerSaving:0,     // >0 -> small header spinner (silent background saves)
     // ---- settings / counter ----
-    settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owner’s risk.', listBatch:25, autoLoad:true, animSpeed:1 },
+    settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owners risk.', listBatch:25, autoLoad:true, animSpeed:1 },
     counter: null,
     tpl: { size:'A4', logo:true, color:'#1f6feb', cols:{qty:true,price:true,total:true}, fontScale:1, showComments:true, showTerms:true, showPayInfo:true, repeatHeader:true, header:'Service & Repair Invoice', footer:'Thank you for your business' },
     printBill: null, printCfg: null, invMeasure: {}, printZoom:1, printTab:'preview',
@@ -1781,7 +1828,11 @@ class Component extends DCLogic {
     products: [], productsLoading:false, productsLoaded:false,
     users: [], usersLoading:false, usersLoaded:false,
     dashStats:null, dashLoading:false,
+    // global branding text loaded from settings.json (single source of truth); ASCII defaults
+    // shown instantly on the splash, then overridden once settings.json resolves.
+    appMeta:{ appName:'MSA Billing', subtitle:'MSA Auto Workshop', version:'1.0', about:null },
     report:{ view:'month', anchor:new Date(), sel:null }, reportData:null, reportLoading:false,
+    recalc:null,   // Recalculate job UI state (null = idle/closed); see _recalcBlank()
     searchResults:null, searching:false,
     // ---- bill view nav ----
     viewId:null, viewIds:[], viewSource:[], viewFrom:'bills', editFrom:'list', addPayFocus:false,
@@ -1800,6 +1851,7 @@ class Component extends DCLogic {
 
   componentDidMount(){
     this._scrollPos={};
+    this._loadAppMeta();
     const pr=this._loadPresets(); this.setState({ presets:(pr&&pr.length)?pr:this._defaultPresets() });
     this._t = setInterval(()=> this.setState({ now:new Date() }), 1000);
     this._r = ()=>{ const m = window.innerWidth < 820; if(m!==this.state.isMobile) this.setState({isMobile:m}); };
@@ -1808,6 +1860,21 @@ class Component extends DCLogic {
     this._vis=()=>{ if(document.visibilityState==='visible') this._healStuckAnimations(); };
     document.addEventListener('visibilitychange', this._vis);
     this._init();
+  }
+  // Load global branding text from settings.json (app name, subtitle, About content). Kept
+  // separate from the in-app Business Name (which is now print-only). Failures keep defaults.
+  async _loadAppMeta(){
+    try{
+      const res=await fetch('./settings.json?_='+Date.now(), { cache:'no-store' });
+      if(!res.ok) return;
+      const j=await res.json();
+      this.setState(s=>({ appMeta:{
+        appName:(j&&j.appName)||s.appMeta.appName,
+        subtitle:(j&&j.subtitle)||s.appMeta.subtitle,
+        version:(j&&j.version)||s.appMeta.version,
+        about:(j&&j.about)||s.appMeta.about
+      }}));
+    }catch(e){ /* keep defaults */ }
   }
   componentWillUnmount(){ clearInterval(this._t); window.removeEventListener('resize', this._r); window.removeEventListener('keydown', this._key); document.removeEventListener('visibilitychange', this._vis); if(this._unsub) this._unsub(); }
   componentDidUpdate(){
@@ -1822,10 +1889,10 @@ class Component extends DCLogic {
     if(typeof document!=='undefined' && document.visibilityState && document.visibilityState!=='visible') return;   // never start an animation while backgrounded
     const sc=this._asScale(); if(sc<=0) return;
     const m=this._main(); if(!m) return;
-    // transform-only — NEVER animates opacity on this persistent container. If the tab/iframe is
+    // transform-only - NEVER animates opacity on this persistent container. If the tab/iframe is
     // backgrounded, WAAPI can leave an animation permanently "pending" (startTime stays null); an
     // opacity:0 start keyframe would then leave the page blank forever. Without opacity in the
-    // keyframes, a stuck animation is at worst a few px of static offset — content stays visible.
+    // keyframes, a stuck animation is at worst a few px of static offset - content stays visible.
     try{ this._watchStuck(m.animate([{transform:'translateY(8px)'},{transform:'none'}],{duration:Math.round(320*sc),easing:'cubic-bezier(.2,.7,.2,1)'})); }catch(e){}
   }
   _applyAnimVar(){ try{ const v=this._asScale(); if(this._lastAs!==v){ this._lastAs=v; document.documentElement.style.setProperty('--as', String(v)); } }catch(e){} }
@@ -1849,14 +1916,14 @@ class Component extends DCLogic {
         const access = await db.getAccessStatus();
         if(access && Number(access.isBlocked)===1){
           this.setState({ authReady:true, accessBlocked:true, accessTitle:access.title||'Access blocked', accessMessage:access.message||'' });
-          return;   // hard stop — never proceeds to login/auth, nothing can bypass this
+          return;   // hard stop - never proceeds to login/auth, nothing can bypass this
         }
       }catch(e){ console.warn('access-status check failed', e); }
       if(db.mode==='local'){ try{ await db.bootstrap({ email:'admin@msa.com', fullName:'Asif Shakoor', password:'123456' }); }catch(e){} }
       this._unsub = db.initAuth((user)=> this._onAuth(user));
     }catch(e){
       console.error('init failed', e);
-      this.setState({ authReady:true, loginErr:'App load nahi ho saki — page refresh karein.' });
+      this.setState({ authReady:true, loginErr:'App load nahi ho saki - page refresh karein.' });
     }
   }
   // ---- tiny, safe markdown -> HTML (escapes first, then applies a narrow whitelist of tags) ----
@@ -1899,7 +1966,7 @@ class Component extends DCLogic {
     this._loadBills(true);
     this._loadDash();
     if(!this.state.productsLoaded) this._loadProducts();   // needed for the New Bill autocomplete dropdown right away, not just after visiting Products
-    this._ensureGeo();   // session-resume case (page refresh) — warms the cache for later activity entries
+    this._ensureGeo();   // session-resume case (page refresh) - warms the cache for later activity entries
   }
   async _loadShell(){
     const st = await this.db.getSettings();
@@ -1918,7 +1985,7 @@ class Component extends DCLogic {
     if(!email || !pw){ this.setState({ loginErr:'Email aur password dono likhein' }); return; }
     this.setState({ loggingIn:true, loginErr:'' });
     let r;
-    try{ r = await this.db.login(email, pw); }catch(e){ r={ ok:false, error:'Login nahi ho saka — internet check karein' }; }
+    try{ r = await this.db.login(email, pw); }catch(e){ r={ ok:false, error:'Login nahi ho saka - internet check karein' }; }
     if(!r || !r.ok){ this.setState({ loggingIn:false, loginErr:(r&&r.error)||'Login nahi hua' }); return; }
     try{ await this.db.bootstrap(); }catch(e){}
     await this._ensureGeo();   // resolve once before the first activity entry so login carries IP/location
@@ -1941,7 +2008,7 @@ class Component extends DCLogic {
     this.setState(s=>({ busy: key?{...s.busy,[key]:true}:s.busy, ...(opts.block?{blocking:{msg:opts.block}}:{}), ...(opts.headerSave?{headerSaving:s.headerSaving+1}:{}) }));
     let res, err;
     try{ res = await fn(); }
-    catch(e){ err=e; console.error('[action '+key+']', e); this.toastMsg(opts.errMsg||'Nahi ho saka — dobara koshish karein','warn'); }
+    catch(e){ err=e; console.error('[action '+key+']', e); this.toastMsg(opts.errMsg||'Nahi ho saka - dobara koshish karein','warn'); }
     this.setState(s=>{ const b={...s.busy}; if(key) delete b[key]; return { busy:b, ...(opts.block?{blocking:null}:{}), ...(opts.headerSave?{headerSaving:Math.max(0,s.headerSaving-1)}:{}) }; });
     if(err && opts.rethrow) throw err;
     return err? undefined : res;
@@ -1960,7 +2027,7 @@ class Component extends DCLogic {
   }
   togglePrivacy(){
     this.setState(s=>({ privacy:!s.privacy }));
-    // animate every money value hiding/revealing — Web Animations API so scroll is preserved.
+    // animate every money value hiding/revealing - Web Animations API so scroll is preserved.
     // Floor of .45 opacity (never 0) + visibility guard + stuck-animation watchdog: even in the
     // worst case (tab backgrounded mid-toggle) a number is at most dimmed, never invisible.
     if(typeof document!=='undefined' && document.visibilityState && document.visibilityState!=='visible') return;
@@ -2039,9 +2106,14 @@ class Component extends DCLogic {
       const map=await this.db.statsForDays(keys);
       let billed=0,paid=0,pending=0,count=0;
       keys.forEach(k=>{ const v=map[k]||{}; billed+=v.billed||0; paid+=v.paid||0; pending+=v.pending||0; count+=v.count||0; });
+      // defensive: a legacy/foreign aggregate doc could hold a negative — never show that
+      billed=Math.max(0,billed); paid=Math.max(0,paid); pending=Math.max(0,pending); count=Math.max(0,count);
       this.setState({ dashStats:{ billed, paid, pending, count }, dashLoading:false });
     }catch(e){ console.warn('loadDash',e); this.setState({ dashStats:{billed:0,paid:0,pending:0,count:0}, dashLoading:false }); }
   }
+  // Reports & the dashboard read cheap aggregate docs. After ANY bill/payment mutation, refresh
+  // whichever the user is looking at so the numbers are always the latest — never a stale snapshot.
+  _refreshDerived(){ this._loadDash(); if(this.state.route==='reports') this._loadReport(); }
   async _loadReport(){
     this.setState({ reportLoading:true });
     const r=this.state.report; const view=r.view; const a=new Date(r.anchor);
@@ -2050,22 +2122,27 @@ class Component extends DCLogic {
       if(view==='day'){
         for(let h=0;h<24;h++) buckets.push({ key:h, label:String(h), amount:0, pending:0, count:0 });
         const bills=await this.db.billsForDay(a.getTime());
-        bills.forEach(b=>{ const d=this.derive(b); const h=b.ts.getHours(); if(buckets[h]){ buckets[h].amount+=d.total; buckets[h].pending+=d.pending; buckets[h].count++; } });
+        let tB=0,tPaid=0,tP=0,tC=0;
+        bills.forEach(b=>{ const d=this.derive(b); const h=b.ts.getHours(); if(buckets[h]){ buckets[h].amount+=d.total; buckets[h].pending+=d.pending; buckets[h].count++; } tB+=d.total; tPaid+=d.paid; tP+=d.pending; tC++; });
+        // SELF-HEAL: the day view reads the REAL bills, so use them to quietly correct this day's
+        // stored aggregate (and roll the delta into its month doc) if they've drifted. Skipped when
+        // we may have hit the 200-row read cap — then we can't be sure we saw every bill.
+        if(bills.length < 200 && this.db.reconcileDay){ this.db.reconcileDay(a.getTime(), { billed:tB, paid:tPaid, pending:tP, count:tC }).catch(()=>{}); }
       } else if(view==='month'){
         const dim=new Date(a.getFullYear(),a.getMonth()+1,0).getDate(); const keys=[];
         for(let dd=1;dd<=dim;dd++) keys.push(this._dayKeyOf(a.getFullYear(),a.getMonth(),dd));
         const map=await this.db.statsForDays(keys);
-        for(let dd=1;dd<=dim;dd++){ const v=map[keys[dd-1]]||{}; buckets.push({ key:dd, label:String(dd), amount:v.billed||0, pending:v.pending||0, count:v.count||0 }); }
+        for(let dd=1;dd<=dim;dd++){ const v=map[keys[dd-1]]||{}; buckets.push({ key:dd, label:String(dd), amount:Math.max(0,v.billed||0), pending:Math.max(0,v.pending||0), count:Math.max(0,v.count||0) }); }
       } else if(view==='year'){
         const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const keys=[];
         for(let m=0;m<12;m++) keys.push(a.getFullYear()+'-'+String(m+1).padStart(2,'0'));
         const map=await this.db.statsForMonths(keys);
-        for(let m=0;m<12;m++){ const v=map[keys[m]]||{}; buckets.push({ key:m, label:mn[m], amount:v.billed||0, pending:v.pending||0, count:v.count||0 }); }
+        for(let m=0;m<12;m++){ const v=map[keys[m]]||{}; buckets.push({ key:m, label:mn[m], amount:Math.max(0,v.billed||0), pending:Math.max(0,v.pending||0), count:Math.max(0,v.count||0) }); }
       } else {
         const map=await this.db.allMonthStats(); const byYear={};
         Object.keys(map).forEach(k=>{ const y=k.slice(0,4); byYear[y]=byYear[y]||{amount:0,pending:0,count:0}; byYear[y].amount+=map[k].billed||0; byYear[y].pending+=map[k].pending||0; byYear[y].count+=map[k].count||0; });
         const cy=new Date().getFullYear(); const yrs=Object.keys(byYear).map(Number); let fy=yrs.length?Math.min(...yrs):cy; if(fy>cy) fy=cy;
-        for(let y=fy;y<=cy;y++){ const v=byYear[y]||{}; buckets.push({ key:y, label:String(y), amount:v.amount||0, pending:v.pending||0, count:v.count||0 }); }
+        for(let y=fy;y<=cy;y++){ const v=byYear[y]||{}; buckets.push({ key:y, label:String(y), amount:Math.max(0,v.amount||0), pending:Math.max(0,v.pending||0), count:Math.max(0,v.count||0) }); }
       }
       this.setState({ reportData:{ buckets, view, firstYear:(buckets[0]&&buckets[0].key)||new Date().getFullYear() }, reportLoading:false });
     }catch(e){ console.warn('loadReport',e); this.setState({ reportData:{ buckets:[], view, firstYear:new Date().getFullYear() }, reportLoading:false }); }
@@ -2133,7 +2210,7 @@ class Component extends DCLogic {
       else { history=[{kind:'payment',amount:total,comment:'JazzCash',ts}]; }
       const comments=['Next service due after 5,000 km.','Customer requested synthetic oil only.','','Brake check recommended next visit.','','Tyres rotated, alignment advised.'];
       const staff=['Asad Saleem','Hina Javed','Waqar Younis','Asad Saleem'];
-      return { id:'b'+i, no:this.state.settings.prefix+'-'+n, name:c[0], phone:c[1], car:c[2], model:c[3], lines, discount:disc, comment:comments[i%comments.length], note: i%5===0?'Customer haggled — owner approved discount.':'', ts, createdBy:staff[i%staff.length], deleted:false, archived:false, history };
+      return { id:'b'+i, no:this.state.settings.prefix+'-'+n, name:c[0], phone:c[1], car:c[2], model:c[3], lines, discount:disc, comment:comments[i%comments.length], note: i%5===0?'Customer haggled - owner approved discount.':'', ts, createdBy:staff[i%staff.length], deleted:false, archived:false, history };
     });
     if(bills[11]) bills[11].archived=true;
     if(bills[13]){ bills[13].deleted=true; bills[13].deletedAt=new Date(Date.now()-12*H); }
@@ -2158,23 +2235,23 @@ class Component extends DCLogic {
     const add=(o)=> log.push({ id:'sa'+(seq++), changes:[], ip:null, location:null, ...o });
     bills.forEach(b=>{
       add({ ts:b.ts, userId:uid[b.createdBy]||'u1', userName:b.createdBy, action:'create', entity:'bill', entityId:b.id, entityLabel:b.no, summary:'Created bill for '+(b.name||'walk-in customer') });
-      b.history.forEach(h=>{ if(h.amount && h.amount!==0){ add({ ts:h.ts||b.ts, userId:uid[b.createdBy]||'u1', userName:b.createdBy, action:(h.kind==='adjustment'?'adjustment':'payment'), entity:'bill', entityId:b.id, entityLabel:b.no, summary:(h.kind==='adjustment'?'Refund ':'Payment ')+this.fmt(Math.abs(h.amount))+(h.comment?(' · '+h.comment):'') }); } });
+      b.history.forEach(h=>{ if(h.amount && h.amount!==0){ add({ ts:h.ts||b.ts, userId:uid[b.createdBy]||'u1', userName:b.createdBy, action:(h.kind==='adjustment'?'adjustment':'payment'), entity:'bill', entityId:b.id, entityLabel:b.no, summary:(h.kind==='adjustment'?'Refund ':'Payment ')+this.fmt(Math.abs(h.amount))+(h.comment?(' - '+h.comment):'') }); } });
       if(b.archived) add({ ts:new Date(b.ts.getTime()+6*H), userId:'u1', userName:'Asad Saleem', action:'archive', entity:'bill', entityId:b.id, entityLabel:b.no, summary:'Archived bill' });
       if(b.deleted) add({ ts:b.deletedAt||new Date(b.ts.getTime()+8*H), userId:'u1', userName:'Asad Saleem', action:'delete', entity:'bill', entityId:b.id, entityLabel:b.no, summary:'Moved bill to Recycle bin' });
     });
-    if(bills[2]) add({ ts:new Date(bills[2].ts.getTime()+3*H), userId:'u2', userName:'Hina Javed', action:'update', entity:'bill', entityId:bills[2].id, entityLabel:bills[2].no, summary:'Edited bill · 2 changes', changes:[{field:'Discount',from:'Rs. 0',to:'Rs. 200'},{field:'Comment',from:'—',to:'Brake check recommended next visit.'}] });
-    if(bills[5]) add({ ts:new Date(bills[5].ts.getTime()+4*H), userId:'u1', userName:'Asad Saleem', action:'update', entity:'bill', entityId:bills[5].id, entityLabel:bills[5].no, summary:'Edited bill · 2 changes', changes:[{field:'Phone',from:'0301-2345678',to:'0301-2345679'},{field:'Items',from:'2 item(s)',to:'3 item(s)'}] });
-    ['Cabin Filter','Computer Diagnostics'].forEach((nm,k)=> add({ ts:new Date(Date.now()-(42+k*6)*H), userId:'u2', userName:'Hina Javed', action:'create', entity:'product', entityId:'prod_'+nm, entityLabel:nm, summary:'Added product · '+nm }));
-    add({ ts:new Date(Date.now()-30*H), userId:'u1', userName:'Asad Saleem', action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated settings · Footer text', changes:[{field:'Footer',from:'Thank you',to:'Thank you for your business · 0300-1234567'}] });
-    add({ ts:new Date(Date.now()-22*H), userId:'u1', userName:'Asad Saleem', action:'update', entity:'user', entityId:'u3', entityLabel:'Waqar Younis', summary:'Updated permissions · applied Cashier preset' });
-    const ips=[['39.50.142.17','Lahore, Punjab · PK'],['182.185.214.6','Lahore, Punjab · PK'],['103.255.4.88','Karachi, Sindh · PK'],['119.160.116.23','Islamabad · PK']];
+    if(bills[2]) add({ ts:new Date(bills[2].ts.getTime()+3*H), userId:'u2', userName:'Hina Javed', action:'update', entity:'bill', entityId:bills[2].id, entityLabel:bills[2].no, summary:'Edited bill - 2 changes', changes:[{field:'Discount',from:'Rs. 0',to:'Rs. 200'},{field:'Comment',from:'-',to:'Brake check recommended next visit.'}] });
+    if(bills[5]) add({ ts:new Date(bills[5].ts.getTime()+4*H), userId:'u1', userName:'Asad Saleem', action:'update', entity:'bill', entityId:bills[5].id, entityLabel:bills[5].no, summary:'Edited bill - 2 changes', changes:[{field:'Phone',from:'0301-2345678',to:'0301-2345679'},{field:'Items',from:'2 item(s)',to:'3 item(s)'}] });
+    ['Cabin Filter','Computer Diagnostics'].forEach((nm,k)=> add({ ts:new Date(Date.now()-(42+k*6)*H), userId:'u2', userName:'Hina Javed', action:'create', entity:'product', entityId:'prod_'+nm, entityLabel:nm, summary:'Added product - '+nm }));
+    add({ ts:new Date(Date.now()-30*H), userId:'u1', userName:'Asad Saleem', action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated settings - Footer text', changes:[{field:'Footer',from:'Thank you',to:'Thank you for your business - 0300-1234567'}] });
+    add({ ts:new Date(Date.now()-22*H), userId:'u1', userName:'Asad Saleem', action:'update', entity:'user', entityId:'u3', entityLabel:'Waqar Younis', summary:'Updated permissions - applied Cashier preset' });
+    const ips=[['39.50.142.17','Lahore, Punjab - PK'],['182.185.214.6','Lahore, Punjab - PK'],['103.255.4.88','Karachi, Sindh - PK'],['119.160.116.23','Islamabad - PK']];
     [['u1','Asad Saleem',1.4],['u2','Hina Javed',3],['u1','Asad Saleem',26],['u3','Waqar Younis',29],['u2','Hina Javed',52],['u1','Asad Saleem',76]].forEach((lp,k)=>{ const ip=ips[k%ips.length]; add({ ts:new Date(Date.now()-lp[2]*H), userId:lp[0], userName:lp[1], action:'login', entity:'auth', entityId:lp[0], entityLabel:lp[1], summary:'Signed in', ip:ip[0], location:ip[1] }); });
     return log.sort((a,b)=> b.ts-a.ts);
   }
 
   // ---------- helpers ----------
   fmt(v){ return this.state.settings.currency + ' ' + Math.round(Number(v)||0).toLocaleString('en-US'); }
-  money(v){ return this.state.privacy ? this.state.settings.currency + ' ••••' : this.fmt(v); }
+  money(v){ return this.state.privacy ? this.state.settings.currency + ' ****' : this.fmt(v); }
   subOf(lines){ return lines.reduce((s,l)=> s + (Number(l.qty)||0)*(Number(l.price)||0), 0); }
   derive(b){
     const sub = this.subOf(b.lines);
@@ -2227,7 +2304,7 @@ class Component extends DCLogic {
     if(narrow){ small=8; base=8.5; h1=11; h2=9.5; paperW=178; pad=9; }
     else if(thermal){ small=9.5; base=10; h1=13; h2=11; paperW=240; pad=12; }
     else { small=10.5; base=11.5; h1=16; h2=13; paperW=(cfg.size==='A5'?360:460); pad=26; }
-    const ratio = cfg.size==='Letter'? 1.294 : 1.414; // Letter 8.5:11, A-series 1:√2
+    const ratio = cfg.size==='Letter'? 1.294 : 1.414; // Letter 8.5:11, A-series 1:root2
     const paperH = thermal? null : Math.round(paperW*ratio);
     const fam = thermal? "'Courier New',monospace" : "'Plus Jakarta Sans',sans-serif";
     const money = v => cur+' '+Math.round(Number(v)||0).toLocaleString('en-US');
@@ -2343,7 +2420,7 @@ class Component extends DCLogic {
     const mkPageStyle=(isLast)=> isLast
       ? Object.assign({}, paper, {height:'auto', minHeight:paperH+'px', overflow:'visible', marginBottom:'0'})
       : Object.assign({}, paper, {height:paperH+'px', minHeight:paperH+'px', overflow:'hidden', marginBottom:'20px', breakAfter:'page', pageBreakAfter:'always'});
-    const slimHeader=(no)=> h('div',{style:{borderBottom:'1px solid #e2e2e2',paddingBottom:px(6),marginBottom:px(8),display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:px(small),color:'#999'}}, h('span',{style:{fontWeight:700,color:'#777'}}, (set.businessName||'')+' · '+no), h('span',null,'continued'));
+    const slimHeader=(no)=> h('div',{style:{borderBottom:'1px solid #e2e2e2',paddingBottom:px(6),marginBottom:px(8),display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:px(small),color:'#999'}}, h('span',{style:{fontWeight:700,color:'#777'}}, (set.businessName||'')+' - '+no), h('span',null,'continued'));
     const pages = rowPages.map((pd,pi)=>{
       const full = !pd.cont || repeatHead;
       return h('div',{key:'pg'+pi, className:'invoice-page', style:mkPageStyle(pi===pageCount-1)},
@@ -2354,7 +2431,7 @@ class Component extends DCLogic {
         footerFor(pi+1, pageCount)
       );
     });
-    // hidden measuring node — rendered once per layout until its real heights are captured
+    // hidden measuring node - rendered once per layout until its real heights are captured
     const measureNode = (!mm) ? h('div',{key:'meas', className:'inv-measure', 'data-key':layoutKey,
         style:{position:'absolute',left:'-99999px',top:'0',width:contentW+'px',visibility:'hidden',pointerEvents:'none',fontFamily:fam,fontSize:px(base),lineHeight:1.45}},
         h('div',{'data-m':'header',style:{display:'flow-root'}}, header),
@@ -2404,7 +2481,7 @@ class Component extends DCLogic {
   // approach (append a clone to <body> + a `@media print` visibility hack that hides
   // every other element) is unreliable on mobile: Android's print framework and iOS
   // AirPrint frequently snapshot the page before the visibility flip has taken effect,
-  // producing a blank print/PDF preview — even though desktop (and desktop's simulated
+  // producing a blank print/PDF preview - even though desktop (and desktop's simulated
   // mobile viewport) handle it fine. Giving the invoice its own document sidesteps the
   // whole visibility trick: the iframe has nothing to hide, so it prints identically on
   // desktop and phones.
@@ -2467,7 +2544,7 @@ class Component extends DCLogic {
       try{ win.focus(); }catch(e){}
       try{ win.print(); }
       catch(e){ try{ window.print(); }catch(_){}}
-      setTimeout(cleanup, 60000); // safety net only — long enough for a slow mobile dialog
+      setTimeout(cleanup, 60000); // safety net only - long enough for a slow mobile dialog
     }catch(e){ this.toastMsg('Print dialog is unavailable here','warn'); }
   }
   // lazily loads the PDF libraries (html2canvas + jsPDF) the first time a PDF is exported
@@ -2489,7 +2566,7 @@ class Component extends DCLogic {
     const pb=this._bill(this.state.printBill);
     const cfg=this.state.printCfg||this.state.tpl;
     this.__pdfBusy=true;
-    this.toastMsg('PDF ban rahi hai…','ok');
+    this.toastMsg('PDF ban rahi hai...','ok');
     let stage=null;
     try{
       await this._ensurePdfLib();
@@ -2514,10 +2591,20 @@ class Component extends DCLogic {
       const jsPDF=window.jspdf.jsPDF;
       const sizeMap={ A4:[210,297], A5:[148,210], Letter:[215.9,279.4] };
       const thermalW = cfg.size==='58mm'?58 : cfg.size==='80mm'?80 : null;
-      const scale=Math.min(2.5, Math.max(2, (window.devicePixelRatio||1)*1.5));
+      // Target print resolution. The invoice is rendered on screen at a smaller CSS
+      // width than the physical page, so a fixed scale wouldn't reach 300 DPI. Instead
+      // we compute, per page, the html2canvas scale needed so that the raster width
+      // equals (physical page width in inches x 300) pixels -> a true 300 DPI export.
+      const DPI=300;
+      // physical printable width in mm (page width for thermal / full sheet width for A-sizes)
+      const targetWmm = thermalW ? thermalW : ((sizeMap[cfg.size]||sizeMap.A4)[0]);
+      const targetPx = (targetWmm/25.4)*DPI;
 
       let pdf=null;
       for(let i=0;i<pages.length;i++){
+        const cssW = Math.max(1, pages[i].getBoundingClientRect().width);
+        // scale so raster hits 300 DPI; clamp to keep memory sane on very small screens
+        const scale = Math.min(6, Math.max(2, targetPx/cssW));
         const canvas=await window.html2canvas(pages[i],{ scale, backgroundColor:'#ffffff', useCORS:true, logging:false });
         const imgData=canvas.toDataURL('image/png');
         const imgRatio=canvas.height/canvas.width;
@@ -2527,19 +2614,19 @@ class Component extends DCLogic {
         const orient = pw>ph ? 'landscape' : 'portrait';
         if(!pdf) pdf=new jsPDF({ orientation:orient, unit:'mm', format:[pw,ph], compress:true });
         else pdf.addPage([pw,ph], orient);
-        if(thermalW){ pdf.addImage(imgData,'PNG',0,0,pw,ph); }
+        if(thermalW){ pdf.addImage(imgData,'PNG',0,0,pw,ph,undefined,'FAST'); }
         else {
-          // A4/A5/Letter — fit to page width, keep aspect ratio, top-aligned
+          // A4/A5/Letter - fit to page width, keep aspect ratio, top-aligned
           let drawW=pw, drawH=pw*imgRatio;
           if(drawH>ph){ drawH=ph; drawW=ph/imgRatio; }
-          pdf.addImage(imgData,'PNG',(pw-drawW)/2, 0, drawW, drawH);
+          pdf.addImage(imgData,'PNG',(pw-drawW)/2, 0, drawW, drawH,undefined,'FAST');
         }
       }
       pdf.save(this._pdfFileName(pb)+'.pdf');
       this.toastMsg('PDF download ho gayi','ok');
     }catch(e){
       console.error('PDF export failed', e);
-      this.toastMsg('PDF nahi ban saki — internet connection check karein','warn');
+      this.toastMsg('PDF nahi ban saki - internet connection check karein','warn');
     }finally{
       if(stage) stage.innerHTML='';
       this.__pdfBusy=false;
@@ -2548,7 +2635,7 @@ class Component extends DCLogic {
   // ---------- preferences (persisted per user; Firestore-backed in production) ----------
   _loadPrefs(){ try{ const r=localStorage.getItem('msa_billing_prefs_v1'); return r?JSON.parse(r):null; }catch(e){ return null; } }
   _savePrefs(){ try{ localStorage.setItem('msa_billing_prefs_v1', JSON.stringify({ tpl:this.state.tpl, listBatch:this.state.settings.listBatch, autoLoad:this.state.settings.autoLoad })); }catch(e){} }
-  // ---------- list paging (infinite scroll → Firestore cursor pages) ----------
+  // ---------- list paging (infinite scroll -> Firestore cursor pages) ----------
   onMainScroll(e){ const el=e.currentTarget||e.target; if(!el) return; const r=this.state.route;
     this._scrollPos=this._scrollPos||{}; this._scrollPos[r]=el.scrollTop;               // per-page scroll memory
     const sc=el.scrollTop>6; if(sc!==this.state.scrolled) this.setState({ scrolled:sc });
@@ -2570,14 +2657,14 @@ class Component extends DCLogic {
   clearFlt(){ this.setState({ billFlt:{ status:'all', from:'', to:'', amtOp:'any', amtVal:'', penOp:'any', penVal:'', hasComment:false, hasNote:false }, billSearch:{q:'',applied:''}, searchResults:null }); }
   toggleFltPanel(){ this.setState(s=>({ fltOpen:!s.fltOpen })); }
   _loadPresets(){ try{ const r=localStorage.getItem('msa_billing_presets_v1'); return r?JSON.parse(r):[]; }catch(e){ return []; } }
-  savePreset(){ const name=(this.state.presetDraft||'').trim(); if(!name){ this.toastMsg('Preset ka naam likhein','warn'); return; } const p={ id:'pr'+Date.now(), name, q:(this.state.billSearch.applied||this.state.billSearch.q||'').trim(), flt:JSON.parse(JSON.stringify(this.state.billFlt)) }; const list=[...this.state.presets, p]; this.setState({ presets:list, presetDraft:'' }); try{ localStorage.setItem('msa_billing_presets_v1', JSON.stringify(list)); }catch(e){} this.logActivity({ action:'create', entity:'preset', entityId:p.id, entityLabel:name, summary:'Saved shared filter preset · '+name }); this.toastMsg('Preset poori shop ke liye save ho gaya','ok'); }
+  savePreset(){ const name=(this.state.presetDraft||'').trim(); if(!name){ this.toastMsg('Preset ka naam likhein','warn'); return; } const p={ id:'pr'+Date.now(), name, q:(this.state.billSearch.applied||this.state.billSearch.q||'').trim(), flt:JSON.parse(JSON.stringify(this.state.billFlt)) }; const list=[...this.state.presets, p]; this.setState({ presets:list, presetDraft:'' }); try{ localStorage.setItem('msa_billing_presets_v1', JSON.stringify(list)); }catch(e){} this.logActivity({ action:'create', entity:'preset', entityId:p.id, entityLabel:name, summary:'Saved shared filter preset - '+name }); this.toastMsg('Preset poori shop ke liye save ho gaya','ok'); }
   applyPresetFilter(id){ const p=this.state.presets.find(x=>x.id===id); if(!p) return; this.setState({ billSearch:{q:p.q||'',applied:p.q||''}, billFlt:JSON.parse(JSON.stringify(p.flt)), fltOpen:false }); this._runSearch(p.q||''); }
   deletePresetFilter(id){ const list=this.state.presets.filter(x=>x.id!==id); this.setState({ presets:list }); try{ localStorage.setItem('msa_billing_presets_v1', JSON.stringify(list)); }catch(e){} if(!list.length) this.setState({presetEdit:false}); }
-  confirmDeletePreset(id, name){ this.askConfirm({ title:'Delete this preset?', message:'“'+name+'” will be removed for the whole shop.', confirmLabel:'Delete preset', danger:true, onConfirm:()=>this.deletePresetFilter(id) }); }
+  confirmDeletePreset(id, name){ this.askConfirm({ title:'Delete this preset?', message:'"'+name+'" will be removed for the whole shop.', confirmLabel:'Delete preset', danger:true, onConfirm:()=>this.deletePresetFilter(id) }); }
   togglePresetEdit(){ this.setState(s=>({ presetEdit:!s.presetEdit })); }
   presetScrollBy(dir){ const el=document.getElementById('presetScroller'); if(el){ el.scrollLeft += dir*200; setTimeout(()=>this._updatePresetArrows(), 60); } }
   _updatePresetArrows(){ if(this.state.route!=='bills'){ if(this.state.presetCanPrev||this.state.presetCanNext) this.setState({ presetCanPrev:false, presetCanNext:false }); return; } const el=document.getElementById('presetScroller'); let prev=false, next=false; if(el && !this.state.isMobile){ prev=el.scrollLeft>2; next=el.scrollLeft < (el.scrollWidth-el.clientWidth-2); } if(prev!==this.state.presetCanPrev || next!==this.state.presetCanNext) this.setState({ presetCanPrev:prev, presetCanNext:next }); }
-  _defaultPresets(){ const base={ status:'all', from:'', to:'', amtOp:'any', amtVal:'', penOp:'any', penVal:'', hasComment:false, hasNote:false }; const mk=(name,patch)=>({ id:'prd_'+name.toLowerCase().replace(/[^a-z0-9]+/g,'_'), name, q:'', flt:{...base, ...patch} }); return [ mk('Unpaid',{status:'unpaid'}), mk('Partial',{status:'partial'}), mk('Paid',{status:'paid'}), mk('Has pending',{status:'pending'}), mk('≥ 10,000',{amtOp:'gte',amtVal:'10000'}), mk('With note',{hasNote:true}), mk('Archived',{status:'archived'}) ]; }
+  _defaultPresets(){ const base={ status:'all', from:'', to:'', amtOp:'any', amtVal:'', penOp:'any', penVal:'', hasComment:false, hasNote:false }; const mk=(name,patch)=>({ id:'prd_'+name.toLowerCase().replace(/[^a-z0-9]+/g,'_'), name, q:'', flt:{...base, ...patch} }); return [ mk('Unpaid',{status:'unpaid'}), mk('Partial',{status:'partial'}), mk('Paid',{status:'paid'}), mk('Has pending',{status:'pending'}), mk('>= 10,000',{amtOp:'gte',amtVal:'10000'}), mk('With note',{hasNote:true}), mk('Archived',{status:'archived'}) ]; }
   setPresetDraft(v){ this.setState({ presetDraft:v }); }
 
   // ---------- phone / car normalize + validate (PK mobile + PTCL landline) ----------
@@ -2592,7 +2679,7 @@ class Component extends DCLogic {
   carCore(s){ return String(s==null?'':s).toUpperCase().replace(/[^A-Z0-9]/g,''); }
   carMatch(billCar, query){ const q=this.carCore(query); if(!q) return false; return this.carCore(billCar).indexOf(q)>=0; }
   commitPhone(){ this.setState(s=>{ const e=s.editor; if(!e) return {}; const v=this.validatePhone(e.phone); const phone=(v.ok&&v.type!=='none')?this.fmtPhone(e.phone):e.phone; return { editor:{...e, phone, phoneCommitted:true, phoneErr: v.ok?'':'Phone number sahi format me nahi (e.g. 0307-2924105 ya 042-35761234)'} }; }, ()=>this._fetchPhoneHist()); }
-  commitCar(){ this.setState(s=>{ const e=s.editor; if(!e) return {}; const v=this.validateCar(e.car); const car=v.ok&&e.car?this.canonCar(e.car):e.car; return { editor:{...e, car, carCommitted:true, carErr: v.ok?'':'Car number sahi nahi lag raha — sirf letters/numbers (e.g. LEA-1234)'} }; }, ()=>this._fetchCarHist()); }
+  commitCar(){ this.setState(s=>{ const e=s.editor; if(!e) return {}; const v=this.validateCar(e.car); const car=v.ok&&e.car?this.canonCar(e.car):e.car; return { editor:{...e, car, carCommitted:true, carErr: v.ok?'':'Car number sahi nahi lag raha - sirf letters/numbers (e.g. LEA-1234)'} }; }, ()=>this._fetchCarHist()); }
   async _fetchPhoneHist(){ const e=this.state.editor; if(!e||!this.db) return; const v=this.validatePhone(e.phone); if(!(v.ok && v.type!=='none')){ this.setState(s=> s.editor?({editor:{...s.editor, phoneInfoData:null}}):{}); return; } try{ const agg=await this.db.customerHistoryByPhone(e.phone, e.id); this.setState(s=> (s.editor && this.canonPhone(s.editor.phone)===this.canonPhone(e.phone))? ({editor:{...s.editor, phoneInfoData:agg}}):{}); }catch(err){} }
   async _fetchCarHist(){ const e=this.state.editor; if(!e||!this.db) return; const v=this.validateCar(e.car); if(!(v.ok && this.carCore(e.car))){ this.setState(s=> s.editor?({editor:{...s.editor, carInfoData:null}}):{}); return; } try{ const agg=await this.db.customerHistoryByCar(e.car, e.id); this.setState(s=> (s.editor && this.carCore(s.editor.car)===this.carCore(e.car))? ({editor:{...s.editor, carInfoData:agg}}):{}); }catch(err){} }
 
@@ -2602,6 +2689,87 @@ class Component extends DCLogic {
   _histAgg(ms){ if(!ms.length) return {count:0}; let total=0, pend=0, pc=0, last=null; ms.forEach(b=>{ const d=this.derive(b); total+=d.total; if(d.pending>0){ pend+=d.pending; pc++; } if(!last||b.ts>last) last=b.ts; }); return {count:ms.length, total, pending:pend, pendingCount:pc, last}; }
 
   // ---------- reports model ----------
+  // Ultimate safeguard: rebuild EVERY report total from the actual bills. A deliberate repair
+  // the user can run any time — guarantees reports can never stay wrong (drift, missed update,
+  // imported/legacy data, etc.). Costs reads (scans bills once) so it's an explicit action.
+  repairReports(){
+    if(this.isBusy('repair-reports')) return;
+    this.askConfirm({ title:'Recalculate all totals?', message:'Reports ke saare totals dobara actual bills se ginne jayenge taake har number bilkul sahi rahe. Bills zyada hon to thoda waqt lag sakta hai.', confirmLabel:'Recalculate', onConfirm:()=>{
+      this.runAction('repair-reports', async()=>{
+        const res=await this.db.recomputeStats((n)=>{ this.setState({ blocking:{ msg:'Recalculating... '+n+' bills' } }); });
+        this._loadDash(); if(this.state.route==='reports') this._loadReport();
+        this.logActivity({ action:'settings', entity:'settings', entityId:'reports', entityLabel:'Reports', summary:'Recalculated report totals ('+((res&&res.scanned)||0)+' bills)' });
+        this.toastMsg('Reports recalculate ho gayi - '+((res&&res.scanned)||0)+' bills','ok');
+      }, { block:'Recalculating...', errMsg:'Recalculate nahi ho saka - internet check karein' });
+    }});
+  }
+  // ===== Recalculate job (FRONT-END controller) =====
+  // Drives the whole recalc UI as a small state machine. In demo/local mode it runs a local
+  // engine that streams granular progress AND performs the real repair via db.recomputeStats.
+  // The BACKEND batch will swap this engine for a Cloud Function that writes live progress to
+  // RTDB, which this same UI will subscribe to instead (the state shape stays identical).
+  _recalcBlank(){ return { open:false, phase:'idle', from:'', to:'', progress:0, bills:{done:0,total:0}, months:{done:0,total:0}, days:{done:0,total:0}, logs:[], logFilter:'all', summary:null, startedBy:'', error:'' }; }
+  _fmtDay(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  _recalcDefaultRange(){ const to=new Date(); const from=new Date(); from.setDate(from.getDate()-6); return { from:this._fmtDay(from), to:this._fmtDay(to) }; }
+  recalcOpenConfirm(){ const r=this._recalcDefaultRange(); this.setState({ recalc:{ ...this._recalcBlank(), phase:'confirm', from:r.from, to:r.to } }); }
+  recalcCancelConfirm(){ this.setState(s=> (s.recalc&&s.recalc.phase==='confirm')? { recalc:this._recalcBlank() } : {}); }
+  recalcSetField(field,val){ this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), [field]:val } })); }
+  recalcSetPreset(kind){ const to=new Date(); const from=new Date(); if(kind==='7d') from.setDate(from.getDate()-6); else if(kind==='1m') from.setMonth(from.getMonth()-1); else if(kind==='1y') from.setFullYear(from.getFullYear()-1); else if(kind==='all') from.setFullYear(from.getFullYear()-10); this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), from:this._fmtDay(from), to:this._fmtDay(to) } })); }
+  recalcToggleDetail(){ this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), open:!(s.recalc&&s.recalc.open) } })); }
+  recalcSetLogFilter(f){ this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), logFilter:f } })); }
+  _recalcLog(level,msg){ this.setState(s=>{ const r=s.recalc||this._recalcBlank(); const logs=[...r.logs, { t:Date.now(), level, msg }]; if(logs.length>600) logs.splice(0, logs.length-600); return { recalc:{ ...r, logs } }; }); }
+  recalcStart(){
+    const r=this.state.recalc||this._recalcBlank();
+    if(!r.from || !r.to){ this.toastMsg('From aur To date dono chunein','warn'); return; }
+    if(r.from>r.to){ this.toastMsg('From date, To date se pehle honi chahiye','warn'); return; }
+    const u=this.state.authUser;
+    this.setState({ recalc:{ ...this._recalcBlank(), phase:'running', open:true, from:r.from, to:r.to, startedBy:(u&&u.fullName)||'' } });
+    this._recalcLog('info','Recalculation shuru ('+r.from+' se '+r.to+')');
+    this._recalcRun(r.from, r.to);
+  }
+  async _recalcRun(from, to){
+    try{
+      const fromD=new Date(from+'T00:00:00'), toD=new Date(to+'T23:59:59');
+      const dayMs=86400000; const totalDays=Math.max(1, Math.round((toD-fromD)/dayMs)+1);
+      const monthsSet={}; for(let i=0;i<totalDays;i++){ const d=new Date(fromD.getTime()+i*dayMs); monthsSet[d.getFullYear()+'-'+(d.getMonth()+1)]=1; }
+      const totalMonths=Math.max(1, Object.keys(monthsSet).length);
+      let bills=[];
+      try{ if(this.db.raw && this.db.raw.query){ const res=await this.db.raw.query('bills',{ where:[['deleted','==',false],['tsMs','>=',fromD.getTime()],['tsMs','<=',toD.getTime()]], orderBy:['tsMs','asc'], limit:3000 }); bills=res.rows||[]; } }catch(e){ this._recalcLog('error','Bills fetch nahi ho saki: '+(e&&e.message||e)); }
+      this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), bills:{done:0,total:bills.length}, months:{done:0,total:totalMonths}, days:{done:0,total:totalDays} } }));
+      this._recalcLog('info', bills.length+' bills, '+totalMonths+' months, '+totalDays+' days process karne hain');
+      let bi=0, mi=0, di=0; const seenMonth={};
+      const tick=async()=>{
+        const cur=this.state.recalc; if(!cur || cur.phase!=='running') return;   // stopped/cleared
+        if(bi<bills.length){
+          const b=bills[bi]; bi++;
+          this._recalcLog('info','Processing bill '+(b.no||b.id));
+          const d=new Date(Number(b.tsMs)||Date.now()); const mk=d.getFullYear()+'-'+(d.getMonth()+1);
+          if(!seenMonth[mk]){ seenMonth[mk]=1; mi++; this._recalcLog('ok','Month '+mk+' completed'); }
+          di=Math.min(totalDays, Math.round((bi/Math.max(1,bills.length))*totalDays));
+          const progress=Math.round((bi/Math.max(1,bills.length))*100);
+          this.setState(s=>({ recalc:{ ...s.recalc, bills:{done:bi,total:bills.length}, months:{done:Math.min(mi,totalMonths),total:totalMonths}, days:{done:di,total:totalDays}, progress } }));
+          this._recalcTimer=setTimeout(tick, 55);
+        } else {
+          try{ if(this.db.recomputeStats) await this.db.recomputeStats(); }catch(e){ this._recalcLog('error','Repair write failed: '+(e&&e.message||e)); }
+          this._loadDash(); if(this.state.route==='reports') this._loadReport();
+          const errCount=((this.state.recalc&&this.state.recalc.logs)||[]).filter(l=>l.level==='error').length;
+          this.setState(s=>({ recalc:{ ...s.recalc, phase:'done', progress:100, bills:{done:bills.length,total:bills.length}, months:{done:totalMonths,total:totalMonths}, days:{done:totalDays,total:totalDays}, summary:{ bills:bills.length, months:totalMonths, days:totalDays, errors:errCount } } }));
+          this._recalcLog('ok','Recalculation mukammal');
+          this.toastMsg('Recalculation mukammal','ok');
+          try{ this.logActivity({ action:'settings', entity:'settings', entityId:'reports', entityLabel:'Reports', summary:'Recalculated report totals ('+bills.length+' bills)' }); }catch(e){}
+        }
+      };
+      if(bills.length){ this._recalcTimer=setTimeout(tick, 80); }
+      else {
+        try{ if(this.db.recomputeStats) await this.db.recomputeStats(); }catch(e){ this._recalcLog('error','Repair write failed: '+(e&&e.message||e)); }
+        this._loadDash(); if(this.state.route==='reports') this._loadReport();
+        this.setState(s=>({ recalc:{ ...s.recalc, phase:'done', progress:100, summary:{ bills:0, months:totalMonths, days:totalDays, errors:0 } } }));
+        this._recalcLog('ok','Is range me koi bill nahi mila; aggregates saaf kar diye');
+      }
+    }catch(e){ this._recalcLog('error','Fatal: '+(e&&e.message||e)); this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), phase:'error', error:(e&&e.message)||'error' } })); }
+  }
+  recalcStop(){ const u=this.state.authUser; if(!(u&&u.role==='Admin')){ this.toastMsg('Sirf Admin process rok sakta hai','warn'); return; } clearTimeout(this._recalcTimer); this.setState(s=>({ recalc:{ ...(s.recalc||this._recalcBlank()), phase:'stopped' } })); this._recalcLog('error','Process admin ne rok diya'); this.toastMsg('Process rok diya gaya','warn'); }
+  recalcClear(){ clearTimeout(this._recalcTimer); this.setState({ recalc:this._recalcBlank() }); }
   repSet(view){ this.setState({ report:{ view, anchor:new Date(), sel:null } }, ()=>this._loadReport()); }
   repSelect(i){ this.setState(s=>({ report:{...s.report, sel: s.report.sel===i?null:i } })); }
   repNav(delta){ this.setState(s=>{ const r=s.report; if(r.view==='total') return {}; const a=new Date(r.anchor); if(r.view==='day') a.setDate(a.getDate()+delta); else if(r.view==='month') a.setMonth(a.getMonth()+delta); else if(r.view==='year') a.setFullYear(a.getFullYear()+delta); return { report:{...r, anchor:a, sel:null} }; }, ()=>this._loadReport()); }
@@ -2618,10 +2786,10 @@ class Component extends DCLogic {
     const r=this.state.report; const bk=(this.state.reportData&&this.state.reportData.buckets[i]); if(!bk) return;
     let from, to, label, dayMs;
     const a=new Date(r.anchor);
-    if(r.view==='day'){ const d=new Date(a.getFullYear(),a.getMonth(),a.getDate(),bk.key,0,0,0); from=d.getTime(); to=d.getTime()+3600*1000-1; dayMs=new Date(a.getFullYear(),a.getMonth(),a.getDate()).getTime(); label=this.dateStrFull(d)+' · '+String(bk.key).padStart(2,'0')+':00'; }
+    if(r.view==='day'){ const d=new Date(a.getFullYear(),a.getMonth(),a.getDate(),bk.key,0,0,0); from=d.getTime(); to=d.getTime()+3600*1000-1; dayMs=new Date(a.getFullYear(),a.getMonth(),a.getDate()).getTime(); label=this.dateStrFull(d)+' - '+String(bk.key).padStart(2,'0')+':00'; }
     else if(r.view==='month'){ const d=new Date(a.getFullYear(),a.getMonth(),bk.key); from=new Date(d).setHours(0,0,0,0); to=new Date(d).setHours(23,59,59,999); dayMs=new Date(a.getFullYear(),a.getMonth(),bk.key).getTime(); label=this.dateStrFull(d); }
     else return;
-    this.setState({ blocking:{ msg:'Loading bills…' } });
+    this.setState({ blocking:{ msg:'Loading bills...' } });
     this.db.billsForDay(dayMs).then(all=>{
       const bills=all.filter(b=> b.ts.getTime()>=from && b.ts.getTime()<=to);
       this.setState({ blocking:null, route:'bills', billsSecondary:true, billsScopeLabel:label, billsReturn:'reports', searchResults:bills, billSearch:{q:'',applied:'__day__'}, billFlt:{ status:'all', from:'', to:'', amtOp:'any', amtVal:'', penOp:'any', penVal:'', hasComment:false, hasNote:false }, navOpen:false, userMenuOpen:false });
@@ -2658,7 +2826,7 @@ class Component extends DCLogic {
     const src=s.viewSource||ids; const have={}; ids.forEach(x=>have[x]=1); const more=src.filter(x=>!have[x]);
     if(more.length){ const ext=ids.concat(more.slice(0,this._batch())); this.setState({ viewIds:ext, viewId:ext[j], viewAnim:'next', viewDir:1 }); this._clearViewAnim(); return; }
     if(this._viewCtx==='bills' && s.billsHasMore && !s.billsLoading){
-      this.runAction('viewnext', async()=>{ await this._loadBills(false); this.setState(st=>{ const cur=st.bills.map(b=>b.id); const merged=this._mergeArr(st.viewIds, cur); const k=merged.indexOf(st.viewId); const nx=Math.min(merged.length-1, k+1); return { viewIds:merged, viewSource:this._mergeArr(st.viewSource||[], cur), viewId:merged[nx], viewAnim:'next', viewDir:1 }; }); this._clearViewAnim(); }, { block:'Loading more bills…' });
+      this.runAction('viewnext', async()=>{ await this._loadBills(false); this.setState(st=>{ const cur=st.bills.map(b=>b.id); const merged=this._mergeArr(st.viewIds, cur); const k=merged.indexOf(st.viewId); const nx=Math.min(merged.length-1, k+1); return { viewIds:merged, viewSource:this._mergeArr(st.viewSource||[], cur), viewId:merged[nx], viewAnim:'next', viewDir:1 }; }); this._clearViewAnim(); }, { block:'Loading more bills...' });
     }
   }
   toggleActMenu(){ this.setState(s=>({ actMenuOpen:!s.actMenuOpen })); }
@@ -2675,17 +2843,17 @@ class Component extends DCLogic {
   }
   _billDiff(o, nv){
     const ch=[]; const cur=this.state.settings.currency; const money=v=> cur+' '+Math.round(Number(v)||0).toLocaleString('en-US');
-    const cmp=(label,a,b)=>{ a=(a==null?'':String(a)); b=(b==null?'':String(b)); if(a!==b) ch.push({field:label, from:a||'—', to:b||'—'}); };
+    const cmp=(label,a,b)=>{ a=(a==null?'':String(a)); b=(b==null?'':String(b)); if(a!==b) ch.push({field:label, from:a||'-', to:b||'-'}); };
     cmp('Customer', o.name, nv.name); cmp('Phone', o.phone, nv.phone); cmp('Car', o.car, nv.car); cmp('Model', o.model, nv.model);
     cmp('Subtotal', money(this.subOf(o.lines)), money(this.subOf(nv.lines)));
     cmp('Discount', money(o.discount||0), money(nv.discount||0));
     // item-level detail (added / removed / qty or price changed)
     const oldL=o.lines||[], newL=nv.lines||[]; const k=l=>String(l.name||'').trim().toLowerCase();
     const om={}, nm={}; oldL.forEach(l=>{ om[k(l)]=l; }); newL.forEach(l=>{ nm[k(l)]=l; });
-    const fl=l=>`${l.name} · Qty ${l.qty} @ ${money(l.price)}`;
-    newL.forEach(l=>{ if(k(l)&&!om[k(l)]) ch.push({field:'Item added', from:'—', to:fl(l)}); });
-    oldL.forEach(l=>{ if(k(l)&&!nm[k(l)]) ch.push({field:'Item removed', from:fl(l), to:'—'}); });
-    newL.forEach(l=>{ const o2=om[k(l)]; if(o2 && ((Number(o2.qty)||0)!==(Number(l.qty)||0) || (Number(o2.price)||0)!==(Number(l.price)||0))) ch.push({field:'Item · '+l.name, from:`Qty ${o2.qty} @ ${money(o2.price)}`, to:`Qty ${l.qty} @ ${money(l.price)}`}); });
+    const fl=l=>`${l.name} - Qty ${l.qty} @ ${money(l.price)}`;
+    newL.forEach(l=>{ if(k(l)&&!om[k(l)]) ch.push({field:'Item added', from:'-', to:fl(l)}); });
+    oldL.forEach(l=>{ if(k(l)&&!nm[k(l)]) ch.push({field:'Item removed', from:fl(l), to:'-'}); });
+    newL.forEach(l=>{ const o2=om[k(l)]; if(o2 && ((Number(o2.qty)||0)!==(Number(l.qty)||0) || (Number(o2.price)||0)!==(Number(l.price)||0))) ch.push({field:'Item - '+l.name, from:`Qty ${o2.qty} @ ${money(o2.price)}`, to:`Qty ${l.qty} @ ${money(l.price)}`}); });
     cmp('Comment', o.comment, nv.comment); cmp('Internal note', o.note, nv.note);
     if(o.ts && nv.ts && o.ts.getTime && nv.ts.getTime && o.ts.getTime()!==nv.ts.getTime()) cmp('Date', this.dateStrFull(o.ts), this.dateStrFull(nv.ts));
     return ch;
@@ -2707,19 +2875,19 @@ class Component extends DCLogic {
   _upsertArchived(b){ this.setState(s=>({ archivedBills: s.archivedBills.find(x=>x.id===b.id)? s.archivedBills.map(x=>x.id===b.id?b:x) : [b, ...s.archivedBills] })); }
 
   archiveBill(id){ const b=this._bill(id); if(!b) return; const arch=!b.archived;
-    this.runAction('arch-'+id, async()=>{ const nb=await this.db.archiveBill(id, b, arch); this._replaceBill(nb); if(arch){ this._removeFromActive(id); this._upsertArchived(nb); } else { this._upsertActive(nb); this._removeFromArchived(id); } this.logActivity({ action:arch?'archive':'unarchive', entity:'bill', entityId:id, entityLabel:b.no, summary:arch?'Archived bill':'Unarchived bill' }); this.toastMsg(arch?'Bill archive ho gaya':'Bill unarchive ho gaya','ok'); if(arch) this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block: arch?'Archiving…':'Restoring…' });
+    this.runAction('arch-'+id, async()=>{ const nb=await this.db.archiveBill(id, b, arch); this._replaceBill(nb); if(arch){ this._removeFromActive(id); this._upsertArchived(nb); } else { this._upsertActive(nb); this._removeFromArchived(id); } this.logActivity({ action:arch?'archive':'unarchive', entity:'bill', entityId:id, entityLabel:b.no, summary:arch?'Archived bill':'Unarchived bill' }); this.toastMsg(arch?'Bill archive ho gaya':'Bill unarchive ho gaya','ok'); if(arch) this._afterRemoveFromView(id); this._refreshDerived(); }, { block: arch?'Archiving...':'Restoring...' });
   }
-  deleteBill(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete this bill?', message:b.no+' Recycle bin me chala jayega — kabhi bhi restore kar sakte hain.', confirmLabel:'Delete bill', danger:true, onConfirm:()=>this._doDeleteBill(id) }); }
+  deleteBill(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete this bill?', message:b.no+' Recycle bin me chala jayega - kabhi bhi restore kar sakte hain.', confirmLabel:'Delete bill', danger:true, onConfirm:()=>this._doDeleteBill(id) }); }
   _doDeleteBill(id){ const b=this._bill(id); if(!b) return;
-    this.runAction('del-'+id, async()=>{ await this.db.softDeleteBill(id, b); this._removeFromActive(id); this.setState(s=>({ pendingBills:s.pendingBills.filter(x=>x.id!==id), archivedBills:s.archivedBills.filter(x=>x.id!==id), binLoaded:false })); this.logActivity({ action:'delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Moved bill to Recycle bin' }); this.toastMsg('Bill Recycle bin me chala gaya','ok'); this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block:'Deleting…' });
+    this.runAction('del-'+id, async()=>{ await this.db.softDeleteBill(id, b); this._removeFromActive(id); this.setState(s=>({ pendingBills:s.pendingBills.filter(x=>x.id!==id), archivedBills:s.archivedBills.filter(x=>x.id!==id), binLoaded:false })); this.logActivity({ action:'delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Moved bill to Recycle bin' }); this.toastMsg('Bill Recycle bin me chala gaya','ok'); this._afterRemoveFromView(id); this._refreshDerived(); }, { block:'Deleting...' });
   }
   restoreBill(id){ const b=this._bill(id); if(!b) return;
-    this.runAction('rest-'+id, async()=>{ await this.db.restoreBill(id, b); this.setState(s=>({ binBills:s.binBills.filter(x=>x.id!==id), billsLoaded:false, archivedLoaded: b.archived? false : s.archivedLoaded })); this.logActivity({ action:'restore', entity:'bill', entityId:id, entityLabel:b.no, summary:'Restored bill from Recycle bin' }); this.toastMsg('Bill restore ho gaya','ok'); this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block:'Restoring…' });
+    this.runAction('rest-'+id, async()=>{ await this.db.restoreBill(id, b); this.setState(s=>({ binBills:s.binBills.filter(x=>x.id!==id), billsLoaded:false, archivedLoaded: b.archived? false : s.archivedLoaded })); this.logActivity({ action:'restore', entity:'bill', entityId:id, entityLabel:b.no, summary:'Restored bill from Recycle bin' }); this.toastMsg('Bill restore ho gaya','ok'); this._afterRemoveFromView(id); this._refreshDerived(); }, { block:'Restoring...' });
   }
-  permanentDelete(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this.setState(s=>{ const vc={...(s.viewCache||{})}; delete vc[id]; return { binBills:s.binBills.filter(x=>x.id!==id), viewCache:vc }; }); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._afterRemoveFromView(id); }, { block:'Deleting…' }) }); }
-  emptyBin(){ if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin · '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); }, { block:'Emptying bin…' }) }); }
+  permanentDelete(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this.setState(s=>{ const vc={...(s.viewCache||{})}; delete vc[id]; return { binBills:s.binBills.filter(x=>x.id!==id), viewCache:vc }; }); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._afterRemoveFromView(id); this._refreshDerived(); }, { block:'Deleting...' }) }); }
+  emptyBin(){ if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin - '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); this._refreshDerived(); }, { block:'Emptying bin...' }) }); }
   _afterRemoveFromView(id){ if(this.state.route!=='view') return; const oldIds=this.state.viewIds||[]; const oldIdx=oldIds.indexOf(id); const ids=oldIds.filter(x=>x!==id); if(!ids.length){ this.viewBack(); return; } const nextId=ids[Math.min(Math.max(0,oldIdx), ids.length-1)]; this.setState({ viewIds:ids, viewId:nextId }); }
-  deleteProduct(name){ this.askConfirm({ title:'Delete product?', message:'“'+name+'” catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product · '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting…' }) }); }
+  deleteProduct(name){ this.askConfirm({ title:'Delete product?', message:'"'+name+'" catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product - '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting...' }) }); }
   // ---------- activity visibility (per user) ----------
   setActivityScope(uid, mode){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; const scope = mode==='specific'? (Array.isArray(u.activityScope)?u.activityScope:[]) : mode;
     this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, activityScope:scope}:x) }));
@@ -2731,7 +2899,7 @@ class Component extends DCLogic {
   }
   _saveScopeDebounced(uid, scope, label){ clearTimeout(this._scopeT); this._scopeQ={uid,scope,label}; this._scopeT=setTimeout(()=>{ const q=this._scopeQ; this._scopeQ=null; this.runAction('scope-'+q.uid, async()=>{ const r=await this.db.updateUser(q.uid, { activityScope:q.scope }); if(!r.ok){ this.toastMsg(r.error||'Save nahi hua','warn'); await this._loadUsers(); return; } this.logActivity({ action:'update', entity:'user', entityId:q.uid, entityLabel:q.label, summary:'Updated activity visibility' }); }, { headerSave:true }); }, 600); }
   // ---------- settings (debounced single log entry) ----------
-  setSetting(field, val, label){ this.setState(s=>({ settings:{...s.settings, [field]:val} })); this._dirty=this._dirty||new Set(); this._dirty.add(label); clearTimeout(this._setT); this._setT=setTimeout(()=>{ const fields=[...(this._dirty||[])]; this._dirty=new Set(); if(fields.length) this.logActivity({ action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated settings · '+fields.join(', ') }); }, 1500); if(field==='startNo' && this.db){ const n=Number(val); if(n>0) this.db.bumpCounterIfHigher(n).then(()=>this.db.peekCounter()).then(c=>{ if(c!=null) this.setState({ counter:c }); }).catch(()=>{}); } }
+  setSetting(field, val, label){ this.setState(s=>({ settings:{...s.settings, [field]:val} })); this._dirty=this._dirty||new Set(); this._dirty.add(label); clearTimeout(this._setT); this._setT=setTimeout(()=>{ const fields=[...(this._dirty||[])]; this._dirty=new Set(); if(fields.length) this.logActivity({ action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated settings - '+fields.join(', ') }); }, 1500); if(field==='startNo' && this.db){ const n=Number(val); if(n>0) this.db.bumpCounterIfHigher(n).then(()=>this.db.peekCounter()).then(c=>{ if(c!=null) this.setState({ counter:c }); }).catch(()=>{}); } }
 
   // ---------- logo upload ----------
   onLogoUpload(file){
@@ -2746,7 +2914,7 @@ class Component extends DCLogic {
         cv.getContext('2d').drawImage(img,0,0,w,hh);
         const data=cv.toDataURL('image/png');
         this.setState(s=>({ settings:{...s.settings, logoData:data} }));
-        this.toastMsg('Logo saved ('+w+'×'+hh+') as text','ok');
+        this.toastMsg('Logo saved ('+w+'x'+hh+') as text','ok');
         this.logActivity({ action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated business logo' });
       };
       img.src=reader.result;
@@ -2766,7 +2934,7 @@ class Component extends DCLogic {
   }
   _asScale(){ const sp=this.state.settings.animSpeed; return (sp==null)?1:(sp<=0?0:(1/sp)); }
   _mergeArr(a,b){ const seen={}, out=[]; (a||[]).concat(b||[]).forEach(x=>{ if(!seen[x]){ seen[x]=1; out.push(x); } }); return out; }
-  blankEditor(){ const u=this.state.authUser; return { id:null, no:this.state.settings.prefix+'-'+(this.state.counter==null?'…':this.state.counter), name:'', phone:'', car:'', model:'', lines:[{name:'',qty:'1',price:''}], discount:'0', paid:'0', lockedPaid:0, paidTouched:false, comment:'', note:'', history:[], ts:new Date(), createdBy:(u&&u.fullName)||'', phoneInfoData:null, carInfoData:null, phoneCommitted:false, carCommitted:false }; }
+  blankEditor(){ const u=this.state.authUser; return { id:null, no:this.state.settings.prefix+'-'+(this.state.counter==null?'...':this.state.counter), name:'', phone:'', car:'', model:'', lines:[{name:'',qty:'1',price:''}], discount:'0', paid:'0', lockedPaid:0, paidTouched:false, comment:'', note:'', history:[], ts:new Date(), createdBy:(u&&u.fullName)||'', phoneInfoData:null, carInfoData:null, phoneCommitted:false, carCommitted:false }; }
   openBill(id){
     if(!this.can('bills_edit')){ this.toastMsg('Aapko bill edit karne ki ijazat nahi','warn'); return; }
     const b = this._bill(id); if(!b) return;
@@ -2830,7 +2998,7 @@ class Component extends DCLogic {
         this._replaceBill(nb); this._upsertActive(nb);
         const changes = oldBill ? this._billDiff(oldBill, payload) : [];
         if(oldBill){ const op=oldBill.history.reduce((a,h)=>a+(h.amount||0),0); if(paid>op) changes.push({field:'Paid',from:this.fmt(op),to:this.fmt(paid)}); }
-        this.logActivity({ action:'update', entity:'bill', entityId:nb.id, entityLabel:nb.no, summary: changes.length?('Edited bill · '+changes.length+' change'+(changes.length>1?'s':'')):'Saved bill (no changes)', changes });
+        this.logActivity({ action:'update', entity:'bill', entityId:nb.id, entityLabel:nb.no, summary: changes.length?('Edited bill - '+changes.length+' change'+(changes.length>1?'s':'')):'Saved bill (no changes)', changes });
         this.toastMsg('Bill update ho gaya','ok');
         this.setState(s=>({ route:'view', editor:null, viewId:nb.id, viewIds:(s.viewIds&&s.viewIds.indexOf(nb.id)>=0)?s.viewIds:[nb.id] }));
       } else {
@@ -2842,9 +3010,9 @@ class Component extends DCLogic {
         this.logActivity({ action:'create', entity:'bill', entityId:nb.id, entityLabel:nb.no, summary:'Created bill for '+(ed.name||'walk-in customer') });
         this.toastMsg('Bill '+nb.no+' save ho gaya','ok');
       }
-      this._loadDash();
+      this._refreshDerived();
       this.setState({ productsLoaded:false });
-    }, { block: ed.id?'Saving changes…':'Creating bill…', errMsg:'Bill save nahi hua — internet check karein' });
+    }, { block: ed.id?'Saving changes...':'Creating bill...', errMsg:'Bill save nahi hua - internet check karein' });
   }
   cancelBill(){ this.setState(s=>{ const backToView = s.editFrom==='view' && s.editor && s.editor.id; return backToView? { route:'view', editor:null, viewId:s.editor.id } : { route:'dashboard', editor:null }; }); }
 
@@ -2871,11 +3039,11 @@ class Component extends DCLogic {
         : { kind:'adjustment', amount:-raw, comment:comment||'Refund to customer', ts:new Date(), by:(u&&u.fullName)||'' };
       const nb=await this.db.addHistory(id, b, entry);
       this._replaceBill(nb);
-      this.logActivity({ action:kind==='payment'?'payment':'adjustment', entity:'bill', entityId:id, entityLabel:b.no, summary:(kind==='payment'?'Payment ':'Refund ')+this.fmt(raw)+(comment?(' · '+comment):'') });
+      this.logActivity({ action:kind==='payment'?'payment':'adjustment', entity:'bill', entityId:id, entityLabel:b.no, summary:(kind==='payment'?'Payment ':'Refund ')+this.fmt(raw)+(comment?(' - '+comment):'') });
       this.toastMsg(kind==='payment'?'Payment add ho gaya':'Adjustment record ho gaya','ok');
       this.setState({ payDraft:{amount:'',comment:'',kind}, pendingLoaded:false });
-      if(this.state.route==='dashboard') this._loadDash();
-    }, { block: kind==='payment'?'Recording payment…':'Recording adjustment…' });
+      this._refreshDerived();
+    }, { block: kind==='payment'?'Recording payment...':'Recording adjustment...' });
   }
 
   // ---------- icons ----------
@@ -2889,7 +3057,7 @@ class Component extends DCLogic {
   renderVals(){
     const S=this.state; const cur=S.settings.currency;
     const ROUTE=S.route;
-    const titles={ dashboard:['Dashboard','Overview for '+this.periodLabel()], bill:[S.editor&&S.editor.id?'Edit bill':'New bill','Customer, products & payment'], bills:['All bills','Browse and open any bill'], search:['Search','Find by phone, car or customer'], pending:['Pending bills','Outstanding balances'], products:['Products','Auto-populated catalogue'], reports:['Reports','Counter-backed totals'], templates:['Print templates','Customise & preview'], admin:['Users & permissions','Manage staff access'], settings:['Settings','Global preferences'], about:['About','App information & support'], menu:['Menu','All sections'], view:['Bill','Saved bill'], activity:['Activity logs','Every action · who and when'], bin:['Recycle bin','Deleted bills — restore or remove'] };
+    const titles={ dashboard:['Dashboard','Overview for '+this.periodLabel()], bill:[S.editor&&S.editor.id?'Edit bill':'New bill','Customer, products & payment'], bills:['All bills','Browse and open any bill'], search:['Search','Find by phone, car or customer'], pending:['Pending bills','Outstanding balances'], products:['Products','Auto-populated catalogue'], reports:['Reports','Counter-backed totals'], templates:['Print templates','Customise & preview'], admin:['Users & permissions','Manage staff access'], settings:['Settings','Global preferences'], about:['About','App information & support'], menu:['Menu','All sections'], view:['Bill','Saved bill'], activity:['Activity logs','Every action - who and when'], bin:['Recycle bin','Deleted bills - restore or remove'] };
     let [pageTitle,pageSub]=titles[ROUTE]||['',''];
     if(ROUTE==='bills' && S.billsSecondary){ pageTitle = S.billsScopeLabel || 'Bills'; pageSub = 'Report se chuni hui bills'; }
 
@@ -2939,7 +3107,7 @@ class Component extends DCLogic {
       { label:'Total billed', value:this.money(tBilled), color:'#1a1d24', sub:this.periodLabel(), icon:this.ic('receipt',17), iconWrap:'width:30px;height:30px;border-radius:9px;background:#f0ecff;color:#5b3df5;display:flex;align-items:center;justify-content:center', stripe:'position:absolute;left:0;top:0;bottom:0;width:3px;background:#5b3df5' },
       { label:'Total paid', value:this.money(tPaid), color:'#0f7a52', sub:'Collected', icon:this.ic('cash',17), iconWrap:'width:30px;height:30px;border-radius:9px;background:#e7f5ee;color:#0f7a52;display:flex;align-items:center;justify-content:center', stripe:'position:absolute;left:0;top:0;bottom:0;width:3px;background:#0f7a52' },
       { label:'Total pending', value:this.money(tPending), color:'#b8740a', sub:'Outstanding', icon:this.ic('clock',17), iconWrap:'width:30px;height:30px;border-radius:9px;background:#fdf2e0;color:#b8740a;display:flex;align-items:center;justify-content:center', stripe:'position:absolute;left:0;top:0;bottom:0;width:3px;background:#b8740a' },
-      { label:'Bills created', value: S.privacy?'••':String(tCount), color:'#1a1d24', sub:this.periodLabel(), icon:this.ic('box',17), iconWrap:'width:30px;height:30px;border-radius:9px;background:#eef4ff;color:#1f6feb;display:flex;align-items:center;justify-content:center', stripe:'position:absolute;left:0;top:0;bottom:0;width:3px;background:#1f6feb' },
+      { label:'Bills created', value: S.privacy?'**':String(tCount), color:'#1a1d24', sub:this.periodLabel(), icon:this.ic('box',17), iconWrap:'width:30px;height:30px;border-radius:9px;background:#eef4ff;color:#1f6feb;display:flex;align-items:center;justify-content:center', stripe:'position:absolute;left:0;top:0;bottom:0;width:3px;background:#1f6feb' },
     ];
 
     const mkCard=(b)=>{
@@ -2949,7 +3117,7 @@ class Component extends DCLogic {
         total:this.money(d.total), accent:m.accent, statusLabel:m.label, badge:this.badgeStyle(d.status),
         subLabel: paidView?'Paid':'Pending', subValue: this.money(paidView?d.paid:d.pending),
         _pending:d.pending, _total:d.total, _paid:d.paid, _status:d.status, _ts:b.ts,
-        onClick:()=>this.openView(b.id,[b.id],null,'bills'), dateHide: S.isMobile?'display:none':'display:block', dateInline: S.isMobile?'':('· '+this.dateStr(b.ts)) };
+        onClick:()=>this.openView(b.id,[b.id],null,'bills'), dateHide: S.isMobile?'display:none':'display:block', dateInline: S.isMobile?'':('- '+this.dateStr(b.ts)) };
     };
     const withCtx=(arr, sourceIds, ctx)=>{ const ids=arr.map(x=>x.id); const src=(sourceIds&&sourceIds.length)?sourceIds:ids; arr.forEach(x=>{ x.onClick=()=>this.openView(x.id, ids, src, ctx||'bills'); }); return arr; };
     const sorted=S.bills.slice().sort((a,b)=> b.ts-a.ts);              // loaded active bills (server-paginated)
@@ -2987,11 +3155,11 @@ class Component extends DCLogic {
     const billsShownLabel = '';
     // active filter chips
     const chips=[];
-    if(bq) chips.push({rk:'q', label:'“'+bq+'”', onClear:()=>this.clearBillSearch()});
+    if(bq) chips.push({rk:'q', label:'"'+bq+'"', onClear:()=>this.clearBillSearch()});
     if(flt.status!=='all') chips.push({rk:'st', label:({paid:'Paid',partial:'Partial',unpaid:'Unpaid',pending:'Has pending',archived:'Archived'})[flt.status]||flt.status, onClear:()=>this.setFlt({status:'all'})});
-    if(flt.from||flt.to) chips.push({rk:'dt', label:(flt.from||'…')+' → '+(flt.to||'…'), onClear:()=>this.setFlt({from:'',to:''})});
-    if(flt.amtOp!=='any') chips.push({rk:'amt', label:'Total '+(flt.amtOp==='gte'?'≥':'≤')+' '+this.fmt(num(flt.amtVal)), onClear:()=>this.setFlt({amtOp:'any',amtVal:''})});
-    if(flt.penOp!=='any') chips.push({rk:'pen', label:'Pending '+(flt.penOp==='gte'?'≥':'≤')+' '+this.fmt(num(flt.penVal)), onClear:()=>this.setFlt({penOp:'any',penVal:''})});
+    if(flt.from||flt.to) chips.push({rk:'dt', label:(flt.from||'...')+' -> '+(flt.to||'...'), onClear:()=>this.setFlt({from:'',to:''})});
+    if(flt.amtOp!=='any') chips.push({rk:'amt', label:'Total '+(flt.amtOp==='gte'?'>=':'<=')+' '+this.fmt(num(flt.amtVal)), onClear:()=>this.setFlt({amtOp:'any',amtVal:''})});
+    if(flt.penOp!=='any') chips.push({rk:'pen', label:'Pending '+(flt.penOp==='gte'?'>=':'<=')+' '+this.fmt(num(flt.penVal)), onClear:()=>this.setFlt({penOp:'any',penVal:''})});
     if(flt.hasComment) chips.push({rk:'cm', label:'Has comment', onClear:()=>this.setFlt({hasComment:false})});
     if(flt.hasNote) chips.push({rk:'nt', label:'Has note', onClear:()=>this.setFlt({hasNote:false})});
     const activeChips=chips.map(c=>({ ...c, style:'display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 11px;background:#eef4ff;border:1px solid #d6e6fd;border-radius:20px;font-size:12px;font-weight:600;color:#1f6feb' }));
@@ -3000,7 +3168,7 @@ class Component extends DCLogic {
     const sgbase='padding:7px 12px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid';
     const statusOpts=[['all','All'],['paid','Paid'],['partial','Partial'],['unpaid','Unpaid'],['pending','Has pending'],['archived','Archived']];
     const fltStatus=statusOpts.map(([k,label])=>({rk:k+(flt.status===k?'1':'0'),label,onClick:()=>this.setFlt({status:k}),style: flt.status===k?`${sgbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${sgbase} #ece4d7;background:#fff;color:#3f4753`}));
-    const opOpts=[['any','Any'],['gte','≥ at least'],['lte','≤ at most']];
+    const opOpts=[['any','Any'],['gte','>= at least'],['lte','<= at most']];
     const fltAmtOps=opOpts.map(([k,label])=>({rk:'a'+k+(flt.amtOp===k?'1':'0'),label,onClick:()=>this.setFlt({amtOp:k}),style: flt.amtOp===k?`${sgbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${sgbase} #ece4d7;background:#fff;color:#3f4753`}));
     const fltPenOps=opOpts.map(([k,label])=>({rk:'p'+k+(flt.penOp===k?'1':'0'),label,onClick:()=>this.setFlt({penOp:k}),style: flt.penOp===k?`${sgbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${sgbase} #ece4d7;background:#fff;color:#3f4753`}));
     const ckStyle=(on)=>`width:22px;height:22px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;border:1.5px solid ${on?'#1f6feb':'#d8cfc2'};background:${on?'#1f6feb':'#fff'};color:#fff`;
@@ -3014,7 +3182,7 @@ class Component extends DCLogic {
     // recycle bin (server-paginated)
     const deletedSorted=S.binBills.slice().sort((a,b)=> (b.deletedAt||b.ts)-(a.deletedAt||a.ts));
     const binIds=deletedSorted.map(b=>b.id);
-    const binView=deletedSorted.map(b=>{ const d=this.derive(b); const m=this.statusMeta(d.status); return { rk:b.id, id:b.id, no:b.no, name:b.name||'Walk-in customer', car:b.car||'—', phone:b.phone||'', total:this.money(d.total), statusLabel:m.label, badge:this.badgeStyle(d.status), deletedStr:b.deletedAt?('Deleted '+this.dateStr(b.deletedAt)):'Deleted', onOpen:()=>this.openView(b.id, binIds, binIds), onRestore:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.restoreBill(b.id); }, onPurge:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.permanentDelete(b.id); } }; });
+    const binView=deletedSorted.map(b=>{ const d=this.derive(b); const m=this.statusMeta(d.status); return { rk:b.id, id:b.id, no:b.no, name:b.name||'Walk-in customer', car:b.car||'-', phone:b.phone||'', total:this.money(d.total), statusLabel:m.label, badge:this.badgeStyle(d.status), deletedStr:b.deletedAt?('Deleted '+this.dateStr(b.deletedAt)):'Deleted', onOpen:()=>this.openView(b.id, binIds, binIds), onRestore:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.restoreBill(b.id); }, onPurge:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.permanentDelete(b.id); } }; });
     const binCount=deletedSorted.length;
     const binEmpty=binCount===0 && !S.binHasMore && S.binLoaded;
     const binHasMore=S.binHasMore; const binRemaining=0;
@@ -3040,21 +3208,21 @@ class Component extends DCLogic {
           canRemove: e.lines.length>1 };
       });
       let phoneInfo=null; const phoneErr=e.phoneErr||'';
-      if(e.phoneCommitted && !phoneErr){ const v=this.validatePhone(e.phone); if(v.ok&&v.type!=='none'){ const h=e.phoneInfoData; if(h&&h.count){ phoneInfo={ text:`Is number par pehle ${h.count} bill${h.count>1?'s':''} ban chuke — total ${this.fmt(h.total)} ka kaam. Aakhri bill ${this.dateStr(h.last)}.`, hasPending:h.pending>0, pendingText:`Is number par ${h.pendingCount} bill ka ${this.fmt(h.pending)} abhi pending hai.` }; } else if(h){ phoneInfo={ text:'Naya customer — is number par pehle koi bill nahi.', hasPending:false }; } else { phoneInfo={ text:'Checking…', hasPending:false, loading:true }; } } }
+      if(e.phoneCommitted && !phoneErr){ const v=this.validatePhone(e.phone); if(v.ok&&v.type!=='none'){ const h=e.phoneInfoData; if(h&&h.count){ phoneInfo={ text:`Is number par pehle ${h.count} bill${h.count>1?'s':''} ban chuke - total ${this.fmt(h.total)} ka kaam. Aakhri bill ${this.dateStr(h.last)}.`, hasPending:h.pending>0, pendingText:`Is number par ${h.pendingCount} bill ka ${this.fmt(h.pending)} abhi pending hai.` }; } else if(h){ phoneInfo={ text:'Naya customer - is number par pehle koi bill nahi.', hasPending:false }; } else { phoneInfo={ text:'Checking...', hasPending:false, loading:true }; } } }
       let carInfo=null; const carErr=e.carErr||'';
-      if(e.carCommitted && !carErr){ const v=this.validateCar(e.car); if(v.ok && this.carCore(e.car)){ const h=e.carInfoData; if(h&&h.count){ const mn=h.multiNum?' (yeh gaari pehle kisi aur number par bhi aayi thi)':''; carInfo={ text:`Is gaari ke pehle ${h.count} bill${h.count>1?'s':''} ban chuke — total ${this.fmt(h.total)}.`+mn+` Aakhri ${this.dateStr(h.last)}.`, hasPending:h.pending>0, pendingText:`Is gaari ka ${h.pendingCount} bill me ${this.fmt(h.pending)} abhi pending hai.` }; } else if(h){ carInfo={ text:'Nayi gaari — is number par pehle koi bill nahi.', hasPending:false }; } else { carInfo={ text:'Checking…', hasPending:false, loading:true }; } } }
+      if(e.carCommitted && !carErr){ const v=this.validateCar(e.car); if(v.ok && this.carCore(e.car)){ const h=e.carInfoData; if(h&&h.count){ const mn=h.multiNum?' (yeh gaari pehle kisi aur number par bhi aayi thi)':''; carInfo={ text:`Is gaari ke pehle ${h.count} bill${h.count>1?'s':''} ban chuke - total ${this.fmt(h.total)}.`+mn+` Aakhri ${this.dateStr(h.last)}.`, hasPending:h.pending>0, pendingText:`Is gaari ka ${h.pendingCount} bill me ${this.fmt(h.pending)} abhi pending hai.` }; } else if(h){ carInfo={ text:'Nayi gaari - is number par pehle koi bill nahi.', hasPending:false }; } else { carInfo={ text:'Checking...', hasPending:false, loading:true }; } } }
       ed={ no:e.no, id:e.id, editing:!!e.id, name:e.name, phone:e.phone, car:e.car, model:e.model,
         phoneInfo, phoneErr, carInfo, carErr,
-        dateStr: e.id?('Created '+this.dateStr(e.ts)):'New · defaults to server time',
+        dateStr: e.id?('Created '+this.dateStr(e.ts)):'New - defaults to server time',
         dateHint: e.id?('Created '+this.dateStrFull(e.ts)):'Defaults to current server time',
-        by: e.createdBy||(S.authUser&&S.authUser.fullName)||'—', byInitials:(e.createdBy||(S.authUser&&S.authUser.fullName)||'?').split(' ').map(x=>x[0]).slice(0,2).join(''),
+        by: e.createdBy||(S.authUser&&S.authUser.fullName)||'-', byInitials:(e.createdBy||(S.authUser&&S.authUser.fullName)||'?').split(' ').map(x=>x[0]).slice(0,2).join(''),
         dtValue: this.toDatetimeLocal(e.ts instanceof Date?e.ts:new Date()),
         onDateTime: ev=>{ const v=ev.target.value; if(v) this.setEd({ts:new Date(v)}); },
         statusBadge:this.badgeStyle(st), statusLabel:m.label,
         lines, discount:e.discount, total:String(total), paid:e.paid, comment:e.comment, note:e.note,
         subtotalDisp:this.fmt(sub), pendingDisp:this.fmt(pending), totalDisp:this.fmt(total),
         pendingBg: pending>0?'#fdf2e0':'#e7f5ee', pendingInk: pending>0?'#b8740a':'#0f7a52',
-        payNote: e.lockedPaid>0?('Pehle se '+this.fmt(e.lockedPaid)+' paid — total isse kam nahi ho sakta.'):'Default poora total. Kam karke pending chhor sakte hain.',
+        payNote: e.lockedPaid>0?('Pehle se '+this.fmt(e.lockedPaid)+' paid - total isse kam nahi ho sakta.'):'Default poora total. Kam karke pending chhor sakte hain.',
         onName:ev=>this.setEd({name:ev.target.value}), onPhone:ev=>this.setEd({phone:ev.target.value, phoneCommitted:false, phoneErr:''}), onCar:ev=>this.setEd({car:ev.target.value, carCommitted:false, carErr:''}), onModel:ev=>this.setEd({model:ev.target.value}),
         onPhoneCommit:()=>this.commitPhone(), onPhoneKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitPhone(); } },
         onCarCommit:()=>this.commitCar(), onCarKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitCar(); } },
@@ -3102,7 +3270,7 @@ class Component extends DCLogic {
         const restoreBtn='display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 16px;border-radius:11px;font-size:13.5px;font-weight:700;cursor:pointer;border:1px solid #cdeadb;background:#fff;color:#0f7a52'+(S.isMobile?';flex:1':'');
         const purgeBtn='display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 16px;border-radius:11px;font-size:13.5px;font-weight:700;cursor:pointer;border:none;background:#c0392b;color:#fff'+(S.isMobile?';flex:1':'');
         vw={ no:vb.no, name:vb.name||'Walk-in customer', phone:vb.phone||'\u2014', car:vb.car||'\u2014', model:vb.model||'\u2014',
-          dateFull:this.dateStrFull(vb.ts), by:vb.createdBy||'—', businessName:set.businessName, header:S.tpl.header||'',
+          dateFull:this.dateStrFull(vb.ts), by:vb.createdBy||'-', businessName:set.businessName, header:S.tpl.header||'',
           statusLabel:m.label, statusBadge:this.badgeStyle(d.status), logoNode, lines,
           subtotalDisp:this.money(d.sub), discountDisp:this.money(d.disc), hasDiscount:d.disc>0, totalDisp:this.money(d.total),
           paidDisp:this.money(d.paid), pendingDisp:this.money(d.pending), payPct,
@@ -3156,7 +3324,7 @@ class Component extends DCLogic {
     const repLoading=S.reportLoading;
     const monthsSh=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const monthsFull=['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const repLong=(key)=>{ if(repView==='day'){ const hh=String(key).padStart(2,'0'); return ra.getDate()+' '+monthsSh[ra.getMonth()]+' '+ra.getFullYear()+' · '+hh+':00'; } if(repView==='month'){ return key+' '+monthsSh[ra.getMonth()]+' '+ra.getFullYear(); } if(repView==='year'){ return monthsFull[key]+' '+ra.getFullYear(); } return String(key); };
+    const repLong=(key)=>{ if(repView==='day'){ const hh=String(key).padStart(2,'0'); return ra.getDate()+' '+monthsSh[ra.getMonth()]+' '+ra.getFullYear()+' - '+hh+':00'; } if(repView==='month'){ return key+' '+monthsSh[ra.getMonth()]+' '+ra.getFullYear(); } if(repView==='year'){ return monthsFull[key]+' '+ra.getFullYear(); } return String(key); };
     const nBars=repB.buckets.length||1;
     // adaptive: how many labels fit without crowding (each needs ~26px). Hidden ones get a tick mark.
     const approxW = S.isMobile ? 320 : 720;
@@ -3164,7 +3332,7 @@ class Component extends DCLogic {
     const labelStep = Math.max(1, Math.ceil(nBars/maxLabels));
     const repBars=repB.buckets.map((b,i)=>{ const hpct=b.amount>0?Math.max(3,Math.round(b.amount/maxAmt*100)):0; const seld=S.report.sel===i; const longL=repLong(b.key); const isEdge=(i===0||i===nBars-1); const showLabel=(i%labelStep===0)||seld||isEdge; const hasData=b.count>0;
       return { rk:'rb'+repView+'_'+b.key, label: b.label, showLabel, showTick: !showLabel && hasData, sel:seld,
-        title:`${longL} · ${this.money(b.amount)} · ${b.count} bill${b.count===1?'':'s'}${b.pending>0?(' · pending '+this.money(b.pending)):''}`,
+        title:`${longL} - ${this.money(b.amount)} - ${b.count} bill${b.count===1?'':'s'}${b.pending>0?(' - pending '+this.money(b.pending)):''}`,
         onClick:()=>this.repSelect(i), onDbl:()=>this.repDrill(i),
         colStyle:'flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:0; cursor:pointer',
         trackStyle:'position:relative; width:100%; max-width:30px; height:158px; display:flex; align-items:flex-end; justify-content:center',
@@ -3177,14 +3345,42 @@ class Component extends DCLogic {
     });
     const repViewBtns=[['day','Day'],['month','Month'],['year','Year'],['total','Total']].map(([k,label])=>({rk:k+(repView===k?'1':'0'),label,onClick:()=>this.repSet(k),style: repView===k?`${segBase}; background:#1a1d24; color:#fff`:`${segBase}; background:transparent; color:#8a8175`}));
     let repPeriodLabel='';
-    try{ if(repView==='day') repPeriodLabel=new Intl.DateTimeFormat('en-US',{day:'numeric',month:'long',year:'numeric'}).format(ra); else if(repView==='month') repPeriodLabel=new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(ra); else if(repView==='year') repPeriodLabel=String(ra.getFullYear()); else repPeriodLabel='All years · '+repB.firstYear+'–'+new Date().getFullYear(); }catch(e){}
+    try{ if(repView==='day') repPeriodLabel=new Intl.DateTimeFormat('en-US',{day:'numeric',month:'long',year:'numeric'}).format(ra); else if(repView==='month') repPeriodLabel=new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(ra); else if(repView==='year') repPeriodLabel=String(ra.getFullYear()); else repPeriodLabel='All years - '+repB.firstYear+'-'+new Date().getFullYear(); }catch(e){}
     let repSel=null;
     if(S.report.sel!=null && repB.buckets[S.report.sel]){ const bk=repB.buckets[S.report.sel]; const selLong=repLong(bk.key); const isLeaf=(repView==='day'||repView==='month'); const canDrill=(repView==='year'||repView==='total');
       let actionLabel='', onAction=null, showAction=false;
-      if(bk.count>0 && isLeaf){ actionLabel=bk.count+' bill'+(bk.count===1?'':'s')+' kholें'; onAction=()=>this.repOpenBills(S.report.sel); showAction=true; }
+      if(bk.count>0 && isLeaf){ actionLabel=bk.count+' bill'+(bk.count===1?'':'s')+' kholein'; onAction=()=>this.repOpenBills(S.report.sel); showAction=true; }
       else if(canDrill && bk.count>0){ actionLabel='Open '+selLong; onAction=()=>this.repDrill(S.report.sel); showAction=true; }
-      repSel={ label:selLong, amount:this.money(bk.amount), pending:this.money(bk.pending), count: S.privacy?'••':String(bk.count), hasPending:bk.pending>0, hasBills:bk.count>0, showAction, actionLabel, onAction }; }
-    const report={ viewBtns:repViewBtns, view:repView, periodLabel:repPeriodLabel, bars:repBars, totAmount:this.money(repTotAmt), totPending:this.money(repTotPen), totCount: S.privacy?'••':String(repTotCnt), canNav:repView!=='total', onPrev:()=>this.repNav(-1), onNext:()=>this.repNav(1), hint:(repView==='day'?'Har bar = ek ghanta. Bar par click se detail.':(repView==='total'?'Har bar = ek saal. Double-click ya “Open” se us saal ke months.':'Bar par click = detail, double-click ya “Open” se androni view.')), sel:repSel, loading:repLoading, showChart:(!repLoading && repB.buckets.length>0), empty:(!repLoading && repTotCnt===0) };
+      repSel={ label:selLong, amount:this.money(bk.amount), pending:this.money(bk.pending), count: S.privacy?'**':String(bk.count), hasPending:bk.pending>0, hasBills:bk.count>0, showAction, actionLabel, onAction }; }
+    // ===== Recalculate job view-model (drives Settings trigger + detailed modal) =====
+    const _rc = S.recalc || null;
+    const _isAdmin = !!(S.authUser && S.authUser.role==='Admin');
+    const recalcOpen=()=>this.recalcOpenConfirm();
+    let recalc=null;
+    if(_rc){
+      const rem=(o)=>Math.max(0,((o&&o.total)||0)-((o&&o.done)||0));
+      const pct=(o)=>((o&&o.total)?Math.round((o.done/o.total)*100):0);
+      const prog=Math.max(0,Math.min(100,Math.round(_rc.progress||0)));
+      const logsAll=_rc.logs||[];
+      const logsF=(_rc.logFilter==='error')?logsAll.filter(l=>l.level==='error'):(_rc.logFilter==='info')?logsAll.filter(l=>l.level!=='error'):logsAll;
+      recalc={
+        phase:_rc.phase, open:!!_rc.open, from:_rc.from, to:_rc.to,
+        isConfirm:_rc.phase==='confirm',
+        active:(_rc.phase==='running'||_rc.phase==='done'||_rc.phase==='stopped'||_rc.phase==='error'),
+        progress:prog, progressLabel:prog+'%',
+        billsLabel:((_rc.bills&&_rc.bills.done)||0)+' / '+((_rc.bills&&_rc.bills.total)||0), billsRem:rem(_rc.bills), billsPct:pct(_rc.bills),
+        monthsLabel:((_rc.months&&_rc.months.done)||0)+' / '+((_rc.months&&_rc.months.total)||0), monthsRem:rem(_rc.months), monthsPct:pct(_rc.months),
+        daysLabel:((_rc.days&&_rc.days.done)||0)+' / '+((_rc.days&&_rc.days.total)||0), daysRem:rem(_rc.days), daysPct:pct(_rc.days),
+        logs:logsF.map((l,i)=>({ rk:'lg'+i+'_'+l.t, msg:l.msg, style:'font-family:ui-monospace,Menlo,monospace; font-size:11.5px; line-height:1.5; padding:1px 0; white-space:pre-wrap; word-break:break-word; color:'+(l.level==='error'?'#ff8f8f':l.level==='ok'?'#7ee2a8':'#9fb4d6') })),
+        filterBtns:[['all','All'],['info','Info'],['error','Errors']].map(([k,lb])=>({ rk:'f'+k+(_rc.logFilter===k?'1':'0'), label:lb, onClick:()=>this.recalcSetLogFilter(k), style:'padding:5px 11px;border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid '+(_rc.logFilter===k?'#2f7bf6':'#2a2f3a')+';background:'+(_rc.logFilter===k?'rgba(47,123,246,.18)':'transparent')+';color:'+(_rc.logFilter===k?'#9cc2ff':'#8a93a6') })),
+        summary:_rc.summary, canStop:_isAdmin,
+        statusText:(_rc.phase==='running'?'chal raha hai':_rc.phase==='done'?'mukammal':_rc.phase==='stopped'?'roka gaya':_rc.phase==='error'?'error':''),
+        onStart:()=>this.recalcStart(), onStop:()=>this.recalcStop(), onClear:()=>this.recalcClear(), onToggleDetail:()=>this.recalcToggleDetail(), onCancel:()=>this.recalcCancelConfirm(),
+        onFrom:(e)=>this.recalcSetField('from', e.target.value), onTo:(e)=>this.recalcSetField('to', e.target.value),
+        preset7:()=>this.recalcSetPreset('7d'), preset1m:()=>this.recalcSetPreset('1m'), preset1y:()=>this.recalcSetPreset('1y')
+      };
+    }
+    const report={ viewBtns:repViewBtns, view:repView, periodLabel:repPeriodLabel, bars:repBars, totAmount:this.money(repTotAmt), totPending:this.money(repTotPen), totCount: S.privacy?'**':String(repTotCnt), canNav:repView!=='total', onPrev:()=>this.repNav(-1), onNext:()=>this.repNav(1), onRepair:()=>this.repairReports(), repairLabel:(this.isBusy('repair-reports')?'Recalculating...':'Recalculate'), hint:(repView==='day'?'Har bar = ek ghanta. Bar par click se detail.':(repView==='total'?'Har bar = ek saal. Double-click ya "Open" se us saal ke months.':'Bar par click = detail, double-click ya "Open" se androni view.')), sel:repSel, loading:repLoading, showChart:(!repLoading && repB.buckets.length>0), empty:(!repLoading && repTotCnt===0) };
 
     // templates
     const tpl=S.tpl;
@@ -3192,7 +3388,7 @@ class Component extends DCLogic {
     const tbase='padding:9px 6px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid';
     const tplSizes=sizeDefs.map(([k,label])=>({ key:k, label, rk:k+(tpl.size===k?'-on':'-off'), onClick:()=>this.setState({tpl:{...tpl,size:k}}), style: tpl.size===k?`${tbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${tbase} #ece4d7;background:#fff;color:#3f4753` }));
     const thermal = tpl.size==='80mm'||tpl.size==='58mm';
-    const tplSizeNote = thermal? 'Continuous roll — content flows down, no page breaks.' : 'Multi-page: products overflow to new pages, header & footer repeat.';
+    const tplSizeNote = thermal? 'Continuous roll - content flows down, no page breaks.' : 'Multi-page: products overflow to new pages, header & footer repeat.';
     const colorOpts=['#1f6feb','#0f7a52','#5b3df5','#c0392b','#1a1d24'];
     const tplColors=colorOpts.map(c=>({ color:c, rk:c+(tpl.color===c?'-on':'-off'), onClick:()=>this.setState({tpl:{...tpl,color:c}}), style:`width:30px;height:30px;border-radius:50%;background:${c};cursor:pointer;border:${tpl.color===c?'3px solid #fff':'2px solid #fff'};box-shadow:0 0 0 ${tpl.color===c?'2px '+c:'1px #ddd'}` }));
     const colDefs=[['qty','Quantity'],['price','Unit price'],['total','Line total']];
@@ -3273,7 +3469,7 @@ class Component extends DCLogic {
       if(b){ const d=this.derive(b);
         const entries=[...b.history].sort((a,b2)=>a.ts-b2.ts).map(h=>{
           const isPay=h.kind==='payment';
-          return { title:isPay?'Payment received':'Adjustment', comment:h.comment||'—', time:this.dateStr(h.ts),
+          return { title:isPay?'Payment received':'Adjustment', comment:h.comment||'-', time:this.dateStr(h.ts),
             amount:(h.amount>=0?'+':'')+this.fmt(Math.abs(h.amount)).replace(cur+' ',cur+' '), color:isPay?'#0f7a52':'#c0392b',
             icon:this.ic(isPay?'cash':'refund',16), iconWrap:`width:32px;height:32px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;background:${isPay?'#e7f5ee':'#fdecea'};color:${isPay?'#0f7a52':'#c0392b'}` };
         });
@@ -3287,7 +3483,7 @@ class Component extends DCLogic {
     let payHint='Add a partial or full payment.'; let payHintColor='#a59c8c';
     if(historyView){ const b=this._bill(S.historyModal); const d=this.derive(b);
       if(pk==='payment') payHint='Cannot exceed remaining '+this.fmt(d.pending)+'. Total paid never goes above the bill total.';
-      else { payHint='Negative adjustment — money returned to the customer, increases pending.'; payHintColor='#c0392b'; }
+      else { payHint='Negative adjustment - money returned to the customer, increases pending.'; payHintColor='#c0392b'; }
     }
 
     // list history modal
@@ -3295,7 +3491,7 @@ class Component extends DCLogic {
     if(S.listHistory){
       const {kind,val}=S.listHistory;
       const matches=withCtx(sorted.filter(b=> (kind==='phone'?b.phone:b.car)===val ).map(mkCard), null, 'bills');
-      listHistoryView={ kind, title: kind==='phone'?'Bills for this phone':'Bills for this car', subtitle:val+' · '+matches.length+' found', bills:matches, empty:!matches.length };
+      listHistoryView={ kind, title: kind==='phone'?'Bills for this phone':'Bills for this car', subtitle:val+' - '+matches.length+' found', bills:matches, empty:!matches.length };
     }
 
     // ===== activity log =====
@@ -3373,7 +3569,7 @@ class Component extends DCLogic {
           comments:mkPT(cfg.showComments), onComments:()=>this.setPrintCfg({showComments:!cfg.showComments}),
           terms:mkPT(cfg.showTerms), onTerms:()=>this.setPrintCfg({showTerms:!cfg.showTerms}),
           pay:mkPT(cfg.showPayInfo), onPay:()=>this.setPrintCfg({showPayInfo:!cfg.showPayInfo}),
-          repeatHeader:mkPT(cfg.repeatHeader!==false), onRepeatHeader:()=>this.setPrintCfg({repeatHeader:!(cfg.repeatHeader!==false)}), repeatHeaderHint:(cfg.repeatHeader!==false)?'Header & customer details repeat on pages 2, 3…':'Only the first page shows the header; later pages start with the items.',
+          repeatHeader:mkPT(cfg.repeatHeader!==false), onRepeatHeader:()=>this.setPrintCfg({repeatHeader:!(cfg.repeatHeader!==false)}), repeatHeaderHint:(cfg.repeatHeader!==false)?'Header & customer details repeat on pages 2, 3...':'Only the first page shows the header; later pages start with the items.',
         };
       }
     }
@@ -3423,11 +3619,11 @@ class Component extends DCLogic {
       loginPwType:S.showPw?'text':'password', loginPwIcon:this.ic(S.showPw?'eyeOff':'eye',17), toggleShowPw:()=>this.setState(s=>({showPw:!s.showPw})),
       loginInputStyle:'width:100%; padding:12px 13px; background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.13); border-radius:12px; font-size:14px; font-weight:500; color:#fff; outline:none',
       loginBtnStyle:'display:flex; align-items:center; justify-content:center; gap:9px; width:100%; padding:13px; margin-top:4px; background:'+(S.loggingIn?'#1a56c0':'#1f6feb')+'; border:none; border-radius:12px; font-size:14px; font-weight:700; color:#fff; cursor:'+(S.loggingIn?'default':'pointer')+'; box-shadow:0 8px 22px rgba(31,111,235,.4)',
-      loginBtnLabel:S.loggingIn?'Signing in…':'Sign in', loginDisabled:S.loggingIn, loginBtnLabelFallback:'Sign in',
-      loginModeNote: S.dbMode==='local' ? 'Demo mode · admin@msa.com / 123456' : 'Apni shop ke account se sign in karein',
+      loginBtnLabel:S.loggingIn?'Signing in...':'Sign in', loginDisabled:S.loggingIn, loginBtnLabelFallback:'Sign in',
+      loginModeNote: S.dbMode==='local' ? 'Demo mode - admin@msa.com / 123456' : 'Apni shop ke account se sign in karein',
       onLoginEmail:ev=>this.setState({loginEmail:ev.target.value, loginErr:''}), onLoginPw:ev=>this.setState({loginPw:ev.target.value, loginErr:''}),
       onLoginSubmit:ev=>{ if(ev&&ev.preventDefault) ev.preventDefault(); this.doLogin(); },
-      userName:(S.authUser&&S.authUser.fullName)||'—', firstName:(((S.authUser&&S.authUser.fullName)||'there').trim().split(' ')[0]), userRole:(S.authUser&&S.authUser.role)||'', userInitials:((S.authUser&&S.authUser.fullName)||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase(), userColor:({Admin:'#5b3df5',Manager:'#1f6feb',Cashier:'#0f7a52',Viewer:'#8a8175'})[(S.authUser&&S.authUser.role)]||'#2f7bf6',
+      userName:(S.authUser&&S.authUser.fullName)||'-', firstName:(((S.authUser&&S.authUser.fullName)||'there').trim().split(' ')[0]), userRole:(S.authUser&&S.authUser.role)||'', userInitials:((S.authUser&&S.authUser.fullName)||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase(), userColor:({Admin:'#5b3df5',Manager:'#1f6feb',Cashier:'#0f7a52',Viewer:'#8a8175'})[(S.authUser&&S.authUser.role)]||'#2f7bf6',
       userMenuOpen:S.userMenuOpen, toggleUserMenu:()=>this.setState(s=>({userMenuOpen:!s.userMenuOpen})), userChipBg:S.userMenuOpen?'rgba(255,255,255,.08)':'transparent', userChevRot:S.userMenuOpen?180:0, onLogout:()=>this.askLogout(),
       showSidebar, isMobile:S.isMobile, navItems, bottomNav, menuItems, drawerOpen:S.isMobile&&S.navOpen,
       topbarStyle, contentStyle, pageTitle, pageSub, clockShort, clockTime, clockAmpm, clockDate, greeting,
@@ -3470,9 +3666,15 @@ class Component extends DCLogic {
       // products
       productRows, productCountLabel, productsListLoading:(S.productsLoading && !S.productsLoaded), productsEmpty:(S.products.length===0 && S.productsLoaded),
       // reports
-      report, reportLoading:repLoading,
+      report, recalc, recalcOpen, reportLoading:repLoading,
       // templates
-      tpl, tplSizes, tplSizeNote, tplColors, tplCols, tplControlsW, templatesWrapStyle, logoToggleStyle, logoKnobStyle, pv, fontPct, businessName:S.settings.businessName,
+      tpl, tplSizes, tplSizeNote, tplColors, tplCols, tplControlsW, templatesWrapStyle, logoToggleStyle, logoKnobStyle, pv, fontPct, businessName:S.settings.businessName, appName:S.appMeta.appName, appSubtitle:S.appMeta.subtitle,
+      aboutTagline:((S.appMeta.about&&S.appMeta.about.tagline))||'Crafted for car workshops - fast billing, clear payments, beautiful prints.',
+      aboutDevName:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.name))||'Hamza Javed',
+      aboutDevRole:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.role))||'App developer and designer',
+      aboutDevInitials:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.initials))||'HJ',
+      aboutDevPhone:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.phoneDisplay))||'0307-2924105',
+      aboutDevPhoneHref:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.phoneHref))||'tel:03072924105',
       tgCommentsWrap:tgComments.wrap, tgCommentsKnob:tgComments.knob, tgTermsWrap:tgTerms.wrap, tgTermsKnob:tgTerms.knob, tgPayWrap:tgPay.wrap, tgPayKnob:tgPay.knob, tgRepeatWrap:tgRepeat.wrap, tgRepeatKnob:tgRepeat.knob,
       toggleComments:()=>this.setState({tpl:{...tpl,showComments:!tpl.showComments}}), toggleTerms:()=>this.setState({tpl:{...tpl,showTerms:!tpl.showTerms}}), togglePayInfo:()=>this.setState({tpl:{...tpl,showPayInfo:!tpl.showPayInfo}}), toggleRepeatHeader:()=>this.setState(s=>({tpl:{...s.tpl,repeatHeader:!(s.tpl.repeatHeader!==false)}})),
       onFontScale:ev=>this.setState({tpl:{...tpl,fontScale:Number(ev.target.value)}}), fontScaleVal:String(tpl.fontScale||1),
@@ -3487,12 +3689,12 @@ class Component extends DCLogic {
       pwModalView: S.pwModal ? (()=>{ const u=S.users.find(x=>x.id===S.pwModal); return u?{name:u.fullName||u.email, email:u.email}:null; })() : null, pwDraft:S.pwDraft, onPwDraft:ev=>this.setState({pwDraft:ev.target.value}), closePwModal:()=>this.setState({pwModal:null,pwDraft:''}), submitPw:()=>this.submitPw(),
       addUserModalStyle:this._modal(),
       // settings
-      settings:S.settings, onCurrency:ev=>this.setSetting('currency',ev.target.value,'Currency'), onRegion:ev=>this.setSetting('region',ev.target.value,'Region'), onPrefix:ev=>this.setSetting('prefix',ev.target.value,'Bill prefix'), onStartNo:ev=>this.setSetting('startNo',ev.target.value,'Starting number'), nextBillPreview:S.settings.prefix+'-'+(S.counter==null?'…':S.counter),
+      settings:S.settings, onCurrency:ev=>this.setSetting('currency',ev.target.value,'Currency'), onRegion:ev=>this.setSetting('region',ev.target.value,'Region'), onPrefix:ev=>this.setSetting('prefix',ev.target.value,'Bill prefix'), onStartNo:ev=>this.setSetting('startNo',ev.target.value,'Starting number'), nextBillPreview:S.settings.prefix+'-'+(S.counter==null?'...':S.counter),
       onBizName:ev=>this.setSetting('businessName',ev.target.value,'Business name'), onTerms:ev=>this.setSetting('terms',ev.target.value,'Terms & conditions'), onLogoFile:ev=>this.onLogoUpload(ev.target.files&&ev.target.files[0]), removeLogo:()=>{ this.setState(s=>({settings:{...s.settings,logoData:''}})); this.logActivity({action:'settings',entity:'settings',entityId:'settings',entityLabel:'Settings',summary:'Removed business logo'}); }, hasLogo:!!S.settings.logoData, noLogo:!S.settings.logoData,
       logoPreview: S.settings.logoData ? React.createElement('img',{src:S.settings.logoData,alt:'logo',style:{width:'100%',height:'100%',objectFit:'contain'}}) : React.createElement('span',{style:{color:'#c3b9a8'}}, this.ic('box',16)),
       listBatchVal:String(S.settings.listBatch), onListBatch:ev=>this.setListPref({listBatch:Math.max(20,Math.min(100,Number(ev.target.value)||25))}), autoLoad:S.settings.autoLoad, setAutoLoad:(v)=>this.setListPref({autoLoad:v}), toggleAutoLoad:()=>this.setListPref({autoLoad:!S.settings.autoLoad}),
       autoToggleWrap:`width:42px;height:24px;border-radius:14px;border:none;cursor:pointer;position:relative;background:${S.settings.autoLoad?'#1f6feb':'#d8cfc2'};transition:.2s;flex:none`, autoToggleKnob:`position:absolute;top:3px;left:${S.settings.autoLoad?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)`,
-      animSpeedVal:String(S.settings.animSpeed==null?1:S.settings.animSpeed), animSpeedLabel:(()=>{ const v=S.settings.animSpeed==null?1:S.settings.animSpeed; return v===0?'Off':(v===1?'Standard':(v<1?'Slow':'Fast')+' · '+v+'×'); })(), onAnimSpeed:ev=>this.setSetting('animSpeed', Number(ev.target.value), 'Animation speed'),
+      animSpeedVal:String(S.settings.animSpeed==null?1:S.settings.animSpeed), animSpeedLabel:(()=>{ const v=S.settings.animSpeed==null?1:S.settings.animSpeed; return v===0?'Off':(v===1?'Standard':(v<1?'Slow':'Fast')+' - '+v+'x'); })(), onAnimSpeed:ev=>this.setSetting('animSpeed', Number(ev.target.value), 'Animation speed'),
       // activity + recycle bin + changes + confirm
       isActivity:ROUTE==='activity', isBin:ROUTE==='bin',
       activityView, activityCountLabel, activityEmpty, actScopeNote, actSortLabel,
@@ -3554,10 +3756,10 @@ class Component extends DCLogic {
     this.runAction('createuser', async()=>{
       const r=await this.db.createUser({ email, password:pwd, fullName:name, role, perms:this._rolePerms(role), activityScope: role==='Admin'?'all':'self' });
       if(!r.ok){ this.toastMsg(r.error||'User nahi bana','warn'); return; }
-      this.logActivity({ action:'create', entity:'user', entityId:r.id, entityLabel:name, summary:'Created user · '+name+' ('+role+')' });
+      this.logActivity({ action:'create', entity:'user', entityId:r.id, entityLabel:name, summary:'Created user - '+name+' ('+role+')' });
       await this._loadUsers(); this.setState({ addUserModal:false, selUserId:r.id });
-      this.toastMsg('User ban gaya · '+name,'ok');
-    }, { block:'Creating user…' });
+      this.toastMsg('User ban gaya - '+name,'ok');
+    }, { block:'Creating user...' });
   }
   // ---- edit details (full name + role) ----
   openEditUser(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; if(this._isPrimary(u)){ if(!this._iAmPrimary()){ this.toastMsg('Sirf primary admin apni profile edit kar sakta hai','warn'); return; } } else if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } const isPrimaryTarget=this._isPrimary(u); this.setState({ editUserModal:true, editDraft:{ id:u.id, fullName:u.fullName||'', email:u.email, role:u.role, editRole: !isPrimaryTarget } }); }
@@ -3571,21 +3773,21 @@ class Component extends DCLogic {
     this.runAction('edituser', async()=>{
       const r=await this.db.updateUser(d.id, patch);
       if(!r.ok){ this.toastMsg(r.error||'Update nahi hua','warn'); return; }
-      this.logActivity({ action:'update', entity:'user', entityId:d.id, entityLabel:name, summary:'Updated user details · '+name });
+      this.logActivity({ action:'update', entity:'user', entityId:d.id, entityLabel:name, summary:'Updated user details - '+name });
       await this._loadUsers(); this.setState({ editUserModal:false, editDraft:null });
       this.toastMsg('User update ho gaya','ok');
-    }, { block:'Saving…' });
+    }, { block:'Saving...' });
   }
   // ---- password ----
   openPwModal(uid){ const u=this.state.users.find(x=>x.id===uid); if(this._isPrimary(u)){ if(!this._iAmPrimary()){ this.toastMsg('Sirf primary admin apna password set kar sakta hai','warn'); return; } } else if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } this.setState({ pwModal:uid, pwDraft:'' }); }
   submitPw(){ const uid=this.state.pwModal; const pw=this.state.pwDraft||''; if(pw.length<6){ this.toastMsg('Password kam az kam 6 characters','warn'); return; } const u=this.state.users.find(x=>x.id===uid);
-    this.runAction('setpw', async()=>{ const r=await this.db.setPassword(uid, pw); if(!r.ok){ this.toastMsg(r.error||'Password set nahi hua','warn'); return; } this.logActivity({ action:'update', entity:'user', entityId:uid, entityLabel:u?(u.fullName||u.email):uid, summary:'Set new password' }); this.setState({ pwModal:null, pwDraft:'' }); this.toastMsg('Password set ho gaya','ok'); }, { block:'Setting password…' });
+    this.runAction('setpw', async()=>{ const r=await this.db.setPassword(uid, pw); if(!r.ok){ this.toastMsg(r.error||'Password set nahi hua','warn'); return; } this.logActivity({ action:'update', entity:'user', entityId:uid, entityLabel:u?(u.fullName||u.email):uid, summary:'Set new password' }); this.setState({ pwModal:null, pwDraft:'' }); this.toastMsg('Password set ho gaya','ok'); }, { block:'Setting password...' });
   }
   // ---- disable / delete ----
   toggleDisable(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; if(this._isPrimary(u)){ this.toastMsg('Primary admin disable nahi ho sakta','warn'); return; } if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } const dis=!u.disabled;
-    this.runAction('disable-'+uid, async()=>{ const r=await this.db.setDisabled(uid, dis); if(!r.ok){ this.toastMsg(r.error||'Nahi ho saka','warn'); return; } this.logActivity({ action:'update', entity:'user', entityId:uid, entityLabel:u.fullName||u.email, summary:(dis?'Disabled':'Enabled')+' account' }); await this._loadUsers(); this.toastMsg(dis?'Account disable ho gaya':'Account enable ho gaya','ok'); }, { block: dis?'Disabling…':'Enabling…' });
+    this.runAction('disable-'+uid, async()=>{ const r=await this.db.setDisabled(uid, dis); if(!r.ok){ this.toastMsg(r.error||'Nahi ho saka','warn'); return; } this.logActivity({ action:'update', entity:'user', entityId:uid, entityLabel:u.fullName||u.email, summary:(dis?'Disabled':'Enabled')+' account' }); await this._loadUsers(); this.toastMsg(dis?'Account disable ho gaya':'Account enable ho gaya','ok'); }, { block: dis?'Disabling...':'Enabling...' });
   }
-  confirmDeleteUser(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; if(this._isPrimary(u)){ this.toastMsg('Primary admin delete nahi ho sakta','warn'); return; } if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } this.askConfirm({ title:'Delete this user?', message:(u.fullName||u.email)+' ka account hamesha ke liye delete ho jayega.', confirmLabel:'Delete user', danger:true, onConfirm:()=> this.runAction('deluser-'+uid, async()=>{ const r=await this.db.deleteUser(uid); if(!r.ok){ this.toastMsg(r.error||'Delete nahi hua','warn'); return; } this.logActivity({ action:'delete', entity:'user', entityId:uid, entityLabel:u.fullName||u.email, summary:'Deleted user · '+(u.fullName||u.email) }); await this._loadUsers(); this.setState(s=>({ selUserId: (s.users[0]&&s.users[0].id)||null })); this.toastMsg('User delete ho gaya','ok'); }, { block:'Deleting user…' }) }); }
+  confirmDeleteUser(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; if(this._isPrimary(u)){ this.toastMsg('Primary admin delete nahi ho sakta','warn'); return; } if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } this.askConfirm({ title:'Delete this user?', message:(u.fullName||u.email)+' ka account hamesha ke liye delete ho jayega.', confirmLabel:'Delete user', danger:true, onConfirm:()=> this.runAction('deluser-'+uid, async()=>{ const r=await this.db.deleteUser(uid); if(!r.ok){ this.toastMsg(r.error||'Delete nahi hua','warn'); return; } this.logActivity({ action:'delete', entity:'user', entityId:uid, entityLabel:u.fullName||u.email, summary:'Deleted user - '+(u.fullName||u.email) }); await this._loadUsers(); this.setState(s=>({ selUserId: (s.users[0]&&s.users[0].id)||null })); this.toastMsg('User delete ho gaya','ok'); }, { block:'Deleting user...' }) }); }
   // ---- permissions (flat) + role preset ----
   togglePerm(uid, key){ const u=this.state.users.find(x=>x.id===uid); if(!u || !this._canActOn(u)) return; const nextPerms={...(u.perms||{}), [key]: !(u.perms&&u.perms[key])};
     this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, role:'Custom', perms:nextPerms}:x) }));   // optimistic
@@ -3598,7 +3800,7 @@ class Component extends DCLogic {
   _savePermsDebounced(uid, role, perms, label, note){
     clearTimeout(this._permT);
     this._permQueued={ uid, role, perms, label, note };
-    this._permT=setTimeout(()=>{ const q=this._permQueued; this._permQueued=null; this.runAction('perm-'+q.uid, async()=>{ const r=await this.db.updateUser(q.uid, { role:q.role, perms:q.perms }); if(!r.ok){ this.toastMsg(r.error||'Permission save nahi hui','warn'); await this._loadUsers(); return; } this.logActivity({ action:'update', entity:'user', entityId:q.uid, entityLabel:q.label, summary:'Updated permissions'+(q.note?' · '+q.note:'') }); }, { headerSave:true }); }, 650);
+    this._permT=setTimeout(()=>{ const q=this._permQueued; this._permQueued=null; this.runAction('perm-'+q.uid, async()=>{ const r=await this.db.updateUser(q.uid, { role:q.role, perms:q.perms }); if(!r.ok){ this.toastMsg(r.error||'Permission save nahi hui','warn'); await this._loadUsers(); return; } this.logActivity({ action:'update', entity:'user', entityId:q.uid, entityLabel:q.label, summary:'Updated permissions'+(q.note?' - '+q.note:'') }); }, { headerSave:true }); }, 650);
   }
 }
 </script>

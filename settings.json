@@ -1,0 +1,29 @@
+{
+  "_comment": "Single source of truth for the app's GLOBAL branding text. Edit these fields here (not in the in-app Settings screen) to change what shows across the app. The in-app 'Business Name' setting is now used ONLY on printed bill templates.",
+
+  "appName": "MSA Billing",
+  "subtitle": "MSA Auto Workshop",
+  "version": "1.0",
+
+  "about": {
+    "tagline": "Crafted for car workshops - fast billing, clear payments, beautiful prints.",
+    "copyrightYear": "2026",
+
+    "developer": {
+      "sectionLabel": "Developer",
+      "name": "Hamza Javed",
+      "role": "App developer and designer",
+      "initials": "HJ",
+      "phoneDisplay": "0307-2924105",
+      "phoneHref": "tel:03072924105"
+    },
+
+    "builtWith": {
+      "sectionLabel": "Built with",
+      "items": [
+        { "title": "React", "desc": "The entire interface is built as a React application, optimised for mobile and desktop." },
+        { "title": "Cloud Firestore", "desc": "All bills, products, users and settings are stored in Firebase Firestore, with secure rules and low-read aggregate counters." }
+      ]
+    }
+  }
+}

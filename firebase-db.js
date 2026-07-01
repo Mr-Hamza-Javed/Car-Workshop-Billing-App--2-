@@ -100,7 +100,9 @@ function billToStore(b, derive) {
     car: b.car || "", carCore: carCore(b.car), model: b.model || "",
     lines: (b.lines || []).map((l) => ({ name: l.name, qty: Number(l.qty) || 0, price: Number(l.price) || 0 })),
     discount: Number(b.discount) || 0, comment: b.comment || "", note: b.note || "",
-    tsMs: (b.ts instanceof Date ? b.ts : new Date()).getTime(),
+    // Never let a corrupt/invalid Date become NaN here — a NaN timestamp would produce a
+    // "NaN-NaN" aggregate key and poison the reports. Fall back to "now".
+    tsMs: (function () { const d = (b.ts instanceof Date ? b.ts : new Date()); const t = d.getTime(); return Number.isFinite(t) ? t : Date.now(); })(),
     createdBy: b.createdBy || "", createdById: b.createdById || "",
     archived: !!b.archived, deleted: !!b.deleted,
     deletedAtMs: b.deletedAt instanceof Date ? b.deletedAt.getTime() : (b.deletedAtMs || null),
@@ -374,7 +376,8 @@ function makeDB(A) {
   function statsBuckets(oldStore, newStore) {
     const buckets = {};
     const add = (key, fld, v) => { buckets[key] = buckets[key] || {}; buckets[key][fld] = (buckets[key][fld] || 0) + v; };
-    const counts = (s) => s && !s.deleted;
+    // a bill only contributes to stats when it exists, isn't deleted, AND has a valid timestamp
+    const counts = (s) => s && !s.deleted && Number.isFinite(Number(s.tsMs)) && Number(s.tsMs) > 0;
     if (counts(oldStore)) { ["d:" + dayKey(oldStore.tsMs), "m:" + monthKey(oldStore.tsMs)].forEach((k) => { add(k, "billed", -oldStore.total); add(k, "paid", -oldStore.paid); add(k, "pending", -oldStore.pending); add(k, "count", -1); }); }
     if (counts(newStore)) { ["d:" + dayKey(newStore.tsMs), "m:" + monthKey(newStore.tsMs)].forEach((k) => { add(k, "billed", newStore.total); add(k, "paid", newStore.paid); add(k, "pending", newStore.pending); add(k, "count", 1); }); }
     return buckets;
@@ -388,7 +391,19 @@ function makeDB(A) {
   async function writeStats(api, buckets, cur) {
     for (const key of Object.keys(buckets)) {
       const path = statsPath(key); const c = cur[path]; const b = buckets[key];
-      await api.set(path, { billed: (c.billed || 0) + (b.billed || 0), paid: (c.paid || 0) + (b.paid || 0), pending: (c.pending || 0) + (b.pending || 0), count: (c.count || 0) + (b.count || 0) });
+      const v = {
+        billed: (c.billed || 0) + (b.billed || 0),
+        paid: (c.paid || 0) + (b.paid || 0),
+        pending: (c.pending || 0) + (b.pending || 0),
+        count: (c.count || 0) + (b.count || 0),
+      };
+      // Safety floor: incremental drift or an unexpected race must NEVER surface as a negative
+      // total or count in a report. The exact true values are always restored by recomputeStats().
+      if (v.billed < 0) v.billed = 0;
+      if (v.paid < 0) v.paid = 0;
+      if (v.pending < 0) v.pending = 0;
+      if (v.count < 0) v.count = 0;
+      await api.set(path, v);
     }
   }
 
@@ -505,22 +520,40 @@ function makeDB(A) {
       return billFromStore(result.id, result.store);
     },
     async updateBill(id, bill, oldBill) {
-      const oldStore = oldBill ? billToStore(oldBill, derive) : await A.get("bills/" + id);
-      const store = billToStore(bill, derive);
+      let store;
       await A.txn(async (t) => {
+        // AUTHORITATIVE baseline = the CURRENT stored doc, read inside the transaction — never
+        // the app's possibly-stale copy. This keeps the stats delta exact even if the bill was
+        // changed on another device/tab since it was opened, and lets us preserve any payment
+        // that was recorded in parallel (an edit changes items/discount/etc.; payments are
+        // appended separately and must not be clobbered).
+        const current = await t.get("bills/" + id);
+        const curHistApp = current && Array.isArray(current.history)
+          ? current.history.map((h) => ({ kind: h.kind, amount: Number(h.amount) || 0, comment: h.comment || "", ts: new Date(h.tsMs || nowMs()), by: h.by || "" }))
+          : ((oldBill && oldBill.history) || []);
+        // the editor only ever APPENDS payments on top of what it loaded (oldBill.history);
+        // carry those appended entries over onto the authoritative history so none are lost.
+        const oldLen = (oldBill && Array.isArray(oldBill.history)) ? oldBill.history.length : 0;
+        const editAppended = oldBill ? (bill.history || []).slice(oldLen) : (current ? [] : (bill.history || []));
+        const mergedHistory = [...curHistApp, ...editAppended];
+        store = billToStore({ ...bill, history: mergedHistory }, derive);
+        const oldStore = current || (oldBill ? billToStore(oldBill, derive) : null);
         const buckets = statsBuckets(oldStore, store);
-        const cur = await readStats(t, buckets);            // reads first
-        await t.set("bills/" + id, store);                  // then writes
+        const cur = await readStats(t, buckets);            // all reads before any write
+        await t.set("bills/" + id, store);
         await writeStats(t, buckets, cur);
       });
       await ensureProducts((bill.lines || []).map((l) => l.name));
       return billFromStore(id, store);
     },
     async _flagBill(id, oldBill, patch) {
-      const oldStore = billToStore(oldBill, derive);
-      const newStore = { ...oldStore, ...patch };
+      let newStore;
       await A.txn(async (t) => {
-        const buckets = statsBuckets(oldStore, newStore);
+        // flip flags on the AUTHORITATIVE current doc (falls back to the app copy only if the
+        // doc somehow doesn't exist), so archive/delete/restore adjust stats against reality.
+        const current = (await t.get("bills/" + id)) || billToStore(oldBill, derive);
+        newStore = { ...current, ...patch };
+        const buckets = statsBuckets(current, newStore);
         const cur = await readStats(t, buckets);            // reads first
         await t.set("bills/" + id, newStore);                // then writes
         await writeStats(t, buckets, cur);
@@ -530,12 +563,41 @@ function makeDB(A) {
     archiveBill(id, oldBill, archived) { return this._flagBill(id, oldBill, { archived: !!archived }); },
     softDeleteBill(id, oldBill) { return this._flagBill(id, oldBill, { deleted: true, deletedAtMs: nowMs() }); },
     restoreBill(id, oldBill) { return this._flagBill(id, oldBill, { deleted: false, deletedAtMs: null }); },
-    async permanentDelete(id) { await A.del("bills/" + id); return { ok: true }; },
+    async permanentDelete(id) {
+      // Bills reach here from the Recycle bin, so they're already soft-deleted and no longer
+      // counted in stats. Guard the rare case of hard-deleting a still-active bill: strip its
+      // stats contribution first so no phantom totals are ever left behind.
+      const current = await A.get("bills/" + id);
+      if (current && !current.deleted) {
+        await A.txn(async (t) => {
+          const c = await t.get("bills/" + id);
+          if (c && !c.deleted) {
+            const buckets = statsBuckets(c, null);
+            const cur = await readStats(t, buckets);
+            await writeStats(t, buckets, cur);
+          }
+        });
+      }
+      await A.del("bills/" + id);
+      return { ok: true };
+    },
     async addHistory(id, oldBill, entry) {
-      const oldStore = billToStore(oldBill, derive);
-      const newStore = billToStore({ ...oldBill, history: [...(oldBill.history || []), entry] }, derive);
+      let newStore;
+      const entryStore = { kind: entry.kind, amount: Number(entry.amount) || 0, comment: entry.comment || "", tsMs: (entry.ts instanceof Date ? entry.ts : new Date()).getTime(), by: entry.by || "" };
       await A.txn(async (t) => {
-        const buckets = statsBuckets(oldStore, newStore);
+        // Append to the AUTHORITATIVE stored history: a payment added in parallel on another
+        // device survives (Firestore retries the txn on write conflict), and the stats delta is
+        // computed against the real stored state — not the app's stale snapshot.
+        const current = (await t.get("bills/" + id)) || billToStore(oldBill, derive);
+        const newHist = [...((current.history) || []), entryStore];
+        const sub = (current.lines || []).reduce((s, l) => s + (Number(l.qty) || 0) * (Number(l.price) || 0), 0);
+        const disc = Math.max(0, Math.min(sub, Number(current.discount) || 0));
+        const total = sub - disc;
+        const paid = newHist.reduce((s, h) => s + (Number(h.amount) || 0), 0);
+        const pending = Math.max(0, total - paid);
+        const status = pending <= 0 && total > 0 ? "paid" : paid > 0 ? "partial" : "unpaid";
+        newStore = { ...current, history: newHist, sub, disc, total, paid, pending, status };
+        const buckets = statsBuckets(current, newStore);
         const cur = await readStats(t, buckets);            // reads first
         await t.set("bills/" + id, newStore);                // then writes
         await writeStats(t, buckets, cur);
@@ -558,6 +620,64 @@ function makeDB(A) {
     async statsForDays(keys) { const out = {}; await Promise.all(keys.map(async (k) => { out[k] = (await A.get("stats/" + k)) || { billed: 0, paid: 0, pending: 0, count: 0 }; })); return out; },
     async statsForMonths(keys) { const out = {}; await Promise.all(keys.map(async (k) => { out[k] = (await A.get("stats_m/" + k)) || { billed: 0, paid: 0, pending: 0, count: 0 }; })); return out; },
     async allMonthStats() { const res = await A.query("stats_m", { orderBy: ["__name__", "asc"] }); const out = {}; res.rows.forEach((r) => { out[r.id] = r; }); return out; },
+
+    /* ---------- reconciliation / self-heal safeguards ----------
+       The aggregates above are maintained incrementally for cheap reads. These two methods are
+       the safety net that guarantees they can never stay wrong. */
+
+    // FULL REPAIR — rebuild every day + month aggregate from the actual (non-deleted) bills.
+    // The one guaranteed source of truth; a deliberate action (costs reads) that leaves reports
+    // provably correct no matter what drift, missed update or legacy data existed before.
+    async recomputeStats(onProgress) {
+      const days = {}, months = {};
+      const blank = () => ({ billed: 0, paid: 0, pending: 0, count: 0 });
+      const bump = (map, key, d) => { const m = map[key] || (map[key] = blank()); m.billed += d.total; m.paid += d.paid; m.pending += d.pending; m.count += 1; };
+      let startAfter = null, scanned = 0, guard = 0;
+      while (guard++ < 5000) {
+        const { rows, hasMore } = await A.query("bills", { where: [["deleted", "==", false]], orderBy: ["tsMs", "desc"], limit: 400, startAfter });
+        if (!rows.length) break;
+        for (const r of rows) {
+          const ts = Number(r.tsMs); if (!Number.isFinite(ts) || ts <= 0) continue;   // skip corrupt timestamps
+          const d = derive(billFromStore(r.id, r));
+          bump(days, dayKey(ts), d); bump(months, monthKey(ts), d);
+        }
+        scanned += rows.length;
+        if (onProgress) { try { onProgress(scanned); } catch (e) {} }
+        if (!hasMore) break;
+        startAfter = rows[rows.length - 1].tsMs;
+      }
+      // Write fresh totals, and ZERO any existing aggregate doc that no longer has bills
+      // (e.g. every bill in a day was deleted/moved) so stale numbers can't linger.
+      const [exD, exM] = await Promise.all([
+        A.query("stats", { orderBy: ["__name__", "asc"] }).catch(() => ({ rows: [] })),
+        A.query("stats_m", { orderBy: ["__name__", "asc"] }).catch(() => ({ rows: [] })),
+      ]);
+      for (const k of Object.keys(days)) await A.set("stats/" + k, days[k]);
+      for (const k of Object.keys(months)) await A.set("stats_m/" + k, months[k]);
+      for (const r of exD.rows) if (!days[r.id]) await A.set("stats/" + r.id, blank());
+      for (const r of exM.rows) if (!months[r.id]) await A.set("stats_m/" + r.id, blank());
+      return { scanned, days: Object.keys(days).length, months: Object.keys(months).length };
+    },
+
+    // CHEAP SELF-HEAL — correct ONE day's aggregates (its day doc + rolling the delta into its
+    // month doc) to match the real bills the app just read for that day's report. No-op when
+    // already consistent, so simply opening a day report quietly keeps that day accurate.
+    async reconcileDay(dayMs, truth) {
+      const k = dayKey(dayMs), mk = monthKey(dayMs);
+      const fields = ["billed", "paid", "pending", "count"];
+      const cur = (await A.get("stats/" + k)) || { billed: 0, paid: 0, pending: 0, count: 0 };
+      const same = fields.every((f) => Math.abs((cur[f] || 0) - (truth[f] || 0)) < 0.5);
+      if (same) return { fixed: false };
+      await A.txn(async (t) => {
+        const dCur = (await t.get("stats/" + k)) || { billed: 0, paid: 0, pending: 0, count: 0 };
+        const mCur = (await t.get("stats_m/" + mk)) || { billed: 0, paid: 0, pending: 0, count: 0 };
+        const dv = {}, mv = {};
+        fields.forEach((f) => { const delta = (truth[f] || 0) - (dCur[f] || 0); dv[f] = Math.max(0, truth[f] || 0); mv[f] = Math.max(0, (mCur[f] || 0) + delta); });
+        await t.set("stats/" + k, dv);
+        await t.set("stats_m/" + mk, mv);
+      });
+      return { fixed: true };
+    },
   };
 }
 
