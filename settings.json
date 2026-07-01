@@ -1,12 +1,12 @@
 {
   "_comment": "Single source of truth for the app's GLOBAL branding text. Edit these fields here (not in the in-app Settings screen) to change what shows across the app. The in-app 'Business Name' setting is now used ONLY on printed bill templates.",
 
-  "appName": "MSA Billing",
-  "subtitle": "MSA Auto Workshop",
-  "version": "1.0",
+  "appName": "Mirza Shahzad POS",
+  "subtitle": "MSA Workshop Billing",
+  "version": "1.0.0.1",
 
   "about": {
-    "tagline": "Crafted for car workshops - fast billing, clear payments, beautiful prints.",
+    "tagline": "Crafted for car workshops - fast billing, clear payments, beautiful prints by Hamza Javed.",
     "copyrightYear": "2026",
 
     "developer": {
