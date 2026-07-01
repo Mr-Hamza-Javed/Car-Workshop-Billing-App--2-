@@ -143,6 +143,11 @@ function makeLocalAdapter() {
     async set(path, data) { const [coll, id] = path.split("/"); if (id) { const ids = idx(coll); if (!ids.includes(id)) { ids.push(id); setIdx(coll, ids); } } write(path, data); },
     async update(path, patch) { const cur = read(path) || {}; write(path, { ...cur, ...patch }); },
     async del(path) { const [coll, id] = path.split("/"); if (id) setIdx(coll, idx(coll).filter((x) => x !== id)); remove(path); },
+    async getAccessStatus() {
+      let doc = read("app/access");
+      if (!doc) { doc = { isBlocked: 0, title: "Your title", message: "Your message" }; write("app/access", doc); }
+      return doc;
+    },
     async query(coll, opts) {
       opts = opts || {};
       let rows = idx(coll).map((id) => ({ id, ...(read(coll + "/" + id) || {}) }));
@@ -266,6 +271,13 @@ async function makeFirebaseAdapter() {
     async set(path, data) { await fs.setDoc(ref(path), data); },
     async update(path, patch) { await fs.setDoc(ref(path), patch, { merge: true }); },
     async del(path) { await fs.deleteDoc(ref(path)); },
+    async getAccessStatus() {
+      const d = await fs.getDoc(ref("app/access"));
+      if (d.exists()) return d.data();
+      const def = { isBlocked: 0, title: "Your title", message: "Your message" };
+      try { await fs.setDoc(ref("app/access"), def); } catch (e) { /* rules only allow create-if-missing; races are harmless */ }
+      return def;
+    },
     async query(coll, opts) {
       opts = opts || {};
       const q = fs.query(fs.collection(db, coll), ...buildConstraints(opts));
@@ -403,6 +415,7 @@ function makeDB(A) {
     /* ---------- settings ---------- */
     async getSettings() { return (await A.get("app/settings")) || null; },
     async saveSettings(s) { await A.set("app/settings", s); },
+    async getAccessStatus() { return A.getAccessStatus(); },
 
     /* ---------- counter (atomic bill number) ---------- */
     async peekCounter() { const c = await A.get("app/counter"); return c ? c.value : null; },

@@ -2,7 +2,7 @@
   "name": "msa-billing-functions",
   "description": "Cloud Functions for MSA Billing — secure user administration",
   "engines": {
-    "node": "22"
+    "node": "24"
   },
   "main": "index.js",
   "dependencies": {

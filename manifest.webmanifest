@@ -2,7 +2,7 @@
   "name": "MSA Billing — Workshop",
   "short_name": "MSA Billing",
   "description": "Car workshop billing, payments, products, reports and team management.",
-  "start_url": "./Workshop%20Billing.dc.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

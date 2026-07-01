@@ -1,0 +1,17 @@
+[debug] [2026-07-01T01:06:02.436Z] ----------------------------------------------------------------------
+[debug] [2026-07-01T01:06:02.438Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Hamza Javed\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only firestore:rules firestore:indexes functions
+[debug] [2026-07-01T01:06:02.438Z] CLI Version:   15.22.3
+[debug] [2026-07-01T01:06:02.438Z] Platform:      win32
+[debug] [2026-07-01T01:06:02.438Z] Node Version:  v22.20.0
+[debug] [2026-07-01T01:06:02.439Z] Detected Agent: unknown
+[debug] [2026-07-01T01:06:02.439Z] Time:          Wed Jul 01 2026 06:06:02 GMT+0500 (Pakistan Standard Time)
+[debug] [2026-07-01T01:06:02.439Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-01T01:06:03.774Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-01T01:06:03.774Z] > authorizing via signed-in user (billymuchly@gmail.com)
+[debug] [2026-07-01T01:06:03.774Z] [iam] checking project mirza-bills for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-07-01T01:06:03.775Z] Checked if tokens are valid: false, expires at: 1782867026780
+[debug] [2026-07-01T01:06:03.775Z] Checked if tokens are valid: false, expires at: 1782867026780
+[debug] [2026-07-01T01:06:03.775Z] > refreshing access token with scopes: []
+[debug] [2026-07-01T01:06:03.777Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-01T01:06:03.777Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]

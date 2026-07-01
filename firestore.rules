@@ -4,6 +4,12 @@ service cloud.firestore {
 
     /* ---------- helpers ---------- */
     function signedIn() { return request.auth != null; }
+    // "known" = signed in AND has an admin-created profile doc. Firebase Auth's email/password
+    // provider technically allows anyone with the public API key to self-register an account
+    // OUTSIDE this app (the app itself never exposes a sign-up form) — signedIn() alone would let
+    // such an account read data. Requiring a users/{uid} profile closes that gap: only accounts
+    // created via the adminCreateUser Cloud Function ever get one.
+    function isKnownUser() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
     function isAdmin()  { return signedIn() && request.auth.token.admin == true; }
     // permission from custom claims, e.g. perm('bills_create')
     function perm(p) {
@@ -13,22 +19,34 @@ service cloud.firestore {
       );
     }
 
-    /* ---------- users: read by any signed-in user; writes only via Cloud Functions (Admin SDK bypasses rules) ---------- */
+    /* ---------- users: read by any KNOWN user; writes only via Cloud Functions (Admin SDK bypasses rules) ---------- */
     match /users/{uid} {
-      allow read: if signedIn();
+      allow read: if isKnownUser();
       allow write: if false;   // all user admin goes through callable functions
     }
 
-    /* ---------- app: settings + counter ---------- */
+    /* ---------- app: settings + counter + access (kill switch) ---------- */
+    match /app/access {
+      // must be readable by EVERYONE, even signed-out — the app checks this before showing login.
+      allow read: if true;
+      // the app may create the default (unblocked) doc once if it doesn't exist yet; after that,
+      // only an operator editing Firestore directly (console / Admin SDK, which bypasses rules)
+      // can ever change it — no client can flip the switch or edit the message once it exists.
+      allow create: if request.resource.data.isBlocked == 0
+                    && request.resource.data.keys().hasOnly(['isBlocked','title','message']);
+      allow update, delete: if false;
+    }
     match /app/{doc} {
-      allow read: if signedIn();
-      // counter is written transactionally whenever a bill is created
-      allow write: if doc == 'counter' ? perm('bills_create') : perm('settings');
+      allow read: if isKnownUser();
+      // counter is written transactionally whenever a bill is created. 'access' (the kill switch) is
+      // explicitly excluded here so NO client write path exists for it — only the restricted create +
+      // console/Admin SDK edits in the /app/access block above can ever touch it.
+      allow write: if doc != 'access' && (doc == 'counter' ? perm('bills_create') : perm('settings'));
     }
 
     /* ---------- bills ---------- */
     match /bills/{id} {
-      allow read:   if signedIn();
+      allow read:   if isKnownUser();
       allow create: if perm('bills_create');
       // edits, archive flips, soft-delete + restore all land as updates
       allow update: if perm('bills_edit') || perm('bills_archive') || perm('bills_delete') || perm('payments');
@@ -37,7 +55,7 @@ service cloud.firestore {
 
     /* ---------- products ---------- */
     match /products/{id} {
-      allow read:   if signedIn();
+      allow read:   if isKnownUser();
       allow create: if perm('bills_create') || perm('products');
       allow update: if perm('bills_create') || perm('products');
       allow delete: if perm('products');
@@ -45,13 +63,13 @@ service cloud.firestore {
 
     /* ---------- activity log (append-only; never edited/deleted from client) ---------- */
     match /activity/{id} {
-      allow read:   if signedIn();
-      allow create: if signedIn();
+      allow read:   if isKnownUser();
+      allow create: if isKnownUser();
       allow update, delete: if false;
     }
 
     /* ---------- stats aggregates (day + month) ---------- */
-    match /stats/{day}    { allow read: if signedIn(); allow write: if perm('bills_create') || perm('bills_edit') || perm('bills_delete') || perm('bills_archive') || perm('payments'); }
-    match /stats_m/{month}{ allow read: if signedIn(); allow write: if perm('bills_create') || perm('bills_edit') || perm('bills_delete') || perm('bills_archive') || perm('payments'); }
+    match /stats/{day}    { allow read: if isKnownUser(); allow write: if perm('bills_create') || perm('bills_edit') || perm('bills_delete') || perm('bills_archive') || perm('payments'); }
+    match /stats_m/{month}{ allow read: if isKnownUser(); allow write: if perm('bills_create') || perm('bills_edit') || perm('bills_delete') || perm('bills_archive') || perm('payments'); }
   }
 }

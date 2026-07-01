@@ -19,7 +19,7 @@ const FONT_CACHE = CACHE_VERSION + "-fonts";
 
 const SHELL_ASSETS = [
   "./",
-  "./Workshop%20Billing.dc.html",
+  "./index.html",
   "./support.js",
   "./firebase-db.js",
   "./manifest.webmanifest",

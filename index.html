@@ -83,6 +83,29 @@
     </div>
   </sc-if>
 
+  <!-- ====== ACCESS BLOCKED (kill switch) — checked before login, cannot be bypassed ====== -->
+  <sc-if value="{{ accessBlocked }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; z-index:200; background:radial-gradient(circle at 50% 0%, #2b1616, #170e0e 72%); display:flex; align-items:center; justify-content:center; padding:24px; overflow:auto">
+      <div style="position:absolute; inset:0; opacity:.5; background:radial-gradient(circle at 18% 22%, rgba(220,60,50,.24), transparent 38%), radial-gradient(circle at 82% 78%, rgba(180,40,40,.18), transparent 42%); pointer-events:none"></div>
+      <div style="position:relative; width:100%; max-width:440px; display:flex; flex-direction:column; align-items:center; gap:22px; animation:loginRise .5s cubic-bezier(.2,.7,.2,1) both">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:14px">
+          <div style="width:72px; height:72px; border-radius:20px; overflow:hidden; box-shadow:0 12px 36px rgba(192,57,43,.5); display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#c0392b,#7a1f16); color:#fff">{{ icons.blockBig }}</div>
+          <div style="text-align:center">
+            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:25px; letter-spacing:-.5px; color:#fff">MSA Billing</div>
+            <div style="font-size:13px; color:rgba(255,255,255,.5); font-weight:500; margin-top:3px">Access unavailable</div>
+          </div>
+        </div>
+        <div style="width:100%; background:rgba(255,255,255,.045); border:1px solid rgba(220,90,80,.28); backdrop-filter:blur(18px); border-radius:20px; padding:26px 24px; display:flex; flex-direction:column; gap:6px; box-shadow:0 24px 64px rgba(0,0,0,.45)">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px">
+            <span style="width:34px; height:34px; border-radius:10px; background:rgba(220,60,50,.18); border:1px solid rgba(220,90,80,.32); display:flex; align-items:center; justify-content:center; color:#ff8f7f; flex:none">{{ icons.infoSm }}</span>
+            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:18px; color:#fff">{{ accessTitle }}</div>
+          </div>
+          <div style="color:rgba(255,255,255,.72); font-size:13.5px">{{ accessMessageEl }}</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- ====== LOGIN SCREEN ====== -->
   <sc-if value="{{ showLogin }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; z-index:95; background:radial-gradient(circle at 50% 0%, #20232b, #121317 72%); display:flex; align-items:center; justify-content:center; padding:24px; overflow:auto">
@@ -1731,6 +1754,7 @@ class Component extends DCLogic {
   state = {
     // ---- auth / shell ----
     authReady:false, authUser:null, dbMode:'local',
+    accessBlocked:false, accessTitle:'', accessMessage:'',
     loginEmail:'', loginPw:'', loginErr:'', loggingIn:false, showPw:false, userMenuOpen:false,
     route: 'dashboard', period: '28d', privacy: false, now: new Date(),
     isMobile: (typeof window!=='undefined' && window.innerWidth < 820),
@@ -1819,12 +1843,46 @@ class Component extends DCLogic {
       const db = await mod.getDB();
       this.db = db;
       this.setState({ dbMode: db.mode });
+      // ---- kill switch: checked BEFORE anything else, even before auth is touched ----
+      try{
+        const access = await db.getAccessStatus();
+        if(access && Number(access.isBlocked)===1){
+          this.setState({ authReady:true, accessBlocked:true, accessTitle:access.title||'Access blocked', accessMessage:access.message||'' });
+          return;   // hard stop — never proceeds to login/auth, nothing can bypass this
+        }
+      }catch(e){ console.warn('access-status check failed', e); }
       if(db.mode==='local'){ try{ await db.bootstrap({ email:'admin@msa.com', fullName:'Asif Shakoor', password:'123456' }); }catch(e){} }
       this._unsub = db.initAuth((user)=> this._onAuth(user));
     }catch(e){
       console.error('init failed', e);
       this.setState({ authReady:true, loginErr:'App load nahi ho saki — page refresh karein.' });
     }
+  }
+  // ---- tiny, safe markdown -> HTML (escapes first, then applies a narrow whitelist of tags) ----
+  _mdToHtml(md){
+    if(!md) return '';
+    const esc=(s)=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const lines=String(md).replace(/\r\n/g,'\n').split('\n');
+    let html=''; let inUl=false, inOl=false;
+    const inlineFmt=(s)=> esc(s)
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/(^|[^*])\*(?!\*)(.+?)\*(?!\*)/g,'$1<em>$2</em>')
+      .replace(/`(.+?)`/g,'<code style="background:rgba(255,255,255,.12);padding:1px 6px;border-radius:5px;font-family:\'JetBrains Mono\',monospace;font-size:.92em">$1</code>')
+      .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">$1</a>');
+    const closeLists=()=>{ if(inUl){ html+='</ul>'; inUl=false; } if(inOl){ html+='</ol>'; inOl=false; } };
+    lines.forEach(raw=>{
+      const line=raw.trim();
+      if(!line){ closeLists(); return; }
+      let m;
+      if((m=line.match(/^###\s+(.*)$/))){ closeLists(); html+='<h3 style="margin:14px 0 6px;font-size:15px;font-weight:700">'+inlineFmt(m[1])+'</h3>'; }
+      else if((m=line.match(/^##\s+(.*)$/))){ closeLists(); html+='<h2 style="margin:16px 0 7px;font-size:17px;font-weight:700">'+inlineFmt(m[1])+'</h2>'; }
+      else if((m=line.match(/^#\s+(.*)$/))){ closeLists(); html+='<h1 style="margin:18px 0 8px;font-size:19px;font-weight:800">'+inlineFmt(m[1])+'</h1>'; }
+      else if((m=line.match(/^[-*]\s+(.*)$/))){ if(inOl){html+='</ol>';inOl=false;} if(!inUl){html+='<ul style="margin:6px 0;padding-left:20px">';inUl=true;} html+='<li style="margin:3px 0">'+inlineFmt(m[1])+'</li>'; }
+      else if((m=line.match(/^\d+\.\s+(.*)$/))){ if(inUl){html+='</ul>';inUl=false;} if(!inOl){html+='<ol style="margin:6px 0;padding-left:20px">';inOl=true;} html+='<li style="margin:3px 0">'+inlineFmt(m[1])+'</li>'; }
+      else { closeLists(); html+='<p style="margin:8px 0;line-height:1.6">'+inlineFmt(line)+'</p>'; }
+    });
+    closeLists();
+    return html;
   }
   async _onAuth(user){
     if(!user){
@@ -2513,7 +2571,7 @@ class Component extends DCLogic {
   restoreBill(id){ const b=this._bill(id); if(!b) return;
     this.runAction('rest-'+id, async()=>{ await this.db.restoreBill(id, b); this.setState(s=>({ binBills:s.binBills.filter(x=>x.id!==id), billsLoaded:false, archivedLoaded: b.archived? false : s.archivedLoaded })); this.logActivity({ action:'restore', entity:'bill', entityId:id, entityLabel:b.no, summary:'Restored bill from Recycle bin' }); this.toastMsg('Bill restore ho gaya','ok'); this._afterRemoveFromView(id); if(this.state.route==='dashboard') this._loadDash(); }, { block:'Restoring…' });
   }
-  permanentDelete(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this.setState(s=>({ binBills:s.binBills.filter(x=>x.id!==id) })); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._afterRemoveFromView(id); }, { block:'Deleting…' }) }); }
+  permanentDelete(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this.setState(s=>{ const vc={...(s.viewCache||{})}; delete vc[id]; return { binBills:s.binBills.filter(x=>x.id!==id), viewCache:vc }; }); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._afterRemoveFromView(id); }, { block:'Deleting…' }) }); }
   emptyBin(){ if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin · '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); }, { block:'Emptying bin…' }) }); }
   _afterRemoveFromView(id){ if(this.state.route!=='view') return; const oldIds=this.state.viewIds||[]; const oldIdx=oldIds.indexOf(id); const ids=oldIds.filter(x=>x!==id); if(!ids.length){ this.viewBack(); return; } const nextId=ids[Math.min(Math.max(0,oldIdx), ids.length-1)]; this.setState({ viewIds:ids, viewId:nextId }); }
   deleteProduct(name){ this.askConfirm({ title:'Delete product?', message:'“'+name+'” catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product · '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting…' }) }); }
@@ -2978,7 +3036,7 @@ class Component extends DCLogic {
     let repSel=null;
     if(S.report.sel!=null && repB.buckets[S.report.sel]){ const bk=repB.buckets[S.report.sel]; const selLong=repLong(bk.key); const isLeaf=(repView==='day'||repView==='month'); const canDrill=(repView==='year'||repView==='total');
       let actionLabel='', onAction=null, showAction=false;
-      if(bk.count>0 && isLeaf){ actionLabel=bk.count+' bill'+(bk.count===1?'':'s')+' kholें'; onAction=()=>this.repOpenBills(S.report.sel); showAction=true; }
+      if(bk.count>0 && isLeaf){ actionLabel=bk.count+' bill'+(bk.count===1?'':'s')+' kholo'; onAction=()=>this.repOpenBills(S.report.sel); showAction=true; }
       else if(canDrill && bk.count>0){ actionLabel='Open '+selLong; onAction=()=>this.repDrill(S.report.sel); showAction=true; }
       repSel={ label:selLong, amount:this.money(bk.amount), pending:this.money(bk.pending), count: S.privacy?'••':String(bk.count), hasPending:bk.pending>0, hasBills:bk.count>0, showAction, actionLabel, onAction }; }
     const report={ viewBtns:repViewBtns, view:repView, periodLabel:repPeriodLabel, bars:repBars, totAmount:this.money(repTotAmt), totPending:this.money(repTotPen), totCount: S.privacy?'••':String(repTotCnt), canNav:repView!=='total', onPrev:()=>this.repNav(-1), onNext:()=>this.repNav(1), hint:(repView==='day'?'Har bar = ek ghanta. Bar par click se detail.':(repView==='total'?'Har bar = ek saal. Double-click ya “Open” se us saal ke months.':'Bar par click = detail, double-click ya “Open” se androni view.')), sel:repSel, loading:repLoading, showChart:(!repLoading && repB.buckets.length>0), empty:(!repLoading && repTotCnt===0) };
@@ -3214,7 +3272,8 @@ class Component extends DCLogic {
     this._counts={ bills:filtered.length, bin:deletedSorted.length, act:actAll.length };
     return {
       // shell / auth
-      splash:!S.authReady, showLogin:S.authReady && !S.authUser, blocking:S.blocking, authed:!!S.authUser, headerSaving:S.headerSaving>0,
+      splash:!S.authReady, showLogin:S.authReady && !S.accessBlocked && !S.authUser, blocking:S.blocking, authed:!!S.authUser, headerSaving:S.headerSaving>0,
+      accessBlocked:S.accessBlocked, accessTitle:S.accessTitle, accessMessageEl: React.createElement('div',{dangerouslySetInnerHTML:{__html: this._mdToHtml(S.accessMessage)}}),
       loginEmail:S.loginEmail, loginPw:S.loginPw, loginErr:S.loginErr, loggingIn:S.loggingIn,
       loginPwType:S.showPw?'text':'password', loginPwIcon:this.ic(S.showPw?'eyeOff':'eye',17), toggleShowPw:()=>this.setState(s=>({showPw:!s.showPw})),
       loginInputStyle:'width:100%; padding:12px 13px; background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.13); border-radius:12px; font-size:14px; font-weight:500; color:#fff; outline:none',
@@ -3232,7 +3291,7 @@ class Component extends DCLogic {
       showMenuBtn, viewAnimStyle, routeKey, showMobileBack:(S.isMobile && isView), showDesktopClose:(!S.isMobile && isView),
       showSecondaryBack:(S.isMobile && ROUTE==='bills' && S.billsSecondary), showDesktopCloseSecondary:(!S.isMobile && ROUTE==='bills' && S.billsSecondary), onCloseSecondary:()=>this.closeSecondaryBills(),
       footerOpen:S.footerOpen, toggleFooter:()=>this.setState(s=>({footerOpen:!s.footerOpen})),
-      icons:{ menu:this.ic('menu',20), clock:this.ic('clock',16), plus:this.ic('plus',17), privacy:this.ic(S.privacy?'eyeOff':'eye',18), privacySm:this.ic(S.privacy?'eyeOff':'eye',13), search:this.ic('search',18), x:this.ic('x',18), history:this.ic('history',16), check:this.ic('check',16), carSm:this.ic('car',13), chevron:this.ic('chevron',16), trashSm:this.ic('trash',15), plusSm:this.ic('plus',15), xSm:this.ic('x',12), boxSm:this.ic('box',16), printerSm:this.ic('printer',15), infoSm:this.ic('info',14), phone:this.ic('phone',16), reactIcon:this.ic('gear',20), dbIcon:this.ic('box',20), calendar:this.ic('calendar',16), lock:this.ic('lock',13), back:this.ic('back',18), chevL:this.ic('chevL',20), chevR:this.ic('chevron',20), edit:this.ic('edit',16), cashSm:this.ic('cash',16), dots:this.ic('dots',18), filter:this.ic('filter',16), activity:this.ic('activity',16), archive:this.ic('archive',16), restore:this.ic('restore',15), logout:this.ic('back',16) },
+      icons:{ blockBig:this.ic('x',30), menu:this.ic('menu',20), clock:this.ic('clock',16), plus:this.ic('plus',17), privacy:this.ic(S.privacy?'eyeOff':'eye',18), privacySm:this.ic(S.privacy?'eyeOff':'eye',13), search:this.ic('search',18), x:this.ic('x',18), history:this.ic('history',16), check:this.ic('check',16), carSm:this.ic('car',13), chevron:this.ic('chevron',16), trashSm:this.ic('trash',15), plusSm:this.ic('plus',15), xSm:this.ic('x',12), boxSm:this.ic('box',16), printerSm:this.ic('printer',15), infoSm:this.ic('info',14), phone:this.ic('phone',16), reactIcon:this.ic('gear',20), dbIcon:this.ic('box',20), calendar:this.ic('calendar',16), lock:this.ic('lock',13), back:this.ic('back',18), chevL:this.ic('chevL',20), chevR:this.ic('chevron',20), edit:this.ic('edit',16), cashSm:this.ic('cash',16), dots:this.ic('dots',18), filter:this.ic('filter',16), activity:this.ic('activity',16), archive:this.ic('archive',16), restore:this.ic('restore',15), logout:this.ic('back',16) },
       appVersion:'1.0.0',
       togglePrivacy:()=>this.togglePrivacy(), openDrawer:()=>this.go('menu'), closeDrawer:()=>this.setState({navOpen:false}),
       onNewBill:()=>this.go('new'), goBills:()=>this.go('bills'), stop:(e)=>e.stopPropagation(),

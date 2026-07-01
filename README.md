@@ -2,7 +2,7 @@
 
 A complete, production-ready billing & management web app for **MSA Auto Workshop**. Staff create
 bills, take payments, manage products, view reports, and administer users — backed by **Firebase**
-(Auth + Firestore + Cloud Functions). Built as a single Design Component, `Workshop Billing.dc.html`,
+(Auth + Firestore + Cloud Functions). Built as a single Design Component, served as `index.html`,
 that runs directly in the browser, hosts as a static site on GitHub Pages, and installs as a PWA.
 
 > **New here? Open [`guide.html`](guide.html) for the full step-by-step setup.**
@@ -36,6 +36,10 @@ that runs directly in the browser, hosts as a static site on GitHub Pages, and i
 - **Print templates** — A4 / A5 / Letter + thermal 80/58mm, live preview, logo/colors/columns/
   header/footer/font controls, multi-page overflow, Print / Save-PDF.
 - **Products**, **Users & permissions**, **Settings** — see below.
+- **Emergency kill switch** — an admin can instantly lock the whole app for every user by flipping
+  `isBlocked` to `1` on the `app/access` Firestore document (console-only, never from the app UI). All
+  users are stopped before the login screen with a full-screen, un-dismissable message (title +
+  Markdown body) until it's switched back off.
 
 ---
 
@@ -62,7 +66,7 @@ Every action gives clear feedback and is protected against double-submit:
 
 | Layer | Tech | Notes |
 |---|---|---|
-| **App** | Single `.dc.html` | UI + logic; static, hosts on GitHub Pages; installable PWA. |
+| **App** | Single `index.html` (Design Component) | UI + logic; static, hosts on GitHub Pages; installable PWA. |
 | **Data + auth** | `firebase-db.js` | One async facade over **Firestore** + **Firebase Auth** + **Cloud Functions**, with a **localStorage fallback** for offline/preview (so it's fully usable without internet, and the design preview works without a backend). |
 | **User admin** | `functions/` | Cloud Functions (Admin SDK) — create / update / set-password / disable / delete users, each **verifying the caller server-side**. Admin never gets logged out. |
 | **Security** | `firestore.rules` | Signed-in gating + permission-aware writes (UI permissions are mirrored in rules — the real security). |

@@ -185,12 +185,12 @@ cd ..</pre>
         <li>Is project ko ek GitHub repo me push karein.</li>
         <li>Repo → <b>Settings → Pages</b> → Source: <code>main</code> branch, <code>/ (root)</code>.</li>
         <li>Thodi der baad URL milega: <code>https://your-username.github.io/repo-name/</code>.</li>
-        <li>App khulay: <code>.../Workshop%20Billing.dc.html</code></li>
+        <li>App khulay: <code>.../index.html</code></li>
       </ol>
       <div class="note"><span class="ico">ℹ︎</span><div>App khud detect kar leti hai ke wo <code>github.io</code> par hai aur asli Firebase backend use karti hai. (Preview/localhost par ye offline “demo” data use karti hai taake aap bina internet test kar sakein.)</div></div>
       <h3>Option B — Firebase Hosting (ek command)</h3>
 <pre>firebase deploy --only hosting</pre>
-      <p>URL: <code>https://mirza-bills.web.app/Workshop%20Billing.dc.html</code></p>
+      <p>URL: <code>https://mirza-bills.web.app/index.html</code></p>
     </div></div>
   </div>
 
@@ -213,7 +213,7 @@ cd ..</pre>
     <span class="pill">Reference</span>
     <h2>Project ki files</h2>
     <div class="kv">
-      <b>Workshop&nbsp;Billing.dc.html</b><span>Poori app (UI + logic).</span>
+      <b>index.html</b><span>Poori app (UI + logic).</span>
       <b>firebase-db.js</b><span>Data + auth layer (Firestore + Functions + offline).</span>
       <b>functions/</b><span>Cloud Functions — secure user management.</span>
       <b>firestore.rules</b><span>Security rules.</span>
@@ -231,6 +231,20 @@ cd ..</pre>
       <li><b>User create nahi hota:</b> functions deploy hue? Blaze on hai? (Steps 4 &amp; 6)</li>
       <li><b>Bills list khali / “index building”:</b> indexes ban rahe hain, thodi der baad.</li>
     </ul>
+  </div>
+
+  <div class="card">
+    <span class="pill">Admin-only</span>
+    <h2>Emergency access switch (kill switch)</h2>
+    <p>Aap kisi bhi waqt Firestore console se <b>saari app ki access band</b> kar sakte hain — koi bhi
+       user login screen tak nahi pohanch payega, sirf ek full-screen message dikhega jo skip nahi ho sakta.</p>
+    <ol>
+      <li><a href="https://console.firebase.google.com/project/mirza-bills/firestore/data/~2Fapp~2Faccess" target="_blank">Firestore → <code>app</code> collection → <code>access</code> document</a> kholein.</li>
+      <li><code>isBlocked</code> ko <code>1</code> kar dein — turant sab users is message par lock ho jayenge.</li>
+      <li><code>title</code> aur <code>message</code> fields edit karein (message <b>Markdown</b> support karta hai: <code># heading</code>, <code>**bold**</code>, <code>*italic*</code>, lists, links).</li>
+      <li>Wapas access dene ke liye <code>isBlocked</code> ko <code>0</code> kar dein.</li>
+    </ol>
+    <div class="note warn"><span class="ico">!</span><div>Yeh sirf Firestore console (ya Admin SDK) se badalta hai — app ke andar se koi bhi is value ko set nahi kar sakta, is liye galti se koi user khud ko lock/unlock nahi kar sakta.</div></div>
   </div>
 
   <footer>MSA Billing · Setup Guide · Made for MSA Auto Workshop</footer>
