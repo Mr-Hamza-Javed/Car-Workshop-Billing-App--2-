@@ -41,12 +41,43 @@
   @keyframes spinRing{to{transform:rotate(360deg)}}
   @keyframes fadeOut{to{opacity:0;visibility:hidden}}
   @keyframes loginRise{from{opacity:.5;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
-  @keyframes billNext{from{opacity:.5;transform:translateX(40px)}to{opacity:1;transform:none}}
-  @keyframes billPrev{from{opacity:.5;transform:translateX(-40px)}to{opacity:1;transform:none}}
+  @keyframes billNext{from{opacity:.4;transform:translateX(64px) scale(.99)}to{opacity:1;transform:none}}
+  @keyframes billPrev{from{opacity:.4;transform:translateX(-64px) scale(.99)}to{opacity:1;transform:none}}
+  @keyframes billNextOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(-64px) scale(.99)}}
+  @keyframes billPrevOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(64px) scale(.99)}}
   @keyframes panelIn{from{transform:translateY(10px)}to{transform:none}}
   @keyframes listpop{from{opacity:.5;transform:translateY(9px)}to{opacity:1;transform:none}}
   @keyframes eyeReveal{from{opacity:.5;filter:blur(5px)}to{opacity:1;filter:blur(0)}}
   @keyframes barGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  /* ===== global motion layer - every duration rides the --as speed scale (Settings slider; 0 = off) ===== */
+  button{transition:transform calc(var(--as,1)*.16s) cubic-bezier(.2,.8,.2,1), box-shadow calc(var(--as,1)*.22s), filter calc(var(--as,1)*.16s), background calc(var(--as,1)*.22s), border-color calc(var(--as,1)*.22s), color calc(var(--as,1)*.22s), opacity calc(var(--as,1)*.22s)}
+  button:hover{filter:brightness(1.06)}
+  button:active{transform:scale(.955)}
+  input,textarea,select{transition:border-color calc(var(--as,1)*.2s), box-shadow calc(var(--as,1)*.2s), background calc(var(--as,1)*.2s)}
+  input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px rgba(47,123,246,.15)}
+  /* hover-lift: cards rise with a soft shadow */
+  .hl{transition:transform calc(var(--as,1)*.2s) cubic-bezier(.2,.8,.2,1), box-shadow calc(var(--as,1)*.24s), border-color calc(var(--as,1)*.2s), background calc(var(--as,1)*.2s)}
+  .hl:hover{transform:translateY(-2px); box-shadow:0 10px 26px rgba(26,29,36,.10)}
+  .hl:active{transform:translateY(0) scale(.995)}
+  /* hover-nudge: rows shift right */
+  .hlx{transition:transform calc(var(--as,1)*.2s) cubic-bezier(.2,.8,.2,1), background calc(var(--as,1)*.2s), border-color calc(var(--as,1)*.2s), box-shadow calc(var(--as,1)*.2s)}
+  .hlx:hover{transform:translateX(4px)}
+  /* report bars: rise on hover */
+  .hbar{transition:transform calc(var(--as,1)*.18s) cubic-bezier(.2,.8,.2,1), filter calc(var(--as,1)*.18s)}
+  .hbar:hover{transform:translateY(-4px); filter:brightness(1.06)}
+  /* staggered list entrance */
+  .stagger>*{animation:listpop calc(var(--as,1)*.32s) cubic-bezier(.2,.8,.2,1) both}
+  .stagger>*:nth-child(2){animation-delay:calc(var(--as,1)*.035s)}
+  .stagger>*:nth-child(3){animation-delay:calc(var(--as,1)*.07s)}
+  .stagger>*:nth-child(4){animation-delay:calc(var(--as,1)*.105s)}
+  .stagger>*:nth-child(5){animation-delay:calc(var(--as,1)*.14s)}
+  .stagger>*:nth-child(6){animation-delay:calc(var(--as,1)*.175s)}
+  .stagger>*:nth-child(7){animation-delay:calc(var(--as,1)*.21s)}
+  .stagger>*:nth-child(8){animation-delay:calc(var(--as,1)*.245s)}
+  .stagger>*:nth-child(9){animation-delay:calc(var(--as,1)*.28s)}
+  .stagger>*:nth-child(10){animation-delay:calc(var(--as,1)*.315s)}
+  .stagger>*:nth-child(11){animation-delay:calc(var(--as,1)*.35s)}
+  .stagger>*:nth-child(12){animation-delay:calc(var(--as,1)*.385s)}
   @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important} }
   @media print{
     html,body{background:#fff !important}
@@ -169,7 +200,7 @@
         </div>
       </div>
       <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="10">
-        <div key="{{ item.rk }}" onClick="{{ item.onClick }}" style="{{ item.style }}">
+        <div key="{{ item.rk }}" class="hlx" onClick="{{ item.onClick }}" style="{{ item.style }}">
           <span style="{{ item.bar }}"></span>
           {{ item.icon }}
           <span>{{ item.label }}</span>
@@ -259,7 +290,7 @@
             <div style="flex:1; min-width:240px; background:linear-gradient(135deg,#1b1d23,#26282f); border-radius:18px; padding:22px 24px; color:#fff; position:relative; overflow:hidden">
               <div style="position:absolute; right:-30px; top:-30px; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle,rgba(47,123,246,.34),transparent 70%)"></div>
               <div style="font-size:12.5px; color:rgba(255,255,255,.5); font-weight:600; letter-spacing:.3px; text-transform:uppercase">{{ greeting }}, {{ firstName }}</div>
-              <div class="tnum" style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:46px; letter-spacing:-1px; line-height:1.05; margin-top:6px; display:flex; align-items:baseline; gap:8px">
+              <div class="tnum" data-no-privacy="1" style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:46px; letter-spacing:-1px; line-height:1.05; margin-top:6px; display:flex; align-items:baseline; gap:8px">
                 {{ clockTime }}<span style="font-size:20px; color:#2f7bf6; letter-spacing:0">{{ clockAmpm }}</span>
               </div>
               <div style="font-size:13.5px; color:rgba(255,255,255,.6); font-weight:500; margin-top:4px">{{ clockDate }} · Asia/Karachi</div>
@@ -278,9 +309,9 @@
           </div>
 
           <!-- summary cards -->
-          <div style="{{ cardsGridStyle }}">
+          <div class="stagger" style="{{ cardsGridStyle }}">
             <sc-for list="{{ summaryCards }}" as="c" hint-placeholder-count="4">
-              <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px 18px 16px; position:relative; overflow:hidden">
+              <div class="hl" style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px 18px 16px; position:relative; overflow:hidden">
                 <div style="{{ c.stripe }}"></div>
                 <div style="display:flex; align-items:center; gap:9px">
                   <div style="{{ c.iconWrap }}">{{ c.icon }}</div>
@@ -298,9 +329,9 @@
               <h2 style="margin:0; font-family:'Bricolage Grotesque'; font-weight:700; font-size:16.5px; letter-spacing:-.3px">Recent bills</h2>
               <button onClick="{{ goBills }}" style="font-size:13px; font-weight:600; color:#1f6feb; background:none; border:none; cursor:pointer">View all →</button>
             </div>
-            <div style="{{ billGridStyle }}">
+            <div class="stagger" style="{{ billGridStyle }}">
               <sc-for list="{{ recentBills }}" as="b" hint-placeholder-count="6">
-                <div onClick="{{ b.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-left:3px solid {{ b.accent }}; border-radius:14px; padding:14px 15px; cursor:pointer; transition:transform .12s, box-shadow .12s" style-hover="background:#fff; border:1px solid #ddd2c2; border-left:3px solid {{ b.accent }}; border-radius:14px; padding:14px 15px; cursor:pointer; box-shadow:0 8px 20px rgba(60,40,10,.08); transform:translateY(-2px)">
+                <div class="hl" onClick="{{ b.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-left:3px solid {{ b.accent }}; border-radius:14px; padding:14px 15px; cursor:pointer; transition:transform .12s, box-shadow .12s" style-hover="background:#fff; border:1px solid #ddd2c2; border-left:3px solid {{ b.accent }}; border-radius:14px; padding:14px 15px; cursor:pointer; box-shadow:0 8px 20px rgba(60,40,10,.08); transform:translateY(-2px)">
                   <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px">
                     <div style="min-width:0">
                       <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:14.5px; color:#1a1d24">{{ b.no }}</div>
@@ -663,7 +694,7 @@
             </div>
             <div style="display:flex; flex-direction:column">
               <sc-for list="{{ allBillsView }}" as="b" hint-placeholder-count="8">
-                <div key="{{ b.rk }}" onClick="{{ b.onClick }}" style="display:flex; align-items:center; gap:11px; padding:13px 16px; border-bottom:1px solid #f4efe7; cursor:pointer" style-hover="display:flex; align-items:center; gap:11px; padding:13px 16px; border-bottom:1px solid #f4efe7; cursor:pointer; background:#faf7f1">
+                <div key="{{ b.rk }}" class="hlx" onClick="{{ b.onClick }}" style="display:flex; align-items:center; gap:11px; padding:13px 16px; border-bottom:1px solid #f4efe7; cursor:pointer" style-hover="display:flex; align-items:center; gap:11px; padding:13px 16px; border-bottom:1px solid #f4efe7; cursor:pointer; background:#faf7f1">
                   <div style="width:8px; height:8px; border-radius:50%; background:{{ b.accent }}; flex:none"></div>
                   <div style="flex:1; min-width:0">
                     <div style="display:flex; align-items:baseline; gap:8px">
@@ -707,9 +738,9 @@
             </div>
             <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:10px">{{ icons.infoSm }} Search by phone, car or customer — never by product. Queries are indexed, not full scans.</div>
           </div>
-          <div style="display:flex; flex-direction:column; gap:9px">
+          <div class="stagger" style="display:flex; flex-direction:column; gap:9px">
             <sc-for list="{{ searchResults }}" as="b" hint-placeholder-count="3">
-              <div onClick="{{ b.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-left:3px solid {{ b.accent }}; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px" style-hover="background:#faf7f1; border:1px solid #ddd2c2; border-left:3px solid {{ b.accent }}; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px">
+              <div class="hl" onClick="{{ b.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-left:3px solid {{ b.accent }}; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px" style-hover="background:#faf7f1; border:1px solid #ddd2c2; border-left:3px solid {{ b.accent }}; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px">
                 <div style="flex:1; min-width:0">
                   <div style="display:flex; align-items:center; gap:9px"><span style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:14px">{{ b.no }}</span><span style="{{ b.badge }}">{{ b.statusLabel }}</span></div>
                   <div style="font-size:13px; font-weight:600; color:#3f4753; margin-top:2px">{{ b.name }}</div>
@@ -743,9 +774,9 @@
               </sc-for>
             </div>
           </div>
-          <div style="display:flex; flex-direction:column; gap:9px">
+          <div class="stagger" style="display:flex; flex-direction:column; gap:9px">
             <sc-for list="{{ pendingBills }}" as="b" hint-placeholder-count="5">
-              <div onClick="{{ b.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px" style-hover="background:#faf7f1; border:1px solid #ddd2c2; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px">
+              <div class="hl" onClick="{{ b.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px" style-hover="background:#faf7f1; border:1px solid #ddd2c2; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px">
                 <div style="flex:1; min-width:0">
                   <div style="font-size:13.5px; font-weight:700; color:#1a1d24"><span style="font-family:'Bricolage Grotesque'">{{ b.no }}</span> · {{ b.name }}</div>
                   <div style="font-size:11.5px; color:#8a8175; margin-top:2px">{{ b.car }} · {{ b.phone }} · {{ b.dateStr }}</div>
@@ -770,7 +801,7 @@
               <span style="font-size:11.5px; color:#a59c8c; font-weight:500">Self-populates from bills</span>
             </div>
             <sc-for list="{{ productRows }}" as="p" hint-placeholder-count="8">
-              <div style="display:flex; align-items:center; gap:13px; padding:12px 16px; border-bottom:1px solid #f4efe7">
+              <div class="hlx" style="display:flex; align-items:center; gap:13px; padding:12px 16px; border-bottom:1px solid #f4efe7">
                 <div style="width:34px; height:34px; border-radius:9px; background:#eef4ff; color:#1f6feb; display:flex; align-items:center; justify-content:center; flex:none">{{ icons.boxSm }}</div>
                 <div style="flex:1; min-width:0">
                   <div style="font-size:14px; font-weight:600; color:#1a1d24">{{ p.name }}</div>
@@ -810,7 +841,7 @@
             <div style="padding-top:14px">
               <div style="display:flex; align-items:stretch; gap:3px; width:100%">
                 <sc-for list="{{ report.bars }}" as="b" hint-placeholder-count="12">
-                  <div key="{{ b.rk }}" onClick="{{ b.onClick }}" onDoubleClick="{{ b.onDbl }}" title="{{ b.title }}" style="{{ b.colStyle }}">
+                  <div key="{{ b.rk }}" class="hbar" onClick="{{ b.onClick }}" onDoubleClick="{{ b.onDbl }}" title="{{ b.title }}" style="{{ b.colStyle }}">
                     <div style="{{ b.trackStyle }}">
                       <div style="{{ b.fillWrap }}">
                         <sc-if value="{{ b.pendMark }}" hint-placeholder-val="{{ false }}"><span style="{{ b.markStyle }}"></span></sc-if>
@@ -905,11 +936,15 @@
               </div>
               <div style="display:flex; flex-direction:column; gap:11px; padding-top:2px">
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Show business info</span>
+                  <button onClick="{{ toggleBizInfo }}" style="{{ tgBizInfoWrap }}"><span style="{{ tgBizInfoKnob }}"></span></button>
+                </label>
+                <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Show comments</span>
                   <button onClick="{{ toggleComments }}" style="{{ tgCommentsWrap }}"><span style="{{ tgCommentsKnob }}"></span></button>
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
-                  <span style="font-size:13px; font-weight:600; color:#3f4753">Show terms &amp; conditions</span>
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Show custom section</span>
                   <button onClick="{{ toggleTerms }}" style="{{ tgTermsWrap }}"><span style="{{ tgTermsKnob }}"></span></button>
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
@@ -946,7 +981,7 @@
               <div style="display:flex; align-items:center; gap:10px; padding:14px 10px; color:#a59c8c; font-size:13px; font-weight:600"><span style="width:18px; height:18px; border-radius:50%; border:2.5px solid #ece4d7; border-top-color:#1f6feb; animation:spinRing .8s linear infinite; display:inline-block"></span> Loading team…</div>
             </sc-if>
             <sc-for list="{{ usersView }}" as="u" hint-placeholder-count="3">
-              <div key="{{ u.rk }}" onClick="{{ u.onClick }}" style="{{ u.rowStyle }}">
+              <div key="{{ u.rk }}" class="hl" onClick="{{ u.onClick }}" style="{{ u.rowStyle }}">
                 <div style="{{ u.avatar }}">{{ u.initials }}</div>
                 <div style="flex:1; min-width:0">
                   <div style="font-size:13.5px; font-weight:600; color:#1a1d24; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ u.name }}</div>
@@ -1091,9 +1126,16 @@
             <div style="margin-top:13px; padding:11px 14px; background:#f4efe7; border-radius:11px; font-size:13px; color:#3f4753; font-weight:500">Next bill will be <b style="font-family:'Bricolage Grotesque'; color:#1a1d24">{{ nextBillPreview }}</b> · increments via an atomic Firestore counter.</div>
           </div>
           <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
-            <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:14px">Terms &amp; conditions</div>
-            <textarea value="{{ settings.terms }}" onChange="{{ onTerms }}" rows="4" style="width:100%; padding:12px 14px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical"></textarea>
-            <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:9px; line-height:1.4">Saved once and reused on every bill. Can be hidden per-print from the print dialog.</div>
+            <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px">Business info (invoice par)</div>
+            <div style="font-size:12.5px; color:#8a8175; font-weight:500; line-height:1.5; margin-bottom:12px">Aapki dukaan ki maloomat — address, phone, email, bank account waghera. Invoice ke header mein business name ke neeche khoobsurat letterhead ki tarah chhapegi.</div>
+            <textarea value="{{ settings.bizInfo }}" onChange="{{ onBizInfo }}" rows="5" placeholder="Shop # 12, Main GT Road, Lahore&#10;0300-1234567 · 042-1234567&#10;msa@workshop.com&#10;**Bank:** Meezan 0123-4567890" style="width:100%; padding:12px 14px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical"></textarea>
+            <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:9px; line-height:1.5">Markdown: <b>**bold**</b>, <em>*italic*</em>, nayi line = nayi line. Khali chhorein to invoice par kuch nahi aayega.</div>
+          </div>
+          <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
+            <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px">Invoice ka aakhri section</div>
+            <div style="font-size:12.5px; color:#8a8175; font-weight:500; line-height:1.5; margin-bottom:12px">Is section ka koi fixed naam nahi — heading aap khud likhte hain. Jaise <b>**Terms &amp; Conditions**</b> likh kar neeche terms, phir chahen to <b>**Warranty**</b> jaisi aur headings bhi.</div>
+            <textarea value="{{ settings.terms }}" onChange="{{ onTerms }}" rows="6" placeholder="**Terms &amp; Conditions**&#10;- Goods once sold are not returnable&#10;- Parts carry manufacturer warranty only&#10;&#10;**Warranty**&#10;30 din ki service warranty" style="width:100%; padding:12px 14px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical"></textarea>
+            <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:9px; line-height:1.5">Markdown: <b>**heading/bold**</b>, <em>*italic*</em>, <b>- </b>se bullet list, khali line se paragraph. Print dialog se per-bill hide bhi ho sakta hai.</div>
           </div>
           <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
             <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:14px">Lists &amp; loading</div>
@@ -1197,9 +1239,9 @@
           <div style="display:flex; align-items:center; justify-content:space-between; margin:0 2px 11px">
             <span style="font-size:13px; font-weight:600; color:#8a8175">{{ activityCountLabel }}</span>
           </div>
-          <div style="display:flex; flex-direction:column; gap:9px">
+          <div class="stagger" style="display:flex; flex-direction:column; gap:9px">
             <sc-for list="{{ activityView }}" as="a" hint-placeholder-count="8">
-              <div onClick="{{ a.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-radius:14px; padding:13px 15px; cursor:{{ a.rowCursor }}; display:flex; gap:13px">
+              <div class="hl" onClick="{{ a.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-radius:14px; padding:13px 15px; cursor:{{ a.rowCursor }}; display:flex; gap:13px">
                 <div style="{{ a.iconWrap }}">{{ a.icon }}</div>
                 <div style="flex:1; min-width:0">
                   <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
@@ -1250,9 +1292,9 @@
             </div>
             <button onClick="{{ emptyBin }}" style="display:flex; align-items:center; gap:7px; padding:10px 15px; background:#c0392b; color:#fff; border:none; border-radius:11px; font-size:13px; font-weight:700; cursor:pointer; flex:none">{{ icons.trashSm }} Empty bin ({{ binCount }})</button>
           </div>
-          <div style="display:flex; flex-direction:column; gap:9px">
+          <div class="stagger" style="display:flex; flex-direction:column; gap:9px">
             <sc-for list="{{ binView }}" as="b" hint-placeholder-count="2">
-              <div key="{{ b.rk }}" onClick="{{ b.onOpen }}" style="background:#fff; border:1px solid #ece4d7; border-radius:13px; padding:13px 15px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; cursor:pointer" style-hover="background:#fdf6f5; border:1px solid #f1cbc4; border-radius:13px; padding:13px 15px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; cursor:pointer">
+              <div key="{{ b.rk }}" class="hl" onClick="{{ b.onOpen }}" style="background:#fff; border:1px solid #ece4d7; border-radius:13px; padding:13px 15px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; cursor:pointer" style-hover="background:#fdf6f5; border:1px solid #f1cbc4; border-radius:13px; padding:13px 15px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; cursor:pointer">
                 <div style="flex:1; min-width:140px">
                   <div style="display:flex; align-items:center; gap:8px"><span style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:14px">{{ b.no }}</span><span style="{{ b.badge }}">{{ b.statusLabel }}</span></div>
                   <div style="font-size:12px; color:#3f4753; font-weight:600; margin-top:2px">{{ b.name }} · {{ b.car }}</div>
@@ -1589,11 +1631,15 @@
                   </label>
                 </sc-for>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Business info</span>
+                  <button onClick="{{ printControls.onBizInfo }}" style="{{ printControls.bizInfo.wrap }}"><span style="{{ printControls.bizInfo.knob }}"></span></button>
+                </label>
+                <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Comments</span>
                   <button onClick="{{ printControls.onComments }}" style="{{ printControls.comments.wrap }}"><span style="{{ printControls.comments.knob }}"></span></button>
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
-                  <span style="font-size:13px; font-weight:600; color:#3f4753">Terms &amp; conditions</span>
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Custom section</span>
                   <button onClick="{{ printControls.onTerms }}" style="{{ printControls.terms.wrap }}"><span style="{{ printControls.terms.knob }}"></span></button>
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
@@ -1658,6 +1704,9 @@
           </sc-for>
           <sc-if value="{{ changesView.empty }}" hint-placeholder-val="{{ false }}">
             <div style="text-align:center; padding:34px; color:#a59c8c; font-size:13.5px; font-weight:500">No changes recorded for this bill yet.</div>
+          </sc-if>
+          <sc-if value="{{ changesView.loading }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center; padding:34px; color:#a59c8c; font-size:13.5px; font-weight:500">Loading bill log…</div>
           </sc-if>
         </div>
       </div>
@@ -1815,7 +1864,7 @@ class Component extends DCLogic {
     busy:{},            // {key:true} -> per-action in-flight guard (disables buttons, anti double-submit)
     headerSaving:0,     // >0 -> small header spinner (silent background saves)
     // ---- settings / counter ----
-    settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owners risk.', listBatch:25, autoLoad:true, animSpeed:1 },
+    settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', bizInfo:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owners risk.', listBatch:25, autoLoad:true, animSpeed:1 },
     counter: null,
     tpl: { size:'A4', logo:true, color:'#1f6feb', cols:{qty:true,price:true,total:true}, fontScale:1, showComments:true, showTerms:true, showPayInfo:true, repeatHeader:true, header:'Service & Repair Invoice', footer:'Thank you for your business' },
     printBill: null, printCfg: null, invMeasure: {}, printZoom:1, printTab:'preview',
@@ -1839,7 +1888,7 @@ class Component extends DCLogic {
     // ---- All-bills secondary mode (drilled from Reports) ----
     billsSecondary:false, billsReturn:null, billsScopeLabel:'', billsDayMs:null,
     // ---- misc ----
-    confirm:null, changesModal:null, actMenuOpen:false,
+    confirm:null, changesModal:null, billLog:{}, billLogLoading:false, actMenuOpen:false,
     addUserModal:false, newUser:{name:'',email:'',password:'',role:'Cashier'},
     editUserModal:false, editDraft:null, pwModal:null, pwDraft:'',
     actFilter:{ user:'all', entity:'all', action:'all', sort:'new', range:'7d', from:'', to:'' },
@@ -1973,6 +2022,9 @@ class Component extends DCLogic {
     const st = await this.db.getSettings();
     if(st){ const { tpl, ...rest } = st; this.setState(s=>({ settings:{ ...s.settings, ...rest }, tpl:{ ...s.tpl, ...(tpl||{}) } })); }
     else { try{ await this.db.saveSettings(this._settingsDoc()); }catch(e){} }
+    // one-time migration: old plain terms text becomes the open markdown section, keeping its
+    // familiar heading. Idempotent (skips anything already containing markdown bold markers).
+    this.setState(s=>{ const t=s.settings.terms; return (t && !/\*\*/.test(t))? { settings:{ ...s.settings, terms:'**Terms & Conditions**\n'+t } } : {}; });
     const startNo = Number((st&&st.startNo) || this.state.settings.startNo) || 1000;
     try{ await this.db.initCounter(startNo); }catch(e){}
     try{ const c = await this.db.peekCounter(); this.setState({ counter: c==null? startNo : c }); }catch(e){ this.setState({ counter:startNo }); }
@@ -2009,7 +2061,7 @@ class Component extends DCLogic {
     this.setState(s=>({ busy: key?{...s.busy,[key]:true}:s.busy, ...(opts.block?{blocking:{msg:opts.block}}:{}), ...(opts.headerSave?{headerSaving:s.headerSaving+1}:{}) }));
     let res, err;
     try{ res = await fn(); }
-    catch(e){ err=e; console.error('[action '+key+']', e); this.toastMsg(opts.errMsg||'Nahi ho saka - dobara koshish karein','warn'); }
+    catch(e){ err=e; console.error('[action '+key+']', e); this.toastMsg((e&&e.userMessage)||opts.errMsg||'Nahi ho saka - dobara koshish karein','warn'); }
     this.setState(s=>{ const b={...s.busy}; if(key) delete b[key]; return { busy:b, ...(opts.block?{blocking:null}:{}), ...(opts.headerSave?{headerSaving:Math.max(0,s.headerSaving-1)}:{}) }; });
     if(err && opts.rethrow) throw err;
     return err? undefined : res;
@@ -2036,7 +2088,9 @@ class Component extends DCLogic {
     try{
       const m=this._main(); if(!m) return;
       requestAnimationFrame(()=>{
-        const nodes=m.querySelectorAll('.tnum, [data-money]');
+        // [data-no-privacy] subtrees (e.g. the dashboard clock — it's .tnum for tabular digits
+        // but shows TIME, not money) must not blur/flash when amounts are hidden.
+        const nodes=[...m.querySelectorAll('.tnum, [data-money]')].filter(el=>!el.closest('[data-no-privacy]'));
         nodes.forEach((el,i)=>{ try{ this._watchStuck(el.animate([{opacity:.45,filter:'blur(5px)',transform:'translateY(2px)'},{opacity:1,filter:'blur(0)',transform:'none'}],{duration:Math.round(360*sc),delay:Math.min(120,i*8),easing:'cubic-bezier(.2,.8,.2,1)'})); }catch(e){} });
       });
     }catch(e){}
@@ -2318,8 +2372,27 @@ class Component extends DCLogic {
         ? h('img',{src:set.logoData, alt:'logo', style:{width:dim+'px',height:dim+'px',objectFit:'contain',borderRadius:'6px'}})
         : h('div',{style:{width:dim+'px',height:dim+'px',borderRadius:'7px',background:cfg.color,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:px(h1),fontFamily:fam}}, (set.businessName||'M')[0]);
     }
-    const biz = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif", fontWeight:800, fontSize:px(h1), color:thermal?'#222':cfg.color, lineHeight:1.1}}, set.businessName||'');
+    const showBiz = cfg.showBizInfo!==false;
+    // Adaptive name size: long business names step DOWN so the name never wraps into an ugly
+    // 3-4 line tower (worst on A5). The step is proportional, then everything rides px().
+    const nameLen=(set.businessName||'').length;
+    const nameScale = nameLen<=14?1 : nameLen<=22?0.86 : nameLen<=30?0.74 : nameLen<=40?0.65 : 0.58;
+    const nameSize = Math.max(narrow?9:10.5, h1*nameScale*(cfg.size==='A5'?0.92:1));
+    const biz = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif", fontWeight:800, fontSize:px(nameSize), color:thermal?'#222':cfg.color, lineHeight:1.12, overflowWrap:'anywhere'}}, set.businessName||'');
     const headerTxt = cfg.header? h('div',{style:{fontSize:px(small),color:'#666',marginTop:'1px'}}, cfg.header):null;
+    // business info (markdown from Settings): address, phones, email, bank details...
+    // Standard sizes: right-aligned contact block in the top-right of the letterhead (classic
+    // professional invoice). Thermal: centered under the shop name. All sizes ride px().
+    const mdOpts=(headSz,headColor,alignEnd)=>({
+      headStyle:{fontWeight:700,color:headColor,fontSize:px(headSz),margin:px(2)+' 0 0'},
+      pStyle:{margin:'0'},
+      liStyle:{display:'flex',gap:px(4),margin:'0',alignItems:'baseline',justifyContent:alignEnd?'flex-end':'flex-start'},
+      gap:px(4)
+    });
+    const bizInfoNode = (showBiz && set.bizInfo)? h('div',{style: thermal
+        ? {fontSize:px(narrow?7.5:small-0.5),color:'#555',marginTop:px(3),lineHeight:1.5}
+        : {fontSize:px(cfg.size==='A5'? small-1 : small-0.5),color:'#666',lineHeight:1.55,textAlign:'right'}},
+      this._invMd(set.bizInfo, mdOpts(narrow?8:small-0.5, thermal?'#333':'#444', !thermal))) : null;
     const billNoNode = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif",fontWeight:700,fontSize:px(h2),color:'#1a1d24'}}, bill.no);
     const dateNode = h('div',{style:{fontSize:px(small),color:'#666'}}, this.dateStrFull(bill.ts));
     const byNode = bill.createdBy ? h('div',{style:{fontSize:px(small),color:'#888',marginTop:px(1)}}, 'By '+bill.createdBy) : null;
@@ -2327,12 +2400,29 @@ class Component extends DCLogic {
     if(thermal){
       header = h('div',{style:{textAlign:'center',borderBottom:'1px dashed #bbb',paddingBottom:px(8),marginBottom:px(8)}},
         logoNode && h('div',{style:{display:'flex',justifyContent:'center',marginBottom:px(4)}},logoNode),
-        biz, headerTxt,
+        biz, headerTxt, bizInfoNode,
         h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:px(6),fontSize:px(small)}}, h('span',null,bill.no), h('span',null,this.dateStrFull(bill.ts))), bill.createdBy? h('div',{style:{fontSize:px(small),color:'#666',marginTop:px(2)}}, 'By '+bill.createdBy):null);
     } else {
-      header = h('div',{style:{borderBottom:'2px solid '+cfg.color,paddingBottom:px(12),marginBottom:px(12),display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'12px'}},
-        h('div',{style:{display:'flex',alignItems:'center',gap:'10px'}}, logoNode, h('div',null,biz,headerTxt)),
-        h('div',{style:{textAlign:'right'}}, billNoNode, dateNode, byNode));
+      // Letterhead (unified for both with/without business info):
+      //   Top row  = logo + shop name (left)  |  contact block (right, only if present)
+      //   Meta band= compact single strip -> [Invoice #  |  Date] clustered LEFT,
+      //              [Generated by] anchored to the far RIGHT. Wraps gracefully on narrow
+      //              sizes. All sizes ride px() so fontScale applies.
+      const metaItem=(label,value,alignEnd)=> h('div',{style:{display:'flex',flexDirection:'column',gap:px(1),minWidth:0,alignItems:alignEnd?'flex-end':'flex-start'}},
+        h('span',{style:{fontSize:px(Math.max(6,small-2.5)),fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:cfg.color,opacity:.72,whiteSpace:'nowrap'}},label),
+        h('span',{style:{fontSize:px(small+0.5),fontWeight:700,color:'#1a1d24',fontFamily:"'Bricolage Grotesque',sans-serif",overflowWrap:'anywhere',lineHeight:1.15,textAlign:alignEnd?'right':'left'}},value));
+      const vDivider = h('div',{style:{width:'1px',alignSelf:'stretch',minHeight:px(small+8),background:cfg.color+'2e',flex:'none'}});
+      const leftCluster = h('div',{style:{display:'flex',alignItems:'center',gap:px(12),minWidth:0}},
+        metaItem('Invoice #', bill.no), vDivider, metaItem('Date', this.dateStrFull(bill.ts)));
+      const metaBand = h('div',{style:{display:'flex',alignItems:'center',flexWrap:'wrap',gap:px(6)+' '+px(14),padding:px(8)+' '+px(13),background:cfg.color+'0d',border:'1px solid '+cfg.color+'22',borderRadius:px(7),marginTop:px(10)}},
+        leftCluster,
+        bill.createdBy ? h('div',{style:{marginLeft:'auto'}}, metaItem('Generated by', bill.createdBy, true)) : null);
+      const topRow = bizInfoNode
+        ? h('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:px(14)}},
+            h('div',{style:{display:'flex',alignItems:'center',gap:'9px',minWidth:0,flex:'1 1 52%'}}, logoNode, h('div',{style:{minWidth:0}},biz,headerTxt)),
+            h('div',{style:{flex:'0 1 auto',maxWidth:'46%'}}, bizInfoNode))
+        : h('div',{style:{display:'flex',alignItems:'center',gap:'10px',minWidth:0}}, logoNode, h('div',{style:{minWidth:0}},biz,headerTxt));
+      header = h('div',{style:{borderBottom:'2px solid '+cfg.color,paddingBottom:px(11),marginBottom:px(12)}}, topRow, metaBand);
     }
     // customer
     const customer = h('div',{style:{display:'flex',justifyContent:'space-between',gap:'10px',fontSize:px(small),color:'#444',marginBottom:px(10),textAlign:thermal?'left':'left'}},
@@ -2366,7 +2456,17 @@ class Component extends DCLogic {
     let commentNode=null;
     if(cfg.showComments && bill.comment){ commentNode = h('div',{style:{marginTop:px(10),padding:px(7)+' '+px(9),background:'#f7f4ef',borderRadius:'4px',fontSize:px(small),color:'#555'}}, h('b',null,'Note: '), bill.comment); }
     let termsNode=null;
-    if(cfg.showTerms && set.terms){ termsNode = h('div',{style:{marginTop:px(10),paddingTop:px(7),borderTop:'1px solid #e2e2e2',fontSize:px(narrow?7.5:small-0.5),color:'#888',lineHeight:1.4}}, h('div',{style:{fontWeight:700,color:'#666',marginBottom:px(2)}},'Terms & Conditions'), set.terms); }
+    if(cfg.showTerms && set.terms){
+      // open markdown section — the USER writes its heading (e.g. **Terms & Conditions**) and
+      // can add any other headed blocks below; bold / italic / bullets / blank lines supported.
+      termsNode = h('div',{style:{marginTop:px(10),paddingTop:px(7),borderTop:'1px solid #e2e2e2',fontSize:px(narrow?7.5:small-0.5),color:'#888',lineHeight:1.45}},
+        this._invMd(set.terms, {
+          headStyle:{fontWeight:700,color:'#666',fontSize:px(narrow?8:small),margin:px(4)+' 0 '+px(1)},
+          pStyle:{margin:px(1)+' 0'},
+          liStyle:{display:'flex',gap:px(4),margin:px(1)+' 0',alignItems:'baseline'},
+          gap:px(4)
+        }));
+    }
     const footerFor=(pageNo,pageCount)=> h('div',{style:{marginTop:'auto',paddingTop:px(8),borderTop:'1px dashed #ccc',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:px(small),color:'#888'}},
       h('span',null, cfg.footer||''), pageCount>1? h('span',null,'Page '+pageNo+' of '+pageCount):null);
 
@@ -2385,7 +2485,7 @@ class Component extends DCLogic {
     // ---- PAGED: measure real DOM heights, then distribute ----
     const contentH = paperH - 2*pad;          // inner content box height
     const contentW = paperW - 2*pad;
-    const layoutKey = [cfg.size,fs,cfg.logo,cfg.cols.qty,cfg.cols.price,cfg.cols.total,cfg.showComments,cfg.showTerms,cfg.showPayInfo,bill.id,bill.lines.length,(set.businessName||'').length,(set.terms||'').length,(bill.comment||'').length,cur,opts.printArea?'p':'v'].join('|');
+    const layoutKey = [cfg.size,fs,cfg.logo,cfg.cols.qty,cfg.cols.price,cfg.cols.total,cfg.showComments,cfg.showTerms,cfg.showPayInfo,cfg.showBizInfo!==false,bill.id,bill.lines.length,(set.businessName||'').length,(set.bizInfo||'').length,(set.terms||'').length,(bill.comment||'').length,cur,opts.printArea?'p':'v'].join('|');
     const mm = (this.state.invMeasure && this.state.invMeasure[layoutKey]) || null;
     // estimate fallback (used only for the first frame before measurement lands)
     const lh=small*1.5*fs, cpad2=(narrow?3:5)*fs;
@@ -2444,6 +2544,31 @@ class Component extends DCLogic {
         h('div',{'data-m':'footer',style:{display:'flow-root'}}, footerFor(1,2))
       ) : null;
     return h('div',{className:(opts.printArea?'print-area ':'')+'invoice-pages', id: opts.printArea?'print-area':undefined, style:{display:'flex',flexDirection:'column',alignItems:'center'}}, measureNode, pages);
+  }
+  // ---- invoice mini-markdown: **heading** (own line), **bold** / *italic* inline, '- ' bullets,
+  //      blank lines = spacing. Every size comes from the caller so it scales with fontScale. ----
+  _invMd(text, o){
+    const h=React.createElement;
+    const inline=(s,kp)=>{
+      const out=[]; let rest=String(s); let k=0;
+      const re=/(\*\*([^*]+)\*\*|\*([^*]+)\*)/;
+      while(rest){ const m=rest.match(re); if(!m){ out.push(rest); break; }
+        if(m.index>0) out.push(rest.slice(0,m.index));
+        if(m[2]!=null) out.push(h('b',{key:kp+'b'+(k++)},m[2])); else out.push(h('em',{key:kp+'i'+(k++)},m[3]));
+        rest=rest.slice(m.index+m[0].length);
+      }
+      return out;
+    };
+    const lines=String(text||'').replace(/\r\n/g,'\n').split('\n');
+    const nodes=[]; let k=0;
+    lines.forEach((raw)=>{
+      const line=raw.trim(); let m;
+      if(!line){ nodes.push(h('div',{key:'sp'+(k++),style:{height:o.gap}})); return; }
+      if((m=line.match(/^\*\*(.+)\*\*$/))){ nodes.push(h('div',{key:'h'+(k++),style:o.headStyle}, inline(m[1],'h'+k))); return; }
+      if((m=line.match(/^[-\u2022]\s+(.*)$/))){ nodes.push(h('div',{key:'li'+(k++),style:o.liStyle}, h('span',{style:{flex:'none'}},'\u2022'), h('span',{style:{minWidth:0}},inline(m[1],'l'+k)))); return; }
+      nodes.push(h('div',{key:'p'+(k++),style:o.pStyle}, inline(line,'p'+k)));
+    });
+    return nodes;
   }
   _doMeasure(){
     const nodes=document.querySelectorAll('.inv-measure'); if(!nodes.length) return;
@@ -2924,13 +3049,23 @@ class Component extends DCLogic {
   viewGo(delta){
     const s=this.state; const ids=s.viewIds.slice(); const i=ids.indexOf(s.viewId); if(i<0) return; const j=i+delta;
     if(j<0) return;                                                        // already first
-    if(j<ids.length){ this.setState({ viewId:ids[j], viewAnim:delta>0?'next':'prev', viewDir:delta }); this._clearViewAnim(); return; }
+    if(j<ids.length){ this._slideSwap(ids[j], delta); return; }
     // need one beyond the loaded nav list
     const src=s.viewSource||ids; const have={}; ids.forEach(x=>have[x]=1); const more=src.filter(x=>!have[x]);
-    if(more.length){ const ext=ids.concat(more.slice(0,this._batch())); this.setState({ viewIds:ext, viewId:ext[j], viewAnim:'next', viewDir:1 }); this._clearViewAnim(); return; }
+    if(more.length){ const ext=ids.concat(more.slice(0,this._batch())); this._slideSwap(ext[j], 1, { viewIds:ext }); return; }
     if(this._viewCtx==='bills' && s.billsHasMore && !s.billsLoading){
       this.runAction('viewnext', async()=>{ await this._loadBills(false); this.setState(st=>{ const cur=st.bills.map(b=>b.id); const merged=this._mergeArr(st.viewIds, cur); const k=merged.indexOf(st.viewId); const nx=Math.min(merged.length-1, k+1); return { viewIds:merged, viewSource:this._mergeArr(st.viewSource||[], cur), viewId:merged[nx], viewAnim:'next', viewDir:1 }; }); this._clearViewAnim(); }, { block:'Loading more bills...' });
     }
+  }
+  // Two-phase slide-through for the bill viewer: the CURRENT bill slides out one way, then
+  // the next bill slides in from the other - reads as one continuous motion. Pure animation
+  // sequencing (no data changes); at animation speed 0 it swaps instantly like before.
+  _slideSwap(nextId, delta, extra){
+    clearTimeout(this._animT);
+    const out=Math.round(150*this._asScale());
+    if(out<=0){ this.setState({ ...(extra||{}), viewId:nextId, viewAnim:null, viewDir:delta }); return; }
+    this.setState({ ...(extra||{}), viewAnim:delta>0?'nextOut':'prevOut', viewDir:delta });
+    this._animT=setTimeout(()=>{ this.setState({ viewId:nextId, viewAnim:delta>0?'next':'prev' }); this._clearViewAnim(); }, out);
   }
   toggleActMenu(){ this.setState(s=>({ actMenuOpen:!s.actMenuOpen })); }
   viewBack(){ if(this.state.viewAnim==='out') return; this.setState({ viewAnim:'out', actMenuOpen:false }); clearTimeout(this._closeT); const dur=Math.max(140, Math.round(260*this._asScale()))+20; this._closeT=setTimeout(()=>{ const r=this.state.viewFrom||'bills'; this.setState({ route:r, viewId:null, viewAnim:null }); this._enterRoute(r); }, dur); }
@@ -2962,7 +3097,16 @@ class Component extends DCLogic {
     return ch;
   }
   setActFilter(patch){ this.setState(s=>({ actFilter:{ ...s.actFilter, ...patch } })); }
-  openChanges(id){ this.setState({ changesModal:id }); }
+  async openChanges(id){
+    this.setState({ changesModal:id });
+    // Fetch THIS bill's activity from the DB so the log shows even if the Activity tab was
+    // never opened (previously it read only the in-memory list -> empty on a fresh load).
+    if(this.db && this.db.billActivity){
+      this.setState({ billLogLoading:true });
+      try{ const items=await this.db.billActivity(id); this.setState(s=> (s.changesModal===id ? { billLog:{ ...(s.billLog||{}), [id]:items }, billLogLoading:false } : { billLog:{ ...(s.billLog||{}), [id]:items }, billLogLoading:false })); }
+      catch(e){ console.warn('billActivity', e); this.setState({ billLogLoading:false }); }
+    }
+  }
   closeChanges(){ this.setState({ changesModal:null }); }
   // ---------- confirm dialog ----------
   askConfirm(cfg){ this.setState({ confirm:cfg }); }
@@ -2973,6 +3117,19 @@ class Component extends DCLogic {
   _bill(id){ const s=this.state; return s.bills.find(x=>x.id===id) || s.archivedBills.find(x=>x.id===id) || s.binBills.find(x=>x.id===id) || s.pendingBills.find(x=>x.id===id) || (s.searchResults&&s.searchResults.find(x=>x.id===id)) || (s.viewCache&&s.viewCache[id]) || null; }
   _replaceBill(b){ this.setState(s=>({ bills:s.bills.map(x=>x.id===b.id?b:x), archivedBills:s.archivedBills.map(x=>x.id===b.id?b:x), binBills:s.binBills.map(x=>x.id===b.id?b:x), pendingBills:s.pendingBills.map(x=>x.id===b.id?b:x).filter(x=> x.id!==b.id || this.derive(b).pending>0), searchResults: s.searchResults? s.searchResults.map(x=>x.id===b.id?b:x):s.searchResults, viewCache:{ ...(s.viewCache||{}), [b.id]:b } })); }
   _removeFromActive(id){ this.setState(s=>({ bills:s.bills.filter(x=>x.id!==id) })); }
+  // Purge a permanently-deleted bill from EVERY client-side cache (_bill() searches them all:
+  // bills, archived, bin, pending, search results, view cache). Leaving a stale copy anywhere
+  // let the user re-open a purged bill from Activity and archive/edit it back into existence —
+  // resurrecting the doc with no stats contribution and corrupting reports.
+  _purgeBillEverywhere(ids){
+    const set={}; (Array.isArray(ids)?ids:[ids]).forEach(i=>{ set[i]=true; });
+    this.setState(s=>{
+      const not=(arr)=>(arr||[]).filter(x=>!set[x.id]);
+      const vc={...(s.viewCache||{})}; Object.keys(set).forEach(i=>{ delete vc[i]; });
+      return { bills:not(s.bills), archivedBills:not(s.archivedBills), binBills:not(s.binBills), pendingBills:not(s.pendingBills), searchResults: s.searchResults? not(s.searchResults) : s.searchResults, viewCache:vc };
+    });
+    Object.keys(set).forEach(i=>this._afterRemoveFromView(i));
+  }
   _upsertActive(b){ this.setState(s=>({ bills: s.bills.find(x=>x.id===b.id)? s.bills.map(x=>x.id===b.id?b:x) : [b, ...s.bills] })); }
   _removeFromArchived(id){ this.setState(s=>({ archivedBills:s.archivedBills.filter(x=>x.id!==id) })); }
   _upsertArchived(b){ this.setState(s=>({ archivedBills: s.archivedBills.find(x=>x.id===b.id)? s.archivedBills.map(x=>x.id===b.id?b:x) : [b, ...s.archivedBills] })); }
@@ -2987,8 +3144,8 @@ class Component extends DCLogic {
   restoreBill(id){ const b=this._bill(id); if(!b) return;
     this.runAction('rest-'+id, async()=>{ await this.db.restoreBill(id, b); this.setState(s=>({ binBills:s.binBills.filter(x=>x.id!==id), billsLoaded:false, archivedLoaded: b.archived? false : s.archivedLoaded })); this.logActivity({ action:'restore', entity:'bill', entityId:id, entityLabel:b.no, summary:'Restored bill from Recycle bin' }); this.toastMsg('Bill restore ho gaya','ok'); this._afterRemoveFromView(id); this._refreshDerived(); }, { block:'Restoring...' });
   }
-  permanentDelete(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this.setState(s=>{ const vc={...(s.viewCache||{})}; delete vc[id]; return { binBills:s.binBills.filter(x=>x.id!==id), viewCache:vc }; }); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._afterRemoveFromView(id); this._refreshDerived(); }, { block:'Deleting...' }) }); }
-  emptyBin(){ if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin - '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); this._refreshDerived(); }, { block:'Emptying bin...' }) }); }
+  permanentDelete(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this._purgeBillEverywhere(id); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._refreshDerived(); }, { block:'Deleting...' }) }); }
+  emptyBin(){ if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; const purged=[]; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); purged.push(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this._purgeBillEverywhere(purged); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin - '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); this._refreshDerived(); }, { block:'Emptying bin...' }) }); }
   _afterRemoveFromView(id){ if(this.state.route!=='view') return; const oldIds=this.state.viewIds||[]; const oldIdx=oldIds.indexOf(id); const ids=oldIds.filter(x=>x!==id); if(!ids.length){ this.viewBack(); return; } const nextId=ids[Math.min(Math.max(0,oldIdx), ids.length-1)]; this.setState({ viewIds:ids, viewId:nextId }); }
   deleteProduct(name){ this.askConfirm({ title:'Delete product?', message:'"'+name+'" catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product - '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting...' }) }); }
   // ---------- activity visibility (per user) ----------
@@ -3509,7 +3666,7 @@ class Component extends DCLogic {
     const pv = this.makeInvoiceView(this._sampleBill(), tpl, {shadow:true});
     const fontPct = Math.round((tpl.fontScale||1)*100)+'%';
     const mkToggle=(on)=>({ wrap:`width:42px;height:24px;border-radius:14px;border:none;cursor:pointer;position:relative;background:${on?'#1f6feb':'#d8cfc2'};transition:.2s;flex:none`, knob:`position:absolute;top:3px;left:${on?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)` });
-    const tgComments=mkToggle(tpl.showComments), tgTerms=mkToggle(tpl.showTerms), tgPay=mkToggle(tpl.showPayInfo), tgRepeat=mkToggle(tpl.repeatHeader!==false);
+    const tgComments=mkToggle(tpl.showComments), tgTerms=mkToggle(tpl.showTerms), tgPay=mkToggle(tpl.showPayInfo), tgRepeat=mkToggle(tpl.repeatHeader!==false), tgBizInfo=mkToggle(tpl.showBizInfo!==false);
     const recentIdForPrint = sorted.length? sorted[0].id : null;
 
     // admin
@@ -3647,8 +3804,19 @@ class Component extends DCLogic {
     let changesView=null;
     if(S.changesModal){
       const cb=this._bill(S.changesModal);
-      const entries=S.activity.filter(e=> e.entity==='bill' && e.entityId===S.changesModal).slice().sort((a,b)=> b.ts-a.ts);
-      changesView={ no: cb?cb.no:'', name: cb?(cb.name||'Walk-in customer'):'', count:entries.length, empty:entries.length===0,
+      // Merge freshly-fetched DB entries (billLog cache) with any in-memory ones for this bill,
+      // dedupe by id AND by signature (a just-logged tmp entry vs its saved copy), newest first.
+      const cached=(S.billLog && S.billLog[S.changesModal]) || [];
+      const live=S.activity.filter(e=> e.entity==='bill' && e.entityId===S.changesModal);
+      const seen={}, sig={}, all=[];
+      cached.concat(live).forEach(e=>{
+        if(e.id && seen[e.id]) return; if(e.id) seen[e.id]=1;
+        const k=(e.action||'')+'|'+(e.summary||'')+'|'+Math.round((e.ts&&e.ts.getTime?e.ts.getTime():0)/2000);
+        if(sig[k]) return; sig[k]=1; all.push(e);
+      });
+      const entries=all.slice().sort((a,b)=> b.ts-a.ts);
+      const loading=S.billLogLoading && entries.length===0;
+      changesView={ no: cb?cb.no:'', name: cb?(cb.name||'Walk-in customer'):'', count:entries.length, empty:entries.length===0 && !loading, loading,
         entries: entries.map(e=>{ const meta=actMeta(e.action); return { rk:e.id, icon:this.ic(meta[0],15), iconWrap:`width:30px;height:30px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;background:${meta[2]};color:${meta[1]}`, summary:e.summary, userName:e.userName, time:this.dateStrFull(e.ts), hasChanges:(e.changes&&e.changes.length>0), changes:(e.changes||[]).map((c,i)=>({rk:e.id+'c'+i, field:c.field, from:c.from, to:c.to})) }; }) };
     }
 
@@ -3670,6 +3838,7 @@ class Component extends DCLogic {
           cols: colDefs2.map(([k,label])=>{ const on=cfg.cols[k]; const t=mkPT(on); return { key:k, rk:'pc'+k+(on?'1':'0'), label, onClick:()=>this.setPrintCfg({cols:{...cfg.cols,[k]:!cfg.cols[k]}}), wrap:t.wrap, knob:t.knob }; }),
           logo:mkPT(cfg.logo), onLogo:()=>this.setPrintCfg({logo:!cfg.logo}),
           comments:mkPT(cfg.showComments), onComments:()=>this.setPrintCfg({showComments:!cfg.showComments}),
+          bizInfo:mkPT(cfg.showBizInfo!==false), onBizInfo:()=>this.setPrintCfg({showBizInfo:!(cfg.showBizInfo!==false)}),
           terms:mkPT(cfg.showTerms), onTerms:()=>this.setPrintCfg({showTerms:!cfg.showTerms}),
           pay:mkPT(cfg.showPayInfo), onPay:()=>this.setPrintCfg({showPayInfo:!cfg.showPayInfo}),
           repeatHeader:mkPT(cfg.repeatHeader!==false), onRepeatHeader:()=>this.setPrintCfg({repeatHeader:!(cfg.repeatHeader!==false)}), repeatHeaderHint:(cfg.repeatHeader!==false)?'Header & customer details repeat on pages 2, 3...':'Only the first page shows the header; later pages start with the items.',
@@ -3701,8 +3870,10 @@ class Component extends DCLogic {
     const animU='calc(var(--as,1) * '; // duration helper using the global speed scale
     const viewAnimStyle =
       S.viewAnim==='out'  ? ('animation:billClose '+animU+'.24s) ease forwards') :
-      S.viewAnim==='next' ? ('animation:billNext '+animU+'.34s) cubic-bezier(.2,.7,.2,1) both') :
-      S.viewAnim==='prev' ? ('animation:billPrev '+animU+'.34s) cubic-bezier(.2,.7,.2,1) both') :
+      S.viewAnim==='nextOut' ? ('animation:billNextOut '+animU+'.15s) ease both') :
+      S.viewAnim==='prevOut' ? ('animation:billPrevOut '+animU+'.15s) ease both') :
+      S.viewAnim==='next' ? ('animation:billNext '+animU+'.3s) cubic-bezier(.2,.7,.2,1) both') :
+      S.viewAnim==='prev' ? ('animation:billPrev '+animU+'.3s) cubic-bezier(.2,.7,.2,1) both') :
       S.viewAnim==='in'   ? ('animation:billOpen '+animU+'.32s) ease both') : '';
     const saveBillLabel = S.isMobile ? 'Save' : 'Save bill';
     const billCardStyle = S.isMobile
@@ -3778,8 +3949,8 @@ class Component extends DCLogic {
       aboutDevInitials:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.initials))||'HJ',
       aboutDevPhone:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.phoneDisplay))||'0307-2924105',
       aboutDevPhoneHref:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.phoneHref))||'tel:03072924105',
-      tgCommentsWrap:tgComments.wrap, tgCommentsKnob:tgComments.knob, tgTermsWrap:tgTerms.wrap, tgTermsKnob:tgTerms.knob, tgPayWrap:tgPay.wrap, tgPayKnob:tgPay.knob, tgRepeatWrap:tgRepeat.wrap, tgRepeatKnob:tgRepeat.knob,
-      toggleComments:()=>this.setState({tpl:{...tpl,showComments:!tpl.showComments}}), toggleTerms:()=>this.setState({tpl:{...tpl,showTerms:!tpl.showTerms}}), togglePayInfo:()=>this.setState({tpl:{...tpl,showPayInfo:!tpl.showPayInfo}}), toggleRepeatHeader:()=>this.setState(s=>({tpl:{...s.tpl,repeatHeader:!(s.tpl.repeatHeader!==false)}})),
+      tgCommentsWrap:tgComments.wrap, tgCommentsKnob:tgComments.knob, tgBizInfoWrap:tgBizInfo.wrap, tgBizInfoKnob:tgBizInfo.knob, tgTermsWrap:tgTerms.wrap, tgTermsKnob:tgTerms.knob, tgPayWrap:tgPay.wrap, tgPayKnob:tgPay.knob, tgRepeatWrap:tgRepeat.wrap, tgRepeatKnob:tgRepeat.knob,
+      toggleComments:()=>this.setState({tpl:{...tpl,showComments:!tpl.showComments}}), toggleBizInfo:()=>this.setState({tpl:{...tpl,showBizInfo:!(tpl.showBizInfo!==false)}}), toggleTerms:()=>this.setState({tpl:{...tpl,showTerms:!tpl.showTerms}}), togglePayInfo:()=>this.setState({tpl:{...tpl,showPayInfo:!tpl.showPayInfo}}), toggleRepeatHeader:()=>this.setState(s=>({tpl:{...s.tpl,repeatHeader:!(s.tpl.repeatHeader!==false)}})),
       onFontScale:ev=>this.setState({tpl:{...tpl,fontScale:Number(ev.target.value)}}), fontScaleVal:String(tpl.fontScale||1),
       toggleLogo:()=>this.setState({tpl:{...tpl,logo:!tpl.logo}}), onTplHeader:ev=>this.setState({tpl:{...tpl,header:ev.target.value}}), onTplFooter:ev=>this.setState({tpl:{...tpl,footer:ev.target.value}}), onPrint:()=> recentIdForPrint? this.openPrint(recentIdForPrint) : this.toastMsg('No saved bills to print yet','warn'),
       // admin
@@ -3793,7 +3964,7 @@ class Component extends DCLogic {
       addUserModalStyle:this._modal(),
       // settings
       settings:S.settings, onCurrency:ev=>this.setSetting('currency',ev.target.value,'Currency'), onRegion:ev=>this.setSetting('region',ev.target.value,'Region'), onPrefix:ev=>this.setSetting('prefix',ev.target.value,'Bill prefix'), onStartNo:ev=>this.setSetting('startNo',ev.target.value,'Starting number'), nextBillPreview:S.settings.prefix+'-'+(S.counter==null?'...':S.counter),
-      onBizName:ev=>this.setSetting('businessName',ev.target.value,'Business name'), onTerms:ev=>this.setSetting('terms',ev.target.value,'Terms & conditions'), onLogoFile:ev=>this.onLogoUpload(ev.target.files&&ev.target.files[0]), removeLogo:()=>{ this.setState(s=>({settings:{...s.settings,logoData:''}})); this.logActivity({action:'settings',entity:'settings',entityId:'settings',entityLabel:'Settings',summary:'Removed business logo'}); }, hasLogo:!!S.settings.logoData, noLogo:!S.settings.logoData,
+      onBizName:ev=>this.setSetting('businessName',ev.target.value,'Business name'), onBizInfo:ev=>this.setSetting('bizInfo',ev.target.value,'Business info'), onTerms:ev=>this.setSetting('terms',ev.target.value,'Invoice custom section'), onLogoFile:ev=>this.onLogoUpload(ev.target.files&&ev.target.files[0]), removeLogo:()=>{ this.setState(s=>({settings:{...s.settings,logoData:''}})); this.logActivity({action:'settings',entity:'settings',entityId:'settings',entityLabel:'Settings',summary:'Removed business logo'}); }, hasLogo:!!S.settings.logoData, noLogo:!S.settings.logoData,
       logoPreview: S.settings.logoData ? React.createElement('img',{src:S.settings.logoData,alt:'logo',style:{width:'100%',height:'100%',objectFit:'contain'}}) : React.createElement('span',{style:{color:'#c3b9a8'}}, this.ic('box',16)),
       listBatchVal:String(S.settings.listBatch), onListBatch:ev=>this.setListPref({listBatch:Math.max(20,Math.min(100,Number(ev.target.value)||25))}), autoLoad:S.settings.autoLoad, setAutoLoad:(v)=>this.setListPref({autoLoad:v}), toggleAutoLoad:()=>this.setListPref({autoLoad:!S.settings.autoLoad}),
       autoToggleWrap:`width:42px;height:24px;border-radius:14px;border:none;cursor:pointer;position:relative;background:${S.settings.autoLoad?'#1f6feb':'#d8cfc2'};transition:.2s;flex:none`, autoToggleKnob:`position:absolute;top:3px;left:${S.settings.autoLoad?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)`,

@@ -552,22 +552,22 @@ function makeDB(A) {
       let store;
       await A.txn(async (t) => {
         // AUTHORITATIVE baseline = the CURRENT stored doc, read inside the transaction — never
-        // the app's possibly-stale copy. This keeps the stats delta exact even if the bill was
-        // changed on another device/tab since it was opened, and lets us preserve any payment
-        // that was recorded in parallel (an edit changes items/discount/etc.; payments are
-        // appended separately and must not be clobbered).
+        // the app's possibly-stale copy.
         const current = await t.get("bills/" + id);
-        const curHistApp = current && Array.isArray(current.history)
+        // SAFEGUARD: a permanently deleted bill can NEVER be resurrected by an edit. Without
+        // this, editing a stale copy re-created the doc while its stats contribution was long
+        // gone — corrupting reports (only the edit's delta ever got counted).
+        if (!current) { const err = new Error("Yeh bill permanently delete ho chuka hai - update mumkin nahi"); err.userMessage = err.message; throw err; }
+        const curHistApp = Array.isArray(current.history)
           ? current.history.map((h) => ({ kind: h.kind, amount: Number(h.amount) || 0, comment: h.comment || "", ts: new Date(h.tsMs || nowMs()), by: h.by || "" }))
-          : ((oldBill && oldBill.history) || []);
+          : [];
         // the editor only ever APPENDS payments on top of what it loaded (oldBill.history);
         // carry those appended entries over onto the authoritative history so none are lost.
         const oldLen = (oldBill && Array.isArray(oldBill.history)) ? oldBill.history.length : 0;
-        const editAppended = oldBill ? (bill.history || []).slice(oldLen) : (current ? [] : (bill.history || []));
+        const editAppended = oldBill ? (bill.history || []).slice(oldLen) : [];
         const mergedHistory = [...curHistApp, ...editAppended];
         store = billToStore({ ...bill, history: mergedHistory }, derive);
-        const oldStore = current || (oldBill ? billToStore(oldBill, derive) : null);
-        const buckets = statsBuckets(oldStore, store);
+        const buckets = statsBuckets(current, store);
         const cur = await readStats(t, buckets);            // all reads before any write
         await t.set("bills/" + id, store);
         await writeStats(t, buckets, cur);
@@ -578,9 +578,11 @@ function makeDB(A) {
     async _flagBill(id, oldBill, patch) {
       let newStore;
       await A.txn(async (t) => {
-        // flip flags on the AUTHORITATIVE current doc (falls back to the app copy only if the
-        // doc somehow doesn't exist), so archive/delete/restore adjust stats against reality.
-        const current = (await t.get("bills/" + id)) || billToStore(oldBill, derive);
+        // flip flags on the AUTHORITATIVE current doc. SAFEGUARD: if the doc no longer exists
+        // (permanently deleted), refuse — archiving/restoring a stale copy used to re-create
+        // the bill with no stats contribution, silently corrupting reports.
+        const current = await t.get("bills/" + id);
+        if (!current) { const err = new Error("Yeh bill permanently delete ho chuka hai - action mumkin nahi"); err.userMessage = err.message; throw err; }
         newStore = { ...current, ...patch };
         const buckets = statsBuckets(current, newStore);
         const cur = await readStats(t, buckets);            // reads first
@@ -614,10 +616,10 @@ function makeDB(A) {
       let newStore;
       const entryStore = { kind: entry.kind, amount: Number(entry.amount) || 0, comment: entry.comment || "", tsMs: (entry.ts instanceof Date ? entry.ts : new Date()).getTime(), by: entry.by || "" };
       await A.txn(async (t) => {
-        // Append to the AUTHORITATIVE stored history: a payment added in parallel on another
-        // device survives (Firestore retries the txn on write conflict), and the stats delta is
-        // computed against the real stored state — not the app's stale snapshot.
-        const current = (await t.get("bills/" + id)) || billToStore(oldBill, derive);
+        // Append to the AUTHORITATIVE stored history. SAFEGUARD: never add a payment to a
+        // permanently deleted bill (would resurrect it and corrupt stats).
+        const current = await t.get("bills/" + id);
+        if (!current) { const err = new Error("Yeh bill permanently delete ho chuka hai - payment mumkin nahi"); err.userMessage = err.message; throw err; }
         const newHist = [...((current.history) || []), entryStore];
         const sub = (current.lines || []).reduce((s, l) => s + (Number(l.qty) || 0) * (Number(l.price) || 0), 0);
         const disc = Math.max(0, Math.min(sub, Number(current.discount) || 0));
@@ -643,6 +645,13 @@ function makeDB(A) {
     async loadActivityPage({ batch, startAfter }) {
       const { rows, hasMore } = await A.query("activity", { orderBy: ["tsMs", "desc"], limit: batch, startAfter });
       return { items: rows.map((r) => actFromStore(r.id, r)), cursor: rows.length ? rows[rows.length - 1].tsMs : null, hasMore };
+    },
+    // Activity for ONE bill (the bill-log modal). Single equality filter => needs NO composite
+    // index and reads only this bill's handful of entries (cheap) — so the log works even when
+    // the Activity tab was never opened, and never scans the whole activity collection.
+    async billActivity(billId) {
+      const { rows } = await A.query("activity", { where: [["entityId", "==", billId]], limit: 300 });
+      return rows.map((r) => actFromStore(r.id, r));
     },
 
     /* ---------- stats (dashboard + reports — never scans bills) ---------- */

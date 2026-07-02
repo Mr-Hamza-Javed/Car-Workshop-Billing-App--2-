@@ -55,7 +55,7 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldPath } = require("firebase-admin/firestore");
 const { getDatabase, ServerValue } = require("firebase-admin/database");
 
 initializeApp();
@@ -413,8 +413,7 @@ exports.recalcStats = onCall({ ...opts, timeoutSeconds: 540, memory: "512MiB" },
       return { jobId, status: "stopped" };
     }
 
-    // Write aggregates to Firestore in <=450-op batches. Also zero any day/month doc that
-    // falls in-range but no longer has bills, so stale numbers can't linger.
+    // Write aggregates to Firestore in <=450-op batches.
     const commitMap = async (coll, map) => {
       let batch = db.batch(), n = 0;
       for (const k of Object.keys(map)) {
@@ -425,6 +424,24 @@ exports.recalcStats = onCall({ ...opts, timeoutSeconds: 540, memory: "512MiB" },
     };
     await commitMap("stats", days);
     await commitMap("stats_m", months);
+
+    // ZERO any existing aggregate doc IN RANGE that no longer has any bills — without this,
+    // a day whose bills were all deleted kept showing its old totals in reports even after a
+    // "successful" recalculation (the local engine always did this; the cloud path must too).
+    const zeroStale = async (coll, map, loKey, hiKey) => {
+      const ex = await db.collection(coll)
+        .where(FieldPath.documentId(), ">=", loKey)
+        .where(FieldPath.documentId(), "<=", hiKey).get();
+      let batch = db.batch(), n = 0;
+      for (const d of ex.docs) {
+        if (!map[d.id]) { batch.set(d.ref, { billed: 0, paid: 0, pending: 0, count: 0 }); n++; if (n % 450 === 0) { await batch.commit(); batch = db.batch(); } }
+      }
+      await batch.commit();
+      return n;
+    };
+    const staleD = await zeroStale("stats", days, dayKey(fromMs), dayKey(toMs));
+    const staleM = await zeroStale("stats_m", months, monthKey(fromMs), monthKey(toMs));
+    if (staleD || staleM) await log("info", "Purane khali aggregates saaf kiye: " + staleD + " din, " + staleM + " mahine");
 
     const summary = { bills: totalBills, months: totalMonths, days: totalDays, errors };
     await jobRef.update({ status: "done", progress: 100, "bills/done": totalBills, "months/done": totalMonths, "days/done": totalDays, summary, updatedAt: TS });
