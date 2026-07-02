@@ -340,7 +340,7 @@
                     <span style="{{ b.badge }}">{{ b.statusLabel }}</span>
                   </div>
                   <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#8a8175; font-weight:500; margin-top:7px">
-                    <span style="display:flex; opacity:.7">{{ icons.carSm }}</span>{{ b.car }} · {{ b.model }}
+                    <span style="display:flex; opacity:.7">{{ icons.carSm }}</span>{{ b.metaVeh }}
                   </div>
                   <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:11px; padding-top:10px; border-top:1px dashed #ece4d7">
                     <div>
@@ -622,17 +622,24 @@
                 <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#a59c8c; display:flex">{{ icons.search }}</span>
                 <input value="{{ billSearch.q }}" onChange="{{ onBillSearchInput }}" onKeyDown="{{ onBillSearchKey }}" placeholder="Bill #, naam, phone ya car — Enter dabayein" autocomplete="off" style="width:100%; padding:11px 13px 11px 40px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:11px; font-size:14px; font-weight:500; color:#1a1d24">
               </div>
-              <button onClick="{{ runBillSearch }}" style="flex:none; padding:11px 15px; background:#1f6feb; color:#fff; border:none; border-radius:11px; font-size:13px; font-weight:700; cursor:pointer">Search</button>
-              <button onClick="{{ toggleFltPanel }}" title="Filters" style="flex:none; display:flex; align-items:center; gap:7px; padding:11px 13px; background:#fff; border:1.5px solid #ece4d7; border-radius:11px; font-size:13px; font-weight:600; color:#3f4753; cursor:pointer">{{ icons.filter }} <span style="{{ fltLabelStyle }}">Filters</span><sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}"><span style="background:#1f6feb; color:#fff; border-radius:20px; min-width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; padding:0 5px">{{ activeCount }}</span></sc-if></button>
-            </div>
-            <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}">
-              <div style="display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-top:11px">
-                <sc-for list="{{ activeChips }}" as="c" hint-placeholder-count="2">
-                  <span key="{{ c.rk }}" style="{{ c.style }}">{{ c.label }} <button onClick="{{ c.onClear }}" style="display:flex; border:none; background:rgba(31,111,235,.16); color:#1f6feb; border-radius:50%; width:17px; height:17px; align-items:center; justify-content:center; cursor:pointer; padding:0">{{ icons.x }}</button></span>
-                </sc-for>
-                <button onClick="{{ clearFlt }}" style="font-size:12px; font-weight:600; color:#c0392b; background:none; border:none; cursor:pointer; padding:4px 6px">Clear all</button>
+              <button onClick="{{ runBillSearch }}" title="Search" style="flex:none; padding:11px 15px; background:#1f6feb; color:#fff; border:none; border-radius:11px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center">{{ searchBtnLabel }}</button>
+              <button onClick="{{ toggleFltPanel }}" title="Filters" style="{{ fltBtnStyle }}">{{ icons.filter }} <span style="{{ fltLabelStyle }}">Filters</span><sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}"><span style="background:#1f6feb; color:#fff; border-radius:20px; min-width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; padding:0 5px">{{ activeCount }}</span></sc-if></button>
+              <div style="position:relative; flex:none">
+                <button onClick="{{ billSortCtl.onToggle }}" title="Sort" style="display:flex; align-items:center; gap:7px; padding:11px 13px; background:#fff; border:1.5px solid #ece4d7; border-radius:11px; font-size:13px; font-weight:600; color:#3f4753; cursor:pointer">{{ icons.sort }} <span style="{{ fltLabelStyle }}">Sort</span></button>
+                <sc-if value="{{ billSortCtl.open }}" hint-placeholder-val="{{ false }}">
+                  <div onClick="{{ billSortCtl.onToggle }}" style="position:fixed; inset:0; z-index:59"></div>
+                  <div style="position:absolute; right:0; top:calc(100% + 6px); z-index:60; background:#fff; border:1px solid #e6ddd0; border-radius:13px; box-shadow:0 16px 44px rgba(26,29,36,.16); padding:6px; min-width:225px; display:flex; flex-direction:column; animation:panelIn calc(var(--as,1)*.18s) cubic-bezier(.2,.8,.2,1)">
+                    <sc-if value="{{ billSortCtl.isTiny }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ billSortCtl.onOpenFilters }}" style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:9px 12px; border:none; border-radius:9px; font-size:12.5px; font-weight:700; cursor:pointer; background:transparent; color:#1f6feb">{{ icons.filter }} Filters…</button>
+                      <div style="height:1px; background:#f0e9de; margin:4px 6px"></div>
+                    </sc-if>
+                    <sc-for list="{{ billSortCtl.options }}" as="o" hint-placeholder-count="6">
+                      <button key="{{ o.rk }}" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}<sc-if value="{{ o.active }}" hint-placeholder-val="{{ false }}"><span style="display:flex">{{ icons.checkSm }}</span></sc-if></button>
+                    </sc-for>
+                  </div>
+                </sc-if>
               </div>
-            </sc-if>
+            </div>
             <sc-if value="{{ hasPresets }}" hint-placeholder-val="{{ false }}">
               <div style="display:flex; align-items:center; gap:8px; margin-top:11px; padding-top:11px; border-top:1px dashed #ece4d7">
                 <span style="font-size:11.5px; font-weight:700; color:#a59c8c; text-transform:uppercase; letter-spacing:.4px; flex:none">Saved</span>
@@ -653,6 +660,15 @@
                   <button onClick="{{ presetScrollNext }}" title="Scroll for more" style="{{ presetScrollBtnStyle }}">{{ icons.chevR }}</button>
                 </sc-if>
                 <button onClick="{{ togglePresetEdit }}" title="Edit saved presets" style="{{ presetEditBtnStyle }}">{{ presetEditIcon }}</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-top:11px; padding-top:11px; border-top:1px dashed #ece4d7">
+                <span style="font-size:11.5px; font-weight:700; color:#a59c8c; text-transform:uppercase; letter-spacing:.4px; flex:none">Active</span>
+                <sc-for list="{{ activeChips }}" as="c" hint-placeholder-count="2">
+                  <span key="{{ c.rk }}" style="{{ c.style }}">{{ c.label }} <button onClick="{{ c.onClear }}" style="display:flex; border:none; background:rgba(31,111,235,.16); color:#1f6feb; border-radius:50%; width:17px; height:17px; align-items:center; justify-content:center; cursor:pointer; padding:0">{{ icons.x }}</button></span>
+                </sc-for>
+                <button onClick="{{ clearFlt }}" style="font-size:12px; font-weight:600; color:#c0392b; background:none; border:none; cursor:pointer; padding:4px 6px">Clear all</button>
               </div>
             </sc-if>
           </div>
@@ -701,7 +717,7 @@
                       <span style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:13px; color:#1f6feb; flex:none">{{ b.no }}</span>
                       <span style="font-size:13.5px; font-weight:600; color:#1a1d24; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ b.name }}</span>
                     </div>
-                    <div style="font-size:11.5px; color:#8a8175; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px">{{ b.car }} · {{ b.phone }} {{ b.dateInline }}</div>
+                    <div style="font-size:11.5px; color:#8a8175; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px">{{ b.meta1 }}</div>
                   </div>
                   <div style="text-align:right; flex:none">
                     <div class="tnum" style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:14.5px; white-space:nowrap">{{ b.total }}</div>
@@ -744,7 +760,7 @@
                 <div style="flex:1; min-width:0">
                   <div style="display:flex; align-items:center; gap:9px"><span style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:14px">{{ b.no }}</span><span style="{{ b.badge }}">{{ b.statusLabel }}</span></div>
                   <div style="font-size:13px; font-weight:600; color:#3f4753; margin-top:2px">{{ b.name }}</div>
-                  <div style="font-size:11.5px; color:#8a8175; margin-top:1px">{{ b.phone }} · {{ b.car }} · {{ b.model }}</div>
+                  <div style="font-size:11.5px; color:#8a8175; margin-top:1px">{{ b.metaSearch }}</div>
                 </div>
                 <div style="text-align:right">
                   <div class="tnum" style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:15px">{{ b.total }}</div>
@@ -768,10 +784,23 @@
               <div class="tnum" style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:34px; letter-spacing:-.8px; color:#9a5e08; margin-top:4px">{{ pendingTotalDisp }}</div>
               <div style="font-size:13px; color:#b8740a; font-weight:500">{{ pendingCountLabel }}</div>
             </div>
-            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; background:rgba(255,255,255,.55); padding:5px; border-radius:13px; width:252px; max-width:100%">
-              <sc-for list="{{ periods }}" as="p" hint-placeholder-count="4">
-                <button key="{{ p.rk }}" onClick="{{ p.onClick }}" style="{{ p.styleAmber }}">{{ p.label }}</button>
-              </sc-for>
+            <div style="display:flex; align-items:center; gap:8px">
+              <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; background:rgba(255,255,255,.55); padding:5px; border-radius:13px; width:252px; max-width:100%">
+                <sc-for list="{{ periods }}" as="p" hint-placeholder-count="4">
+                  <button key="{{ p.rk }}" onClick="{{ p.onClick }}" style="{{ p.styleAmber }}">{{ p.label }}</button>
+                </sc-for>
+              </div>
+              <div style="position:relative; flex:none">
+                <button onClick="{{ pendSortCtl.onToggle }}" title="Sort" style="display:flex; align-items:center; justify-content:center; width:38px; height:38px; background:rgba(255,255,255,.55); border:1px solid #f3dcb3; border-radius:11px; color:#9a5e08; cursor:pointer">{{ icons.sort }}</button>
+                <sc-if value="{{ pendSortCtl.open }}" hint-placeholder-val="{{ false }}">
+                  <div onClick="{{ pendSortCtl.onToggle }}" style="position:fixed; inset:0; z-index:59"></div>
+                  <div style="position:absolute; right:0; top:calc(100% + 6px); z-index:60; background:#fff; border:1px solid #e6ddd0; border-radius:13px; box-shadow:0 16px 44px rgba(26,29,36,.16); padding:6px; min-width:225px; display:flex; flex-direction:column; animation:panelIn calc(var(--as,1)*.18s) cubic-bezier(.2,.8,.2,1)">
+                    <sc-for list="{{ pendSortCtl.options }}" as="o" hint-placeholder-count="6">
+                      <button key="{{ o.rk }}" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}<sc-if value="{{ o.active }}" hint-placeholder-val="{{ false }}"><span style="display:flex">{{ icons.checkSm }}</span></sc-if></button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
             </div>
           </div>
           <div class="stagger" style="display:flex; flex-direction:column; gap:9px">
@@ -779,7 +808,7 @@
               <div class="hl" onClick="{{ b.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px" style-hover="background:#faf7f1; border:1px solid #ddd2c2; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px">
                 <div style="flex:1; min-width:0">
                   <div style="font-size:13.5px; font-weight:700; color:#1a1d24"><span style="font-family:'Bricolage Grotesque'">{{ b.no }}</span> · {{ b.name }}</div>
-                  <div style="font-size:11.5px; color:#8a8175; margin-top:2px">{{ b.car }} · {{ b.phone }} · {{ b.dateStr }}</div>
+                  <div style="font-size:11.5px; color:#8a8175; margin-top:2px">{{ b.meta2 }}</div>
                 </div>
                 <div style="text-align:right; flex:none">
                   <div style="font-size:10.5px; color:#a59c8c; font-weight:600; text-transform:uppercase; letter-spacing:.4px">Pending</div>
@@ -1297,7 +1326,7 @@
               <div key="{{ b.rk }}" class="hl" onClick="{{ b.onOpen }}" style="background:#fff; border:1px solid #ece4d7; border-radius:13px; padding:13px 15px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; cursor:pointer" style-hover="background:#fdf6f5; border:1px solid #f1cbc4; border-radius:13px; padding:13px 15px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; cursor:pointer">
                 <div style="flex:1; min-width:140px">
                   <div style="display:flex; align-items:center; gap:8px"><span style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:14px">{{ b.no }}</span><span style="{{ b.badge }}">{{ b.statusLabel }}</span></div>
-                  <div style="font-size:12px; color:#3f4753; font-weight:600; margin-top:2px">{{ b.name }} · {{ b.car }}</div>
+                  <div style="font-size:12px; color:#3f4753; font-weight:600; margin-top:2px">{{ b.metaBin }}</div>
                   <div style="font-size:11.5px; color:#a59c8c; margin-top:1px">{{ b.deletedStr }}</div>
                 </div>
                 <div class="tnum" style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:15px">{{ b.total }}</div>
@@ -1557,7 +1586,7 @@
             <div onClick="{{ b.onClick }}" style="background:#faf7f1; border:1px solid #f0e9de; border-left:3px solid {{ b.accent }}; border-radius:12px; padding:12px 14px; cursor:pointer; display:flex; align-items:center; gap:12px" style-hover="background:#f4efe7; border:1px solid #e6ddd0; border-left:3px solid {{ b.accent }}; border-radius:12px; padding:12px 14px; cursor:pointer; display:flex; align-items:center; gap:12px">
               <div style="flex:1; min-width:0">
                 <div style="display:flex; align-items:center; gap:8px"><span style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:13.5px">{{ b.no }}</span><span style="{{ b.badge }}">{{ b.statusLabel }}</span></div>
-                <div style="font-size:11.5px; color:#8a8175; margin-top:2px">{{ b.model }} · {{ b.dateStr }}</div>
+                <div style="font-size:11.5px; color:#8a8175; margin-top:2px">{{ b.metaHist }}</div>
               </div>
               <div class="tnum" style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:15px">{{ b.total }}</div>
             </div>
@@ -1895,6 +1924,8 @@ class Component extends DCLogic {
     billSearch:{ q:'', applied:'' },
     billFlt:{ status:'all', from:'', to:'', amtOp:'any', amtVal:'', penOp:'any', penVal:'', hasComment:false, hasNote:false },
     fltOpen:false, presets:[], presetDraft:'', presetEdit:false, presetCanPrev:false, presetCanNext:false,
+    billSort:'created_desc', pendSort:'created_desc', sortMenu:null,
+    isTiny: (typeof window!=='undefined' && window.innerWidth < 480),
     dropOpen:-1,
   };
 
@@ -1904,7 +1935,7 @@ class Component extends DCLogic {
     setTimeout(()=>this._recalcResume(), 2500);
     const pr=this._loadPresets(); this.setState({ presets:(pr&&pr.length)?pr:this._defaultPresets() });
     this._t = setInterval(()=> this.setState({ now:new Date() }), 1000);
-    this._r = ()=>{ const m = window.innerWidth < 820; if(m!==this.state.isMobile) this.setState({isMobile:m}); };
+    this._r = ()=>{ const m = window.innerWidth < 820; const t = window.innerWidth < 480; const p={}; if(m!==this.state.isMobile) p.isMobile=m; if(t!==this.state.isTiny) p.isTiny=t; if(Object.keys(p).length) this.setState(p); };
     window.addEventListener('resize', this._r);
     this._key=(e)=>this._onKey(e); window.addEventListener('keydown', this._key);
     this._vis=()=>{ if(document.visibilityState==='visible') this._healStuckAnimations(); };
@@ -2795,6 +2826,23 @@ class Component extends DCLogic {
   setFlt(patch){ this.setState(s=>({ billFlt:{...s.billFlt, ...patch} })); if(patch.status==='archived' && !this.state.archivedLoaded && !this.state.archivedLoading) this._loadArchived(true); }
   clearFlt(){ this.setState({ billFlt:{ status:'all', from:'', to:'', amtOp:'any', amtVal:'', penOp:'any', penVal:'', hasComment:false, hasNote:false }, billSearch:{q:'',applied:''}, searchResults:null }); }
   toggleFltPanel(){ this.setState(s=>({ fltOpen:!s.fltOpen })); }
+  // ---- list sorting (client-side over loaded items; default = creation time, newest first) ----
+  _sortBills(arr, key){
+    const dv=(b)=>this.derive(b);
+    const created=(b)=> (b.createdAt&&b.createdAt.getTime)? b.createdAt.getTime() : b.ts.getTime();
+    const noNum=(b)=>{ const m=String(b.no||'').match(/(\d+)\s*$/); return m? Number(m[1]) : 0; };
+    const cmp={
+      created_desc:(a,b)=> created(b)-created(a), created_asc:(a,b)=> created(a)-created(b),
+      date_desc:(a,b)=> b.ts-a.ts, date_asc:(a,b)=> a.ts-b.ts,
+      no_desc:(a,b)=> noNum(b)-noNum(a), no_asc:(a,b)=> noNum(a)-noNum(b),
+      amount_desc:(a,b)=> dv(b).total-dv(a).total, amount_asc:(a,b)=> dv(a).total-dv(b).total,
+      pending_desc:(a,b)=> dv(b).pending-dv(a).pending, pending_asc:(a,b)=> dv(a).pending-dv(b).pending,
+      name_asc:(a,b)=> String(a.name||'').localeCompare(String(b.name||'')),
+    }[key] || ((a,b)=> created(b)-created(a));
+    return arr.slice().sort(cmp);
+  }
+  setSort(list,key){ this.setState(list==='pending'? { pendSort:key, sortMenu:null } : { billSort:key, sortMenu:null }); }
+  toggleSortMenu(which){ this.setState(s=>({ sortMenu: s.sortMenu===which? null : which })); }
   _loadPresets(){ try{ const r=localStorage.getItem('msa_billing_presets_v1'); return r?JSON.parse(r):[]; }catch(e){ return []; } }
   savePreset(){ const name=(this.state.presetDraft||'').trim(); if(!name){ this.toastMsg('Preset ka naam likhein','warn'); return; } const p={ id:'pr'+Date.now(), name, q:(this.state.billSearch.applied||this.state.billSearch.q||'').trim(), flt:JSON.parse(JSON.stringify(this.state.billFlt)) }; const list=[...this.state.presets, p]; this.setState({ presets:list, presetDraft:'' }); try{ localStorage.setItem('msa_billing_presets_v1', JSON.stringify(list)); }catch(e){} this.logActivity({ action:'create', entity:'preset', entityId:p.id, entityLabel:name, summary:'Saved shared filter preset - '+name }); this.toastMsg('Preset poori shop ke liye save ho gaya','ok'); }
   applyPresetFilter(id){ const p=this.state.presets.find(x=>x.id===id); if(!p) return; this.setState({ billSearch:{q:p.q||'',applied:p.q||''}, billFlt:JSON.parse(JSON.stringify(p.flt)), fltOpen:false }); this._runSearch(p.q||''); }
@@ -2825,7 +2873,7 @@ class Component extends DCLogic {
   // ---------- customer history on entry (Roman Urdu) ----------
   histForPhone(phone, exId){ const canon=this.canonPhone(phone); if(!canon) return null; const ms=this.state.bills.filter(b=>!b.deleted && b.id!==exId && this.canonPhone(b.phone)===canon); return this._histAgg(ms); }
   histForCar(car, exId){ const canon=this.carCore(car); if(!canon) return null; const ms=this.state.bills.filter(b=>!b.deleted && b.id!==exId && this.carCore(b.car)===canon); const agg=this._histAgg(ms); if(agg&&agg.count){ const nums=[...new Set(ms.map(b=>this.canonPhone(b.phone)).filter(Boolean))]; agg.multiNum=nums.length>1; } return agg; }
-  _histAgg(ms){ if(!ms.length)  return {count:0}; let total=0, pend=0, pc=0, last=null; ms.forEach(b=>{ const d=this.derive(b); total+=d.total; if(d.pending>0){ pend+=d.pending; pc++; } if(!last||b.ts>last) last=b.ts; }); return {count:ms.length, total, pending:pend, pendingCount:pc, last}; }
+  _histAgg(ms){ if(!ms.length) return {count:0}; let total=0, pend=0, pc=0, last=null; ms.forEach(b=>{ const d=this.derive(b); total+=d.total; if(d.pending>0){ pend+=d.pending; pc++; } if(!last||b.ts>last) last=b.ts; }); return {count:ms.length, total, pending:pend, pendingCount:pc, last}; }
 
   // ---------- reports model ----------
   // Ultimate safeguard: rebuild EVERY report total from the actual bills. A deliberate repair
@@ -3309,7 +3357,7 @@ class Component extends DCLogic {
   // ---------- icons ----------
   ic(name, size){
     size=size||20;
-    const P={ home:'M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10', receipt:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', plus:'M12 5v14M5 12h14', search:'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3', box:'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10', chart:'M4 20V10M10 20V4M16 20v-7M22 20H2', printer:'M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z', users:'M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 20v-2a4 4 0 0 0-3-3.9M16 2.1A4 4 0 0 1 16 10', gear:'M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 13a7.6 7.6 0 0 0 .1-2l1.9-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1l-.3-2.4h-4l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L4.5 11a7.6 7.6 0 0 0 0 2l-1.9 1.5 2 3.4 2.3-.9a7.6 7.6 0 0 0 1.7 1l.3 2.4h4l.3-2.4a7.6 7.6 0 0 0 1.7-1l2.3.9 2-3.4z', clock:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7.5v5l3.5 2', eye:'M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', eyeOff:'M9.9 4.2A11 11 0 0 1 12 4c6.5 0 10.5 7 10.5 7a18 18 0 0 1-2.2 3M6.6 6.6A18 18 0 0 0 1.5 11s4 7 10.5 7a11 11 0 0 0 5-1.2M2 2l20 20M9.5 9.5a3 3 0 0 0 4.2 4.2', history:'M3 12a9 9 0 1 0 3-6.7L3 8M3 3.5v4.5h4.5M12 7.5v5l3 2', trash:'M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6', archive:'M3 4h18v4H3zM5 8v12h14V8M9.5 12h5', x:'M6 6l12 12M18 6 6 18', phone:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L8 9.6a16 16 0 0 0 6 6l1.1-1.1a2 2 0 0 1 2.1-.5c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z', car:'M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13M4 13h16v4H4zM7.5 17v1.5M16.5 17v1.5M7 13.5h.01M17 13.5h.01', menu:'M3 6h18M3 12h18M3 18h18', dots:'M5 12h.01M12 12h.01M19 12h.01', filter:'M3 5h18M6 12h12M10 19h4', check:'M20 6 9 17l-5-5', info:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 7.5h.01', chevron:'M9 6l6 6-6 6', refund:'M3 7h13a5 5 0 0 1 0 10H9M3 7l4-4M3 7l4 4', cash:'M2 6h20v12H2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6', calendar:'M7 3v3M17 3v3M3.5 8.5h17M5 5h14a1.5 1.5 0 0 1 1.5 1.5V19A1.5 1.5 0 0 1 19 20.5H5A1.5 1.5 0 0 1 3.5 19V6.5A1.5 1.5 0 0 1 5 5z', lock:'M6 10V8a6 6 0 1 1 12 0v2M5 10h14v10H5zM12 14v3', back:'M19 12H5M11 18l-6-6 6-6', chevL:'M15 6l-6 6 6 6', edit:'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z', activity:'M3 12h4l2.5-7 4 14 2.5-7H21', restore:'M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3' };
+    const P={ home:'M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10', receipt:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', plus:'M12 5v14M5 12h14', search:'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3', box:'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10', chart:'M4 20V10M10 20V4M16 20v-7M22 20H2', printer:'M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z', users:'M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 20v-2a4 4 0 0 0-3-3.9M16 2.1A4 4 0 0 1 16 10', gear:'M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 13a7.6 7.6 0 0 0 .1-2l1.9-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1l-.3-2.4h-4l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L4.5 11a7.6 7.6 0 0 0 0 2l-1.9 1.5 2 3.4 2.3-.9a7.6 7.6 0 0 0 1.7 1l.3 2.4h4l.3-2.4a7.6 7.6 0 0 0 1.7-1l2.3.9 2-3.4z', clock:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7.5v5l3.5 2', eye:'M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', eyeOff:'M9.9 4.2A11 11 0 0 1 12 4c6.5 0 10.5 7 10.5 7a18 18 0 0 1-2.2 3M6.6 6.6A18 18 0 0 0 1.5 11s4 7 10.5 7a11 11 0 0 0 5-1.2M2 2l20 20M9.5 9.5a3 3 0 0 0 4.2 4.2', history:'M3 12a9 9 0 1 0 3-6.7L3 8M3 3.5v4.5h4.5M12 7.5v5l3 2', trash:'M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6', archive:'M3 4h18v4H3zM5 8v12h14V8M9.5 12h5', x:'M6 6l12 12M18 6 6 18', phone:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L8 9.6a16 16 0 0 0 6 6l1.1-1.1a2 2 0 0 1 2.1-.5c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z', car:'M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13M4 13h16v4H4zM7.5 17v1.5M16.5 17v1.5M7 13.5h.01M17 13.5h.01', menu:'M3 6h18M3 12h18M3 18h18', dots:'M5 12h.01M12 12h.01M19 12h.01', filter:'M3 5h18M6 12h12M10 19h4', sort:'M4 6h9M4 12h7M4 18h5M17 5v14M17 19l-3.5-3.5M17 19l3.5-3.5', check:'M20 6 9 17l-5-5', info:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 7.5h.01', chevron:'M9 6l6 6-6 6', refund:'M3 7h13a5 5 0 0 1 0 10H9M3 7l4-4M3 7l4 4', cash:'M2 6h20v12H2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6', calendar:'M7 3v3M17 3v3M3.5 8.5h17M5 5h14a1.5 1.5 0 0 1 1.5 1.5V19A1.5 1.5 0 0 1 19 20.5H5A1.5 1.5 0 0 1 3.5 19V6.5A1.5 1.5 0 0 1 5 5z', lock:'M6 10V8a6 6 0 1 1 12 0v2M5 10h14v10H5zM12 14v3', back:'M19 12H5M11 18l-6-6 6-6', chevL:'M15 6l-6 6 6 6', edit:'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z', activity:'M3 12h4l2.5-7 4 14 2.5-7H21', restore:'M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3' };
     return React.createElement('svg',{width:size,height:size,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'}, React.createElement('path',{d:P[name]||''}));
   }
 
@@ -3373,14 +3421,23 @@ class Component extends DCLogic {
     const mkCard=(b)=>{
       const d=this.derive(b); const m=this.statusMeta(d.status);
       const paidView = d.status==='paid';
-      return { rk:b.id, id:b.id, no:b.no, name:b.name, car:b.car, model:b.model, phone:b.phone, dateStr:this.dateStr(b.ts),
+      // dot(): joins ONLY the parts that actually exist — no more dangling '· -' when a bill
+      // has no car number / phone. Each list gets a graceful default when everything is empty.
+      const dot=(...parts)=>parts.filter(p=>p&&String(p).trim()&&String(p).trim()!=='-').join(' · ');
+      const dateS=this.dateStr(b.ts);
+      return { rk:b.id, id:b.id, no:b.no, name:b.name||'Walk-in customer', car:b.car, model:b.model, phone:b.phone, dateStr:dateS,
+        meta1: dot(b.car, b.phone, S.isMobile?null:dateS) || (S.isMobile?'No details':dateS),
+        meta2: dot(b.car, b.phone, dateS),
+        metaVeh: dot(b.car, b.model) || 'No vehicle info',
+        metaSearch: dot(b.phone, b.car, b.model) || 'No contact info',
+        metaHist: dot(b.model, dateS),
         total:this.money(d.total), accent:m.accent, statusLabel:m.label, badge:this.badgeStyle(d.status),
         subLabel: paidView?'Paid':'Pending', subValue: this.money(paidView?d.paid:d.pending),
         _pending:d.pending, _total:d.total, _paid:d.paid, _status:d.status, _ts:b.ts,
-        onClick:()=>this.openView(b.id,[b.id],null,'bills'), dateHide: S.isMobile?'display:none':'display:block', dateInline: S.isMobile?'':('- '+this.dateStr(b.ts)) };
+        onClick:()=>this.openView(b.id,[b.id],null,'bills'), dateHide: S.isMobile?'display:none':'display:block', dateInline: S.isMobile?'':('- '+dateS) };
     };
     const withCtx=(arr, sourceIds, ctx)=>{ const ids=arr.map(x=>x.id); const src=(sourceIds&&sourceIds.length)?sourceIds:ids; arr.forEach(x=>{ x.onClick=()=>this.openView(x.id, ids, src, ctx||'bills'); }); return arr; };
-    const sorted=S.bills.slice().sort((a,b)=> b.ts-a.ts);              // loaded active bills (server-paginated)
+    const sorted=this._sortBills(S.bills,'created_desc');              // loaded active bills, newest-created first
     const recentBills=withCtx(sorted.slice(0,10).map(mkCard), null, 'bills');
 
     // ===== bills: search + filters + infinite scroll (Firestore cursor pages) =====
@@ -3404,7 +3461,7 @@ class Component extends DCLogic {
     // base = search results when a query is applied, else the loaded active/archived page
     const searchActive = !!bq && Array.isArray(S.searchResults);
     const baseList = searchActive ? S.searchResults.slice().sort((a,b)=>b.ts-a.ts) : (useArchived ? S.archivedBills.slice().sort((a,b)=>b.ts-a.ts) : sorted);
-    const filtered = baseList.filter(b=> (searchActive? !b.deleted : true) && inRange(b) && passFlt(b) && (useArchived? b.archived : !b.archived));
+    const filtered = this._sortBills(baseList.filter(b=> (searchActive? !b.deleted : true) && inRange(b) && passFlt(b) && (useArchived? b.archived : !b.archived)), S.billSort);
     const fullIds = filtered.map(b=>b.id);
     const allBillsView = withCtx(filtered.map(mkCard), fullIds, S.billsSecondary?'secondary':'bills');
     const billsHasMore = S.billsSecondary? false : (searchActive? false : (useArchived? S.archivedHasMore : S.billsHasMore));
@@ -3442,7 +3499,7 @@ class Component extends DCLogic {
     // recycle bin (server-paginated)
     const deletedSorted=S.binBills.slice().sort((a,b)=> (b.deletedAt||b.ts)-(a.deletedAt||a.ts));
     const binIds=deletedSorted.map(b=>b.id);
-    const binView=deletedSorted.map(b=>{ const d=this.derive(b); const m=this.statusMeta(d.status); return { rk:b.id, id:b.id, no:b.no, name:b.name||'Walk-in customer', car:b.car||'-', phone:b.phone||'', total:this.money(d.total), statusLabel:m.label, badge:this.badgeStyle(d.status), deletedStr:b.deletedAt?('Deleted '+this.dateStr(b.deletedAt)):'Deleted', onOpen:()=>this.openView(b.id, binIds, binIds), onRestore:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.restoreBill(b.id); }, onPurge:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.permanentDelete(b.id); } }; });
+    const binView=deletedSorted.map(b=>{ const d=this.derive(b); const m=this.statusMeta(d.status); return { rk:b.id, id:b.id, no:b.no, name:b.name||'Walk-in customer', car:b.car||'-', phone:b.phone||'', metaBin:[b.name||'Walk-in customer', b.car].filter(p=>p&&String(p).trim()).join(' · '), total:this.money(d.total), statusLabel:m.label, badge:this.badgeStyle(d.status), deletedStr:b.deletedAt?('Deleted '+this.dateStr(b.deletedAt)):'Deleted', onOpen:()=>this.openView(b.id, binIds, binIds), onRestore:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.restoreBill(b.id); }, onPurge:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.permanentDelete(b.id); } }; });
     const binCount=deletedSorted.length;
     const binEmpty=binCount===0 && !S.binHasMore && S.binLoaded;
     const binHasMore=S.binHasMore; const binRemaining=0;
@@ -3564,14 +3621,15 @@ class Component extends DCLogic {
     // (search merged into All bills page)
 
     // pending page (server-paginated by pending desc)
-    const pendSorted=S.pendingBills.slice().filter(b=>this.derive(b).pending>0).sort((a,b)=>this.derive(b).pending-this.derive(a).pending);
+    // pending page — default: newest created first (sortable via the sort menu)
+    const pendSorted=this._sortBills(S.pendingBills.slice().filter(b=>this.derive(b).pending>0), S.pendSort);
     const pendingBills=withCtx(pendSorted.map(mkCard), null, 'pending');
     const pendingTotalDisp=this.money(S.pendingTotal||pendSorted.reduce((s,b)=>s+this.derive(b).pending,0));
     const pendingCountLabel=`${pendSorted.length}${S.pendingHasMore?'+':''} bills awaiting payment`;
     const pendingHasMore=S.pendingHasMore; const pendingListLoading=S.pendingLoading && !S.pendingLoaded;
 
     // products
-    const productRows=[...S.products].sort((a,b)=>b.count-a.count).map(p=>({ name:p.name, count:p.count, onDelete:()=>this.deleteProduct(p.name) }));
+    const productRows=[...S.products].sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)).map(p=>({ name:p.name, count:p.count, onDelete:()=>this.deleteProduct(p.name) }));
     const productNames=S.products.map(p=>p.name);
     const productCountLabel=`${S.products.length} products`;
 
@@ -3640,6 +3698,20 @@ class Component extends DCLogic {
         preset7:()=>this.recalcSetPreset('7d'), preset1m:()=>this.recalcSetPreset('1m'), preset1y:()=>this.recalcSetPreset('1y')
       };
     }
+    // ===== sort menus (All bills + Pending) =====
+    const sortOpts=[['created_desc','Newest first - created'],['created_asc','Oldest first - created'],['date_desc','Bill date - newest'],['date_asc','Bill date - oldest'],['no_desc','Bill # - high to low'],['no_asc','Bill # - low to high'],['amount_desc','Amount - highest'],['amount_asc','Amount - lowest'],['pending_desc','Pending - highest'],['pending_asc','Pending - lowest'],['name_asc','Customer A-Z']];
+    const mkSortCtl=(which,cur)=>({
+      open:S.sortMenu===which, isTiny:S.isTiny,
+      onToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.toggleSortMenu(which); },
+      onOpenFilters:()=>{ this.setState({ sortMenu:null, fltOpen:true }); },
+      options:sortOpts.map(([k,label])=>({ rk:which+'_'+k, label, active:cur===k, onClick:()=>this.setSort(which,k),
+        style:'display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:9px 12px;border:none;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;background:'+(cur===k?'#eef4ff':'transparent')+';color:'+(cur===k?'#1f6feb':'#3f4753') })),
+    });
+    const billSortCtl=mkSortCtl('bills',S.billSort);
+    const pendSortCtl=mkSortCtl('pending',S.pendSort);
+    const searchBtnLabel = S.isMobile? this.ic('search',16) : 'Search';
+    const fltBtnStyle = (S.isTiny?'display:none; ':'display:flex; ')+'flex:none; align-items:center; gap:7px; padding:11px 13px; background:#fff; border:1.5px solid #ece4d7; border-radius:11px; font-size:13px; font-weight:600; color:#3f4753; cursor:pointer';
+
     const report={ viewBtns:repViewBtns, view:repView, periodLabel:repPeriodLabel, bars:repBars, totAmount:this.money(repTotAmt), totPending:this.money(repTotPen), totCount: S.privacy?'**':String(repTotCnt), canNav:repView!=='total', onPrev:()=>this.repNav(-1), onNext:()=>this.repNav(1), onRepair:()=>this.repairReports(), repairLabel:(this.isBusy('repair-reports')?'Recalculating...':'Recalculate'), hint:(repView==='day'?'Har bar = ek ghanta. Bar par click se detail.':(repView==='total'?'Har bar = ek saal. Double-click ya "Open" se us saal ke months.':'Bar par click = detail, double-click ya "Open" se androni view.')), sel:repSel, loading:repLoading, showChart:(!repLoading && repB.buckets.length>0), empty:(!repLoading && repTotCnt===0) };
 
     // templates
@@ -3906,7 +3978,7 @@ class Component extends DCLogic {
       showMenuBtn, viewAnimStyle, routeKey, showMobileBack:(S.isMobile && isView), showDesktopClose:(!S.isMobile && isView),
       showSecondaryBack:(S.isMobile && ROUTE==='bills' && S.billsSecondary), showDesktopCloseSecondary:(!S.isMobile && ROUTE==='bills' && S.billsSecondary), onCloseSecondary:()=>this.closeSecondaryBills(),
       footerOpen:S.footerOpen, toggleFooter:()=>this.setState(s=>({footerOpen:!s.footerOpen})),
-      icons:{ blockBig:this.ic('x',30), menu:this.ic('menu',20), clock:this.ic('clock',16), plus:this.ic('plus',17), privacy:this.ic(S.privacy?'eyeOff':'eye',18), privacySm:this.ic(S.privacy?'eyeOff':'eye',13), search:this.ic('search',18), x:this.ic('x',18), history:this.ic('history',16), check:this.ic('check',16), carSm:this.ic('car',13), chevron:this.ic('chevron',16), trashSm:this.ic('trash',15), plusSm:this.ic('plus',15), xSm:this.ic('x',12), boxSm:this.ic('box',16), printerSm:this.ic('printer',15), infoSm:this.ic('info',14), phone:this.ic('phone',16), reactIcon:this.ic('gear',20), dbIcon:this.ic('box',20), calendar:this.ic('calendar',16), lock:this.ic('lock',13), back:this.ic('back',18), chevL:this.ic('chevL',20), chevR:this.ic('chevron',20), edit:this.ic('edit',16), cashSm:this.ic('cash',16), dots:this.ic('dots',18), filter:this.ic('filter',16), activity:this.ic('activity',16), archive:this.ic('archive',16), restore:this.ic('restore',15), logout:this.ic('back',16) },
+      icons:{ sort:this.ic('sort',16), checkSm:this.ic('check',14), blockBig:this.ic('x',30), menu:this.ic('menu',20), clock:this.ic('clock',16), plus:this.ic('plus',17), privacy:this.ic(S.privacy?'eyeOff':'eye',18), privacySm:this.ic(S.privacy?'eyeOff':'eye',13), search:this.ic('search',18), x:this.ic('x',18), history:this.ic('history',16), check:this.ic('check',16), carSm:this.ic('car',13), chevron:this.ic('chevron',16), trashSm:this.ic('trash',15), plusSm:this.ic('plus',15), xSm:this.ic('x',12), boxSm:this.ic('box',16), printerSm:this.ic('printer',15), infoSm:this.ic('info',14), phone:this.ic('phone',16), reactIcon:this.ic('gear',20), dbIcon:this.ic('box',20), calendar:this.ic('calendar',16), lock:this.ic('lock',13), back:this.ic('back',18), chevL:this.ic('chevL',20), chevR:this.ic('chevron',20), edit:this.ic('edit',16), cashSm:this.ic('cash',16), dots:this.ic('dots',18), filter:this.ic('filter',16), activity:this.ic('activity',16), archive:this.ic('archive',16), restore:this.ic('restore',15), logout:this.ic('back',16) },
       appVersion:'1.0.0',
       togglePrivacy:()=>this.togglePrivacy(), openDrawer:()=>this.go('menu'), closeDrawer:()=>this.setState({navOpen:false}),
       onNewBill:()=>this.go('new'), goBills:()=>this.go('bills'), stop:(e)=>e.stopPropagation(),
@@ -3928,6 +4000,7 @@ class Component extends DCLogic {
       searching:S.searching,
       billSearch:S.billSearch, onBillSearchInput:ev=>this.setBillSearch(ev.target.value), onBillSearchKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.applyBillSearch(); } }, runBillSearch:()=>this.applyBillSearch(), clearBillSearch:()=>this.clearBillSearch(),
       fltOpen:S.fltOpen, toggleFltPanel:()=>this.toggleFltPanel(), activeChips, hasActive, activeCount, clearFlt:()=>this.clearFlt(),
+      billSortCtl, pendSortCtl, searchBtnLabel, fltBtnStyle,
       fltStatus, fltAmtOps, fltPenOps, billFlt:S.billFlt,
       onAmtVal:ev=>this.setFlt({amtVal:ev.target.value.replace(/[^0-9.]/g,'')}), onPenVal:ev=>this.setFlt({penVal:ev.target.value.replace(/[^0-9.]/g,'')}),
       onFromDate:ev=>this.setFlt({from:ev.target.value}), onToDate:ev=>this.setFlt({to:ev.target.value}),
@@ -4080,8 +4153,3 @@ class Component extends DCLogic {
 </script>
 </body>
 </html>
-
-
-
-
-

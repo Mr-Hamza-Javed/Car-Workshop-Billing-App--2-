@@ -104,6 +104,10 @@ function billToStore(b, derive) {
     // "NaN-NaN" aggregate key and poison the reports. Fall back to "now".
     tsMs: (function () { const d = (b.ts instanceof Date ? b.ts : new Date()); const t = d.getTime(); return Number.isFinite(t) ? t : Date.now(); })(),
     createdBy: b.createdBy || "", createdById: b.createdById || "",
+    // creation time (device clock when the bill was first made) — distinct from tsMs (the
+    // bill's DATE, which the user may backdate). Lists sort by this. Old docs lack it;
+    // billFromStore falls back to tsMs so they still sort stably.
+    createdAtMs: (b.createdAt instanceof Date && Number.isFinite(b.createdAt.getTime())) ? b.createdAt.getTime() : nowMs(),
     archived: !!b.archived, deleted: !!b.deleted,
     deletedAtMs: b.deletedAt instanceof Date ? b.deletedAt.getTime() : (b.deletedAtMs || null),
     history: (b.history || []).map((h) => ({ kind: h.kind, amount: Number(h.amount) || 0, comment: h.comment || "", tsMs: (h.ts instanceof Date ? h.ts : new Date()).getTime(), by: h.by || "" })),
@@ -116,6 +120,7 @@ function billFromStore(id, d) {
     lines: (d.lines || []).map((l) => ({ name: l.name, qty: Number(l.qty) || 0, price: Number(l.price) || 0 })),
     discount: Number(d.discount) || 0, comment: d.comment || "", note: d.note || "",
     ts: new Date(d.tsMs || nowMs()), createdBy: d.createdBy || "", createdById: d.createdById || "",
+    createdAt: new Date(d.createdAtMs || d.tsMs || nowMs()),
     archived: !!d.archived, deleted: !!d.deleted,
     deletedAt: d.deletedAtMs ? new Date(d.deletedAtMs) : null,
     history: (d.history || []).map((h) => ({ kind: h.kind, amount: Number(h.amount) || 0, comment: h.comment || "", ts: new Date(h.tsMs || d.tsMs || nowMs()), by: h.by || "" })),
@@ -567,6 +572,7 @@ function makeDB(A) {
         const editAppended = oldBill ? (bill.history || []).slice(oldLen) : [];
         const mergedHistory = [...curHistApp, ...editAppended];
         store = billToStore({ ...bill, history: mergedHistory }, derive);
+        if (current.createdAtMs) store.createdAtMs = current.createdAtMs;   // creation time never changes on edit
         const buckets = statsBuckets(current, store);
         const cur = await readStats(t, buckets);            // all reads before any write
         await t.set("bills/" + id, store);
@@ -637,7 +643,7 @@ function makeDB(A) {
     },
 
     /* ---------- products ---------- */
-    async listProducts() { const res = await A.query("products", { orderBy: ["nameLower", "asc"] }); return res.rows.map((r) => ({ name: r.name, count: r.count || 0 })); },
+    async listProducts() { const res = await A.query("products", { orderBy: ["nameLower", "asc"] }); return res.rows.map((r) => ({ name: r.name, count: r.count || 0, createdAtMs: r.createdAtMs || 0 })); },
     async deleteProduct(name) { const id = "p_" + (await sha256Hex(lower(name))).slice(0, 16); await A.del("products/" + id); return { ok: true }; },
 
     /* ---------- activity ---------- */
