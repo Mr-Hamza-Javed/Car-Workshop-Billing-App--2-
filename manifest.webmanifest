@@ -1,11 +1,11 @@
 {
-  "name": "MSA Billing — Workshop",
-  "short_name": "MSA Billing",
+  "name": "Mirza Shahzad Workshop — POS",
+  "short_name": "Shahzad POS",
   "description": "Car workshop billing, payments, products, reports and team management.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "portrait",
   "background_color": "#15161b",
   "theme_color": "#15161b",
   "icons": [

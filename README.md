@@ -17,8 +17,8 @@ that runs directly in the browser, hosts as a static site on GitHub Pages, and i
   / count) read from **cheap aggregate documents** (never scans bills), a master privacy "eye"
   toggle, live clock, and recent bills.
 - **Bill form** — product rows with auto-suggest, live line totals, two-way linked **discount ↔
-  final-total**, and **paid auto-follows the final total** on a new bill until you edit it (then it
-  sticks — for credit/udhaar). Printed comment + internal note, customer history lookups by phone/car.
+  final-total**, and **paid starts at 0 on a new bill** — it never auto-fills; the cashier types the
+  amount actually received (any balance stays pending/udhaar). Printed comment + internal note, customer history lookups by phone/car.
 - **Bill view (read-only)** — readable invoice card. **Next/Prev** via buttons + keyboard ← →
   only (tapping the bill never navigates), with smooth slide animations. As you reach the end of the
   loaded list, the next batch loads automatically. Mobile shows a **back icon**; desktop shows
@@ -34,7 +34,9 @@ that runs directly in the browser, hosts as a static site on GitHub Pages, and i
   payment / refund / user & settings changes) with field-level diffs and per-user visibility scope.
 - **Recycle bin & archive** — soft-delete to a restorable bin; permanent delete / empty-bin; archive.
 - **Print templates** — A4 / A5 / Letter + thermal 80/58mm, live preview, logo/colors/columns/
-  header/footer/font controls, multi-page overflow, Print / Save-PDF.
+  header/footer/font controls (font size down to 40%), **black mode** (pure-black text, lines &
+  logo for B&W printers — only the meta band & note keep a light gray background), long item
+  names wrap to new lines, multi-page overflow, Print / Save-PDF.
 - **Products**, **Users & permissions**, **Settings** — see below.
 - **Emergency kill switch** — an admin can instantly lock the whole app for every user by flipping
   `isBlocked` to `1` on the `app/access` Firestore document (console-only, never from the app UI). All

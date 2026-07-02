@@ -19,7 +19,7 @@
 <link rel="icon" href="assets/logo-favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -961,7 +961,7 @@
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Font size</span>
                   <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ fontPct }}</span>
                 </div>
-                <input type="range" min="0.8" max="1.4" step="0.05" value="{{ fontScaleVal }}" onChange="{{ onFontScale }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+                <input type="range" min="0.4" max="1.4" step="0.05" value="{{ fontScaleVal }}" onChange="{{ onFontScale }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
               </div>
               <div style="display:flex; flex-direction:column; gap:11px; padding-top:2px">
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
@@ -1639,12 +1639,37 @@
                 </sc-for>
               </div>
             </div>
+            <button onClick="{{ printControls.toggleMore }}" style="display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:11px 13px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:11px; cursor:pointer; font-size:12.5px; font-weight:700; color:#3f4753">
+              <span>All print settings</span>
+              <span style="{{ printControls.moreChevStyle }}">{{ icons.chevron }}</span>
+            </button>
+            <sc-if value="{{ printControls.moreOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:18px">
             <div>
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
-                <span style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px">Font size</span>
-                <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ printControls.fontPct }}</span>
+              <div style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px">Fonts</div>
+              <div style="display:flex; flex-direction:column; gap:13px">
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+                    <span style="font-size:13px; font-weight:600; color:#3f4753">Font size</span>
+                    <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ printControls.fontPct }}</span>
+                  </div>
+                  <input type="range" min="0.4" max="1.4" step="0.05" value="{{ printControls.fontVal }}" onChange="{{ printControls.onFont }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+                    <span style="font-size:13px; font-weight:600; color:#3f4753">Items text weight</span>
+                    <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ printControls.itemWVal }}</span>
+                  </div>
+                  <input type="range" min="400" max="700" step="25" value="{{ printControls.itemWVal }}" onChange="{{ printControls.onItemW }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+                    <span style="font-size:13px; font-weight:600; color:#3f4753">Table header weight</span>
+                    <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ printControls.headWVal }}</span>
+                  </div>
+                  <input type="range" min="600" max="900" step="25" value="{{ printControls.headWVal }}" onChange="{{ printControls.onHeadW }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+                </div>
               </div>
-              <input type="range" min="0.8" max="1.4" step="0.05" value="{{ printControls.fontVal }}" onChange="{{ printControls.onFont }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
             </div>
             <div>
               <div style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px">Show / hide</div>
@@ -1675,6 +1700,13 @@
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Paid / pending</span>
                   <button onClick="{{ printControls.onPay }}" style="{{ printControls.pay.wrap }}"><span style="{{ printControls.pay.knob }}"></span></button>
                 </label>
+                <label style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; cursor:pointer">
+                  <span style="min-width:0">
+                    <span style="display:block; font-size:13px; font-weight:600; color:#3f4753">Black mode</span>
+                    <span style="display:block; font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:2px; line-height:1.4">B&amp;W printer ke liye sab kuch pure black</span>
+                  </span>
+                  <button onClick="{{ printControls.onBlack }}" style="{{ printControls.blackM.wrap }}"><span style="{{ printControls.blackM.knob }}"></span></button>
+                </label>
               </div>
             </div>
             <div>
@@ -1687,6 +1719,8 @@
                 <button onClick="{{ printControls.onRepeatHeader }}" style="{{ printControls.repeatHeader.wrap }}"><span style="{{ printControls.repeatHeader.knob }}"></span></button>
               </label>
             </div>
+            </div>
+            </sc-if>
             <div style="display:flex; align-items:center; gap:7px; font-size:11px; color:#a59c8c; font-weight:500; line-height:1.4; margin-top:auto">{{ icons.infoSm }} Aapki choices account me save rehti hain</div>
           </div>
           <!-- preview -->
@@ -1895,8 +1929,8 @@ class Component extends DCLogic {
     // ---- settings / counter ----
     settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', bizInfo:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owners risk.', listBatch:25, autoLoad:true, animSpeed:1 },
     counter: null,
-    tpl: { size:'A4', logo:true, color:'#1f6feb', cols:{qty:true,price:true,total:true}, fontScale:1, showComments:true, showTerms:true, showPayInfo:true, repeatHeader:true, header:'Service & Repair Invoice', footer:'Thank you for your business' },
-    printBill: null, printCfg: null, invMeasure: {}, printZoom:1, printTab:'preview',
+    tpl: { size:'A4', logo:true, color:'#1f6feb', cols:{qty:true,price:true,total:true}, fontScale:1, itemWeight:400, headWeight:700, blackMode:false, showComments:true, showTerms:true, showPayInfo:true, repeatHeader:true, header:'Service & Repair Invoice', footer:'Thank you for your business' },
+    printBill: null, printCfg: null, invMeasure: {}, printZoom:1, printTab:'preview', printMore:false,
     // ---- data caches (progressively loaded; NOT the full DB) ----
     bills: [], billsCursor:null, billsHasMore:false, billsLoading:true, billsLoaded:false,
     archivedBills: [], archivedCursor:null, archivedHasMore:false, archivedLoading:false, archivedLoaded:false,
@@ -2386,6 +2420,9 @@ class Component extends DCLogic {
     const narrow = cfg.size==='58mm';
     const fs = cfg.fontScale||1;
     const px = n => Math.round(n*fs*10)/10 + 'px';
+    const black = !!cfg.blackMode;               // B&W printer mode: everything pure black
+    const K = c => black ? '#000' : c;           // gray/colored text & lines -> pure black
+    const AC = black ? '#000' : cfg.color;       // accent color -> pure black
     let base,small,h1,h2,paperW,pad;
     if(narrow){ small=8; base=8.5; h1=11; h2=9.5; paperW=178; pad=9; }
     else if(thermal){ small=9.5; base=10; h1=13; h2=11; paperW=240; pad=12; }
@@ -2393,15 +2430,18 @@ class Component extends DCLogic {
     const ratio = cfg.size==='Letter'? 1.294 : 1.414; // Letter 8.5:11, A-series 1:root2
     const paperH = thermal? null : Math.round(paperW*ratio);
     const fam = thermal? "'Courier New',monospace" : "'Plus Jakarta Sans',sans-serif";
+    const tblFam = thermal? fam : "'Archivo','Plus Jakarta Sans',sans-serif";   // items table: crisp, print-legible grotesque
+    const itemW = Math.min(700, Math.max(400, Number(cfg.itemWeight)||400));    // items text weight (user slider)
+    const headW = Math.min(900, Math.max(600, Number(cfg.headWeight)||700));    // table header weight (user slider)
     const money = v => cur+' '+Math.round(Number(v)||0).toLocaleString('en-US');
-    const paper = { background:'#fff', width:paperW+'px', minWidth:paperW+'px', flexShrink:0, boxSizing:'border-box', padding:pad+'px', fontFamily:fam, color:'#222', fontSize:px(base), lineHeight:1.45, overflowWrap:'anywhere', wordBreak:'break-word', boxShadow: opts.shadow?'0 8px 28px rgba(0,0,0,.13)':'none', height: paperH?paperH+'px':'auto', minHeight: paperH?paperH+'px':'auto', display:'flex', flexDirection:'column' };
+    const paper = { background:'#fff', width:paperW+'px', minWidth:paperW+'px', flexShrink:0, boxSizing:'border-box', padding:pad+'px', fontFamily:fam, color:K('#222'), fontSize:px(base), lineHeight:1.45, overflowWrap:'anywhere', wordBreak:'break-word', boxShadow: opts.shadow?'0 8px 28px rgba(0,0,0,.13)':'none', height: paperH?paperH+'px':'auto', minHeight: paperH?paperH+'px':'auto', display:'flex', flexDirection:'column' };
     // logo node
     let logoNode=null;
     if(cfg.logo){
       const dim = thermal? (narrow?30:34) : 40;
       logoNode = set.logoData
-        ? h('img',{src:set.logoData, alt:'logo', style:{width:dim+'px',height:dim+'px',objectFit:'contain',borderRadius:'6px'}})
-        : h('div',{style:{width:dim+'px',height:dim+'px',borderRadius:'7px',background:cfg.color,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:px(h1),fontFamily:fam}}, (set.businessName||'M')[0]);
+        ? h('img',{src:set.logoData, alt:'logo', style:{width:dim+'px',height:dim+'px',objectFit:'contain',borderRadius:'6px',filter: black?'grayscale(1) contrast(1.5)':'none'}})
+        : h('div',{style:{width:dim+'px',height:dim+'px',borderRadius:'7px',background:AC,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:px(h1),fontFamily:fam}}, (set.businessName||'M')[0]);
     }
     const showBiz = cfg.showBizInfo!==false;
     // Adaptive name size: long business names step DOWN so the name never wraps into an ugly
@@ -2409,8 +2449,8 @@ class Component extends DCLogic {
     const nameLen=(set.businessName||'').length;
     const nameScale = nameLen<=14?1 : nameLen<=22?0.86 : nameLen<=30?0.74 : nameLen<=40?0.65 : 0.58;
     const nameSize = Math.max(narrow?9:10.5, h1*nameScale*(cfg.size==='A5'?0.92:1));
-    const biz = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif", fontWeight:800, fontSize:px(nameSize), color:thermal?'#222':cfg.color, lineHeight:1.12, overflowWrap:'anywhere'}}, set.businessName||'');
-    const headerTxt = cfg.header? h('div',{style:{fontSize:px(small),color:'#666',marginTop:'1px'}}, cfg.header):null;
+    const biz = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif", fontWeight:800, fontSize:px(nameSize), color:thermal?K('#222'):AC, lineHeight:1.12, overflowWrap:'anywhere'}}, set.businessName||'');
+    const headerTxt = cfg.header? h('div',{style:{fontSize:px(small),color:K('#666'),marginTop:'1px'}}, cfg.header):null;
     // business info (markdown from Settings): address, phones, email, bank details...
     // Standard sizes: right-aligned contact block in the top-right of the letterhead (classic
     // professional invoice). Thermal: centered under the shop name. All sizes ride px().
@@ -2421,18 +2461,18 @@ class Component extends DCLogic {
       gap:px(4)
     });
     const bizInfoNode = (showBiz && set.bizInfo)? h('div',{style: thermal
-        ? {fontSize:px(narrow?7.5:small-0.5),color:'#555',marginTop:px(3),lineHeight:1.5}
-        : {fontSize:px(cfg.size==='A5'? small-1 : small-0.5),color:'#666',lineHeight:1.55,textAlign:'right'}},
-      this._invMd(set.bizInfo, mdOpts(narrow?8:small-0.5, thermal?'#333':'#444', !thermal))) : null;
-    const billNoNode = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif",fontWeight:700,fontSize:px(h2),color:'#1a1d24'}}, bill.no);
-    const dateNode = h('div',{style:{fontSize:px(small),color:'#666'}}, this.dateStrFull(bill.ts));
-    const byNode = bill.createdBy ? h('div',{style:{fontSize:px(small),color:'#888',marginTop:px(1)}}, 'By '+bill.createdBy) : null;
+        ? {fontSize:px(narrow?7.5:small-0.5),color:K('#555'),marginTop:px(3),lineHeight:1.5}
+        : {fontSize:px(cfg.size==='A5'? small-1 : small-0.5),color:K('#666'),lineHeight:1.55,textAlign:'right'}},
+      this._invMd(set.bizInfo, mdOpts(narrow?8:small-0.5, K(thermal?'#333':'#444'), !thermal))) : null;
+    const billNoNode = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif",fontWeight:700,fontSize:px(h2),color:K('#1a1d24')}}, bill.no);
+    const dateNode = h('div',{style:{fontSize:px(small),color:K('#666')}}, this.dateStrFull(bill.ts));
+    const byNode = bill.createdBy ? h('div',{style:{fontSize:px(small),color:K('#888'),marginTop:px(1)}}, 'By '+bill.createdBy) : null;
     let header;
     if(thermal){
-      header = h('div',{style:{textAlign:'center',borderBottom:'1px dashed #bbb',paddingBottom:px(8),marginBottom:px(8)}},
+      header = h('div',{style:{textAlign:'center',borderBottom:'1px dashed '+K('#bbb'),paddingBottom:px(8),marginBottom:px(8)}},
         logoNode && h('div',{style:{display:'flex',justifyContent:'center',marginBottom:px(4)}},logoNode),
         biz, headerTxt, bizInfoNode,
-        h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:px(6),fontSize:px(small)}}, h('span',null,bill.no), h('span',null,this.dateStrFull(bill.ts))), bill.createdBy? h('div',{style:{fontSize:px(small),color:'#666',marginTop:px(2)}}, 'By '+bill.createdBy):null);
+        h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:px(6),fontSize:px(small)}}, h('span',null,bill.no), h('span',null,this.dateStrFull(bill.ts))), bill.createdBy? h('div',{style:{fontSize:px(small),color:K('#666'),marginTop:px(2)}}, 'By '+bill.createdBy):null);
     } else {
       // Letterhead (unified for both with/without business info):
       //   Top row  = logo + shop name (left)  |  contact block (right, only if present)
@@ -2440,12 +2480,12 @@ class Component extends DCLogic {
       //              [Generated by] anchored to the far RIGHT. Wraps gracefully on narrow
       //              sizes. All sizes ride px() so fontScale applies.
       const metaItem=(label,value,alignEnd)=> h('div',{style:{display:'flex',flexDirection:'column',gap:px(1),minWidth:0,alignItems:alignEnd?'flex-end':'flex-start'}},
-        h('span',{style:{fontSize:px(Math.max(6,small-2.5)),fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:cfg.color,opacity:.72,whiteSpace:'nowrap'}},label),
-        h('span',{style:{fontSize:px(small+0.5),fontWeight:700,color:'#1a1d24',fontFamily:"'Bricolage Grotesque',sans-serif",overflowWrap:'anywhere',lineHeight:1.15,textAlign:alignEnd?'right':'left'}},value));
-      const vDivider = h('div',{style:{width:'1px',alignSelf:'stretch',minHeight:px(small+8),background:cfg.color+'2e',flex:'none'}});
+        h('span',{style:{fontSize:px(Math.max(6,small-2.5)),fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:AC,opacity:black?1:.72,whiteSpace:'nowrap'}},label),
+        h('span',{style:{fontSize:px(small+0.5),fontWeight:700,color:K('#1a1d24'),fontFamily:"'Bricolage Grotesque',sans-serif",overflowWrap:'anywhere',lineHeight:1.15,textAlign:alignEnd?'right':'left'}},value));
+      const vDivider = h('div',{style:{width:'1px',alignSelf:'stretch',minHeight:px(small+8),background:black?'#000':cfg.color+'2e',flex:'none'}});
       const leftCluster = h('div',{style:{display:'flex',alignItems:'center',gap:px(12),minWidth:0}},
         metaItem('Invoice #', bill.no), vDivider, metaItem('Date', this.dateStrFull(bill.ts)));
-      const metaBand = h('div',{style:{display:'flex',alignItems:'center',flexWrap:'wrap',gap:px(6)+' '+px(14),padding:px(8)+' '+px(13),background:cfg.color+'0d',border:'1px solid '+cfg.color+'22',borderRadius:px(7),marginTop:px(10)}},
+      const metaBand = h('div',{style:{display:'flex',alignItems:'center',flexWrap:'wrap',gap:px(6)+' '+px(14),padding:px(8)+' '+px(13),background:black?'#ededed':cfg.color+'0d',border:'1px solid '+(black?'#000':cfg.color+'22'),borderRadius:px(7),marginTop:px(10)}},
         leftCluster,
         bill.createdBy ? h('div',{style:{marginLeft:'auto'}}, metaItem('Generated by', bill.createdBy, true)) : null);
       const topRow = bizInfoNode
@@ -2453,52 +2493,52 @@ class Component extends DCLogic {
             h('div',{style:{display:'flex',alignItems:'center',gap:'9px',minWidth:0,flex:'1 1 52%'}}, logoNode, h('div',{style:{minWidth:0}},biz,headerTxt)),
             h('div',{style:{flex:'0 1 auto',maxWidth:'46%'}}, bizInfoNode))
         : h('div',{style:{display:'flex',alignItems:'center',gap:'10px',minWidth:0}}, logoNode, h('div',{style:{minWidth:0}},biz,headerTxt));
-      header = h('div',{style:{borderBottom:'2px solid '+cfg.color,paddingBottom:px(11),marginBottom:px(12)}}, topRow, metaBand);
+      header = h('div',{style:{borderBottom:'2px solid '+AC,paddingBottom:px(11),marginBottom:px(12)}}, topRow, metaBand);
     }
     // customer
-    const customer = h('div',{style:{display:'flex',justifyContent:'space-between',gap:'10px',fontSize:px(small),color:'#444',marginBottom:px(10),textAlign:thermal?'left':'left'}},
+    const customer = h('div',{style:{display:'flex',justifyContent:'space-between',gap:'10px',fontSize:px(small),color:K('#444'),marginBottom:px(10),textAlign:thermal?'left':'left'}},
       h('div',null, h('b',null,bill.name||'Walk-in'), h('br'), bill.phone||''),
       h('div',{style:{textAlign:'right'}}, h('b',null,bill.car||''), h('br'), bill.model||''));
     // table builder for a slice of lines
     const showQty=cfg.cols.qty, showPrice=cfg.cols.price, showTotal=cfg.cols.total;
-    const grid=['1fr']; if(showQty)grid.push(narrow?'20px':thermal?'26px':'42px'); if(showPrice)grid.push(narrow?'42px':thermal?'52px':'64px'); if(showTotal)grid.push(narrow?'46px':thermal?'56px':'70px');
+    const grid=['1fr']; if(showQty)grid.push(narrow?'16px':thermal?'22px':'30px'); if(showPrice)grid.push(narrow?'42px':thermal?'52px':'64px'); if(showTotal)grid.push(narrow?'46px':thermal?'56px':'70px');
     const gridCols=grid.join(' ');
     const cellPad = px(narrow?3:5);
-    const headCell=(txt,align)=> h('div',{style:{padding:cellPad+' 3px',fontWeight:700,color:thermal?'#222':cfg.color,borderBottom:'1px solid #ccc',textAlign:align||'left'}}, txt);
+    const headCell=(txt,align)=> h('div',{style:{padding:cellPad+' 3px',fontWeight:headW,color:thermal?K('#222'):AC,borderBottom:'1px solid '+K('#ccc'),textAlign:align||'left'}}, txt);
     const buildTable=(slice,startIdx)=>{
       const rows=[ headCell('Item') ];
       if(showQty)rows.push(headCell('Qty','center'));
       if(showPrice)rows.push(headCell('Price','right'));
       if(showTotal)rows.push(headCell('Total','right'));
       slice.forEach((l,j)=>{ const i=startIdx+j;
-        const nameClip = thermal ? {whiteSpace:'normal',overflowWrap:'anywhere',wordBreak:'break-word'} : {whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'};
-        rows.push(h('div',{key:'i'+i,style:Object.assign({padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',color:'#333',minWidth:0}, nameClip)}, l.name));
-        if(showQty)rows.push(h('div',{key:'q'+i,style:{padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',color:'#333',textAlign:'center'}}, String(l.qty)));
-        if(showPrice)rows.push(h('div',{key:'p'+i,style:{padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',color:'#333',textAlign:'right'}}, Number(l.price).toLocaleString('en-US')));
-        if(showTotal)rows.push(h('div',{key:'t'+i,style:{padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',color:'#333',textAlign:'right'}}, (l.qty*l.price).toLocaleString('en-US')));
+        const nameClip = {whiteSpace:'normal',overflowWrap:'anywhere',wordBreak:'break-word'};   // long item names wrap onto new lines
+        rows.push(h('div',{key:'i'+i,style:Object.assign({padding:cellPad+' 3px',borderBottom:'1px solid '+K('#f0f0f0'),color:K('#333'),fontWeight:itemW,minWidth:0}, nameClip)}, l.name));
+        if(showQty)rows.push(h('div',{key:'q'+i,style:{padding:cellPad+' 3px',borderBottom:'1px solid '+K('#f0f0f0'),color:K('#333'),fontWeight:itemW,fontVariantNumeric:'tabular-nums',textAlign:'center'}}, String(l.qty)));
+        if(showPrice)rows.push(h('div',{key:'p'+i,style:{padding:cellPad+' 3px',borderBottom:'1px solid '+K('#f0f0f0'),color:K('#333'),fontWeight:itemW,fontVariantNumeric:'tabular-nums',textAlign:'right'}}, Number(l.price).toLocaleString('en-US')));
+        if(showTotal)rows.push(h('div',{key:'t'+i,style:{padding:cellPad+' 3px',borderBottom:'1px solid '+K('#f0f0f0'),color:K('#333'),fontWeight:itemW,fontVariantNumeric:'tabular-nums',textAlign:'right'}}, (l.qty*l.price).toLocaleString('en-US')));
       });
-      return h('div',{style:{display:'grid',gridTemplateColumns:gridCols,fontSize:px(small),borderTop:'1px solid #ccc'}}, rows);
+      return h('div',{style:{display:'grid',gridTemplateColumns:gridCols,fontSize:px(small),fontFamily:tblFam,borderTop:'1px solid '+K('#ccc')}}, rows);
     };
     // totals / comment / terms (appear once, on last page)
-    const totRow=(label,val,strong)=> h('div',{style:{display:'flex',justifyContent:'space-between',padding:px(2)+' 0',color:strong?cfg.color:'#444',fontWeight:strong?700:400,fontSize:strong?px(h2):px(small),borderTop:strong?'2px solid '+cfg.color:'none',marginTop:strong?px(4):0}}, h('span',null,label), h('span',null,money(val)));
+    const totRow=(label,val,strong)=> h('div',{style:{display:'flex',justifyContent:'space-between',padding:px(2)+' 0',color:strong?AC:K('#444'),fontWeight:strong?700:400,fontSize:strong?px(h2):px(small),borderTop:strong?'2px solid '+AC:'none',marginTop:strong?px(4):0}}, h('span',null,label), h('span',null,money(val)));
     const totalsInner=[ totRow('Subtotal',d.sub), d.disc>0&&totRow('Discount',d.disc), totRow('Total',d.total,true) ];
-    if(cfg.showPayInfo){ totalsInner.push(totRow('Paid',d.paid)); totalsInner.push(h('div',{key:'pend',style:{display:'flex',justifyContent:'space-between',padding:px(2)+' 0',fontWeight:700,fontSize:px(small),color: d.pending>0?'#b8740a':'#0f7a52'}}, h('span',null,'Pending'), h('span',null,money(d.pending)))); }
+    if(cfg.showPayInfo){ totalsInner.push(totRow('Paid',d.paid)); totalsInner.push(h('div',{key:'pend',style:{display:'flex',justifyContent:'space-between',padding:px(2)+' 0',fontWeight:700,fontSize:px(small),color: black?'#000':(d.pending>0?'#b8740a':'#0f7a52')}}, h('span',null,'Pending'), h('span',null,money(d.pending)))); }
     const totals = h('div',{style:{display:'flex',justifyContent:'flex-end',marginTop:px(10)}}, h('div',{style:{width: thermal?'100%':'58%',fontSize:px(small)}}, totalsInner));
     let commentNode=null;
-    if(cfg.showComments && bill.comment){ commentNode = h('div',{style:{marginTop:px(10),padding:px(7)+' '+px(9),background:'#f7f4ef',borderRadius:'4px',fontSize:px(small),color:'#555'}}, h('b',null,'Note: '), bill.comment); }
+    if(cfg.showComments && bill.comment){ commentNode = h('div',{style:{marginTop:px(10),padding:px(7)+' '+px(9),background:black?'#ededed':'#f7f4ef',borderRadius:'4px',fontSize:px(small),color:K('#555')}}, h('b',null,'Note: '), bill.comment); }
     let termsNode=null;
     if(cfg.showTerms && set.terms){
       // open markdown section — the USER writes its heading (e.g. **Terms & Conditions**) and
       // can add any other headed blocks below; bold / italic / bullets / blank lines supported.
-      termsNode = h('div',{style:{marginTop:px(10),paddingTop:px(7),borderTop:'1px solid #e2e2e2',fontSize:px(narrow?7.5:small-0.5),color:'#888',lineHeight:1.45}},
+      termsNode = h('div',{style:{marginTop:px(10),paddingTop:px(7),borderTop:'1px solid '+K('#e2e2e2'),fontSize:px(narrow?7.5:small-0.5),color:K('#888'),lineHeight:1.45}},
         this._invMd(set.terms, {
-          headStyle:{fontWeight:700,color:'#666',fontSize:px(narrow?8:small),margin:px(4)+' 0 '+px(1)},
+          headStyle:{fontWeight:700,color:K('#666'),fontSize:px(narrow?8:small),margin:px(4)+' 0 '+px(1)},
           pStyle:{margin:px(1)+' 0'},
           liStyle:{display:'flex',gap:px(4),margin:px(1)+' 0',alignItems:'baseline'},
           gap:px(4)
         }));
     }
-    const footerFor=(pageNo,pageCount)=> h('div',{style:{marginTop:'auto',paddingTop:px(8),borderTop:'1px dashed #ccc',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:px(small),color:'#888'}},
+    const footerFor=(pageNo,pageCount)=> h('div',{style:{marginTop:'auto',paddingTop:px(8),borderTop:'1px dashed '+K('#ccc'),display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:px(small),color:K('#888')}},
       h('span',null, cfg.footer||''), pageCount>1? h('span',null,'Page '+pageNo+' of '+pageCount):null);
 
     // ---- THERMAL: single continuous page ----
@@ -2506,17 +2546,17 @@ class Component extends DCLogic {
       const cont = Object.assign({}, paper, {height:'auto',minHeight:'auto'});
       return h('div',{style:cont, className: opts.printArea?'print-area':'', id: opts.printArea?'print-area':undefined},
         header, customer, buildTable(bill.lines,0), totals, commentNode, termsNode,
-        cfg.footer? h('div',{style:{marginTop:px(12),paddingTop:px(8),borderTop:'1px dashed #ccc',textAlign:'center',fontSize:px(small),color:'#888'}}, cfg.footer):null);
+        cfg.footer? h('div',{style:{marginTop:px(12),paddingTop:px(8),borderTop:'1px dashed '+K('#ccc'),textAlign:'center',fontSize:px(small),color:K('#888')}}, cfg.footer):null);
     }
 
     // single thead row and single body row, used only for measuring real heights
-    const headGrid=()=>{ const cells=[headCell('Item')]; if(showQty)cells.push(headCell('Qty','center')); if(showPrice)cells.push(headCell('Price','right')); if(showTotal)cells.push(headCell('Total','right')); return h('div',{'data-m':'thead',style:{display:'grid',gridTemplateColumns:gridCols,fontSize:px(small),borderTop:'1px solid #ccc'}}, cells); };
-    const rowGrid=()=>{ const l=bill.lines[0]||{name:'Sample item',qty:1,price:0}; const cells=[ h('div',{style:Object.assign({padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',color:'#333',minWidth:0},(thermal?{whiteSpace:'normal'}:{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}))}, l.name) ]; if(showQty)cells.push(h('div',{style:{padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',textAlign:'center'}},String(l.qty))); if(showPrice)cells.push(h('div',{style:{padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',textAlign:'right'}},Number(l.price).toLocaleString('en-US'))); if(showTotal)cells.push(h('div',{style:{padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',textAlign:'right'}},'0')); return h('div',{'data-m':'row',style:{display:'grid',gridTemplateColumns:gridCols,fontSize:px(small)}}, cells); };
+    const headGrid=()=>{ const cells=[headCell('Item')]; if(showQty)cells.push(headCell('Qty','center')); if(showPrice)cells.push(headCell('Price','right')); if(showTotal)cells.push(headCell('Total','right')); return h('div',{'data-m':'thead',style:{display:'grid',gridTemplateColumns:gridCols,fontSize:px(small),fontFamily:tblFam,borderTop:'1px solid #ccc'}}, cells); };
+    const rowGrid=()=>{ const l=bill.lines[0]||{name:'Sample item',qty:1,price:0}; const cells=[ h('div',{style:Object.assign({padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',color:'#333',minWidth:0},(thermal?{whiteSpace:'normal'}:{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}))}, l.name) ]; if(showQty)cells.push(h('div',{style:{padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',textAlign:'center'}},String(l.qty))); if(showPrice)cells.push(h('div',{style:{padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',textAlign:'right'}},Number(l.price).toLocaleString('en-US'))); if(showTotal)cells.push(h('div',{style:{padding:cellPad+' 3px',borderBottom:'1px solid #f0f0f0',textAlign:'right'}},'0')); return h('div',{'data-m':'row',style:{display:'grid',gridTemplateColumns:gridCols,fontSize:px(small),fontFamily:tblFam,fontWeight:itemW}}, cells); };
 
     // ---- PAGED: measure real DOM heights, then distribute ----
     const contentH = paperH - 2*pad;          // inner content box height
     const contentW = paperW - 2*pad;
-    const layoutKey = [cfg.size,fs,cfg.logo,cfg.cols.qty,cfg.cols.price,cfg.cols.total,cfg.showComments,cfg.showTerms,cfg.showPayInfo,cfg.showBizInfo!==false,bill.id,bill.lines.length,(set.businessName||'').length,(set.bizInfo||'').length,(set.terms||'').length,(bill.comment||'').length,cur,opts.printArea?'p':'v'].join('|');
+    const layoutKey = [cfg.size,fs,itemW,headW,cfg.logo,cfg.cols.qty,cfg.cols.price,cfg.cols.total,cfg.showComments,cfg.showTerms,cfg.showPayInfo,cfg.showBizInfo!==false,bill.id,bill.lines.length,(set.businessName||'').length,(set.bizInfo||'').length,(set.terms||'').length,(bill.comment||'').length,cur,opts.printArea?'p':'v'].join('|');
     const mm = (this.state.invMeasure && this.state.invMeasure[layoutKey]) || null;
     // estimate fallback (used only for the first frame before measurement lands)
     const lh=small*1.5*fs, cpad2=(narrow?3:5)*fs;
@@ -2530,20 +2570,32 @@ class Component extends DCLogic {
     const slimH = repeatHead ? (HH+CH) : Math.round(small*1.5*fs + 12);   // continuation 'header' height
     const region0 = Math.max(RH, contentH - FH - HH - CH);                 // first page: full masthead + customer
     const regionN = Math.max(RH, contentH - FH - slimH);                   // continuation pages
-    const rows0 = Math.max(1, Math.floor((region0 - THH - 2) / RH));
-    const rowsN = Math.max(1, Math.floor((regionN - THH - 2) / RH));
-    // 1) fill each page with rows to its capacity (first page is shorter when header repeats off)
+    // 1) fill each page with rows by ACCUMULATED HEIGHT: item names wrap onto extra lines,
+    //    so each row's height is the measured single-line height plus its estimated wrapped
+    //    lines (from the name column's width). First page is shorter when header repeats off.
     const L=bill.lines.length;
+    const fixedCols=(showQty?30:0)+(showPrice?64:0)+(showTotal?70:0);
+    const nameW=Math.max(30, contentW - fixedCols - 6);
+    const charsPerLine=Math.max(6, Math.floor(nameW/(small*fs*0.58)));
+    const wrapLh=small*1.5*fs;
+    const rowHOf=l=> RH + (Math.max(1, Math.ceil((((l&&l.name)||' ').length)/charsPerLine))-1)*wrapLh;
     const rowPages=[];
-    { let k=0, first=true; while(k<L){ const cap=first?rows0:rowsN; rowPages.push({rows:bill.lines.slice(k,k+cap), start:k, trailing:[], cont:!first}); k+=cap; first=false; } }
-    if(rowPages.length===0) rowPages.push({rows:[],start:0,trailing:[],cont:false});
+    { let k=0, first=true;
+      while(k<L){
+        const cap=(first?region0:regionN) - THH - 2;
+        let used=0; const rows=[]; const start=k;
+        while(k<L){ const rh=rowHOf(bill.lines[k]); if(rows.length && used+rh>cap) break; used+=rh; rows.push(bill.lines[k]); k++; }
+        rowPages.push({rows, start, used, trailing:[], cont:!first}); first=false;
+      }
+    }
+    if(rowPages.length===0) rowPages.push({rows:[],start:0,used:0,trailing:[],cont:false});
     // 2) totals stays with the rows when it fits; note & terms each move to a new page only if no room
     const trailing=[{h:TOT,node:totals,k:'totals'}];
     if(commentNode) trailing.push({h:NOT,node:commentNode,k:'note'});
     if(termsNode) trailing.push({h:TER,node:termsNode,k:'terms'});
     let lastP=rowPages[rowPages.length-1];
     let lastRegion = lastP.cont? regionN : region0;
-    let remain = lastRegion - ((lastP.rows.length?THH:0) + lastP.rows.length*RH);
+    let remain = lastRegion - ((lastP.rows.length?THH:0) + (lastP.used||0));
     for(const blk of trailing){
       if(blk.h <= remain + 1){ lastP.trailing.push(blk); remain -= blk.h; }
       else { lastP={rows:[],start:0,trailing:[blk],cont:true}; rowPages.push(lastP); remain = regionN - blk.h; }
@@ -2552,7 +2604,7 @@ class Component extends DCLogic {
     const mkPageStyle=(isLast)=> isLast
       ? Object.assign({}, paper, {height:'auto', minHeight:paperH+'px', overflow:'visible', marginBottom:'0'})
       : Object.assign({}, paper, {height:paperH+'px', minHeight:paperH+'px', overflow:'hidden', marginBottom:'20px', breakAfter:'page', pageBreakAfter:'always'});
-    const slimHeader=(no)=> h('div',{style:{borderBottom:'1px solid #e2e2e2',paddingBottom:px(6),marginBottom:px(8),display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:px(small),color:'#999'}}, h('span',{style:{fontWeight:700,color:'#777'}}, (set.businessName||'')+' - '+no), h('span',null,'continued'));
+    const slimHeader=(no)=> h('div',{style:{borderBottom:'1px solid '+K('#e2e2e2'),paddingBottom:px(6),marginBottom:px(8),display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:px(small),color:K('#999')}}, h('span',{style:{fontWeight:700,color:K('#777')}}, (set.businessName||'')+' - '+no), h('span',null,'continued'));
     const pages = rowPages.map((pd,pi)=>{
       const full = !pd.cont || repeatHead;
       return h('div',{key:'pg'+pi, className:'invoice-page', style:mkPageStyle(pi===pageCount-1)},
@@ -2685,7 +2737,7 @@ class Component extends DCLogic {
       doc.write('<!DOCTYPE html><html><head><meta charset="utf-8">'
         + '<title>'+title.replace(/</g,'&lt;')+'</title>'
         + '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-        + '<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'
+        + '<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'
         + '<style>*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
         + 'html,body{margin:0;padding:0;background:#fff;font-family:\'Plus Jakarta Sans\',system-ui,sans-serif}'
         + '.print-area,.invoice-pages{display:flex;flex-direction:column;align-items:center}'
@@ -3254,8 +3306,9 @@ class Component extends DCLogic {
   }
 
   // ---------- editor field changes ----------
-  // paid auto-follows the final total on a NEW bill, until the user edits paid themselves
-  _syncEd(e){ if(e && !e.id && !e.paidTouched){ const sub=this.subOf(e.lines); const disc=Math.max(0,Math.min(sub,Number(e.discount)||0)); const total=sub-disc; return { ...e, paid:String(total) }; } return e; }
+  // paid kabhi auto-fill nahi hota: naya bill 0 se shuru hota hai aur sirf user ke
+  // khud type karne par badalta hai (items add karne se paid nahi badhta)
+  _syncEd(e){ return e; }
   setEd(patch){ this.setState(s=> ({ editor: this._syncEd({ ...s.editor, ...patch }) })); }
   lineChange(i, field, val){ this.setState(s=>{ const lines=s.editor.lines.map((l,k)=> k===i?{...l,[field]:val}:l); return { editor: this._syncEd({...s.editor, lines}) }; }); }
   addLine(){ this.setState(s=> ({ editor: this._syncEd({...s.editor, lines:[...s.editor.lines, {name:'',qty:'1',price:''}]}), dropOpen:s.editor.lines.length })); }
@@ -3539,7 +3592,7 @@ class Component extends DCLogic {
         lines, discount:e.discount, total:String(total), paid:e.paid, comment:e.comment, note:e.note,
         subtotalDisp:this.fmt(sub), pendingDisp:this.fmt(pending), totalDisp:this.fmt(total),
         pendingBg: pending>0?'#fdf2e0':'#e7f5ee', pendingInk: pending>0?'#b8740a':'#0f7a52',
-        payNote: e.lockedPaid>0?('Pehle se '+this.fmt(e.lockedPaid)+' paid - total isse kam nahi ho sakta.'):'Default poora total. Kam karke pending chhor sakte hain.',
+        payNote: e.lockedPaid>0?('Pehle se '+this.fmt(e.lockedPaid)+' paid - total isse kam nahi ho sakta.'):'Paid 0 se shuru hota hai - jo amount customer ne diya wo type karein, baqi pending rahega.',
         onName:ev=>this.setEd({name:ev.target.value}), onPhone:ev=>this.setEd({phone:ev.target.value, phoneCommitted:false, phoneErr:''}), onCar:ev=>this.setEd({car:ev.target.value, carCommitted:false, carErr:''}), onModel:ev=>this.setEd({model:ev.target.value}),
         onPhoneCommit:()=>this.commitPhone(), onPhoneKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitPhone(); } },
         onCarCommit:()=>this.commitCar(), onCarKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitCar(); } },
@@ -3913,6 +3966,11 @@ class Component extends DCLogic {
           bizInfo:mkPT(cfg.showBizInfo!==false), onBizInfo:()=>this.setPrintCfg({showBizInfo:!(cfg.showBizInfo!==false)}),
           terms:mkPT(cfg.showTerms), onTerms:()=>this.setPrintCfg({showTerms:!cfg.showTerms}),
           pay:mkPT(cfg.showPayInfo), onPay:()=>this.setPrintCfg({showPayInfo:!cfg.showPayInfo}),
+          blackM:mkPT(!!cfg.blackMode), onBlack:()=>this.setPrintCfg({blackMode:!cfg.blackMode}),
+          itemWVal:String(cfg.itemWeight||400), onItemW:ev=>this.setPrintCfg({itemWeight:Number(ev.target.value)}),
+          headWVal:String(cfg.headWeight||700), onHeadW:ev=>this.setPrintCfg({headWeight:Number(ev.target.value)}),
+          moreOpen:!!S.printMore, toggleMore:()=>this.setState(s=>({printMore:!s.printMore})),
+          moreChevStyle:'display:flex;color:#8a8175;transition:transform .2s;transform:rotate('+(S.printMore?180:0)+'deg)',
           repeatHeader:mkPT(cfg.repeatHeader!==false), onRepeatHeader:()=>this.setPrintCfg({repeatHeader:!(cfg.repeatHeader!==false)}), repeatHeaderHint:(cfg.repeatHeader!==false)?'Header & customer details repeat on pages 2, 3...':'Only the first page shows the header; later pages start with the items.',
         };
       }
