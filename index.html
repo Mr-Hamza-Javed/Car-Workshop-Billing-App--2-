@@ -2825,7 +2825,7 @@ class Component extends DCLogic {
   // ---------- customer history on entry (Roman Urdu) ----------
   histForPhone(phone, exId){ const canon=this.canonPhone(phone); if(!canon) return null; const ms=this.state.bills.filter(b=>!b.deleted && b.id!==exId && this.canonPhone(b.phone)===canon); return this._histAgg(ms); }
   histForCar(car, exId){ const canon=this.carCore(car); if(!canon) return null; const ms=this.state.bills.filter(b=>!b.deleted && b.id!==exId && this.carCore(b.car)===canon); const agg=this._histAgg(ms); if(agg&&agg.count){ const nums=[...new Set(ms.map(b=>this.canonPhone(b.phone)).filter(Boolean))]; agg.multiNum=nums.length>1; } return agg; }
-  _histAgg(ms){ if(!ms.length) return {count:0}; let total=0, pend=0, pc=0, last=null; ms.forEach(b=>{ const d=this.derive(b); total+=d.total; if(d.pending>0){ pend+=d.pending; pc++; } if(!last||b.ts>last) last=b.ts; }); return {count:ms.length, total, pending:pend, pendingCount:pc, last}; }
+  _histAgg(ms){ if(!ms.length)  return {count:0}; let total=0, pend=0, pc=0, last=null; ms.forEach(b=>{ const d=this.derive(b); total+=d.total; if(d.pending>0){ pend+=d.pending; pc++; } if(!last||b.ts>last) last=b.ts; }); return {count:ms.length, total, pending:pend, pendingCount:pc, last}; }
 
   // ---------- reports model ----------
   // Ultimate safeguard: rebuild EVERY report total from the actual bills. A deliberate repair
@@ -4080,3 +4080,8 @@ class Component extends DCLogic {
 </script>
 </body>
 </html>
+
+
+
+
+
