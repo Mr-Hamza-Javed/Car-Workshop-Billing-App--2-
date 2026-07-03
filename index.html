@@ -2148,7 +2148,7 @@ class Component extends DCLogic {
   async _loadShell(){
     const st = await this.db.getSettings();
     if(st){ const { tpl, ...rest } = st; this.setState(s=>({ settings:{ ...s.settings, ...rest }, tpl:{ ...s.tpl, ...(tpl||{}) } })); }
-    else { try{ await this.db.saveSettings(this._settingsDoc()); }catch(e){} }
+    else { try{ if(this.canAct('settings','manage')) await this.db.saveSettings(this._settingsDoc()); }catch(e){} }
     // one-time migration: old plain terms text becomes the open markdown section, keeping its
     // familiar heading. Idempotent (skips anything already containing markdown bold markers).
     this.setState(s=>{ const t=s.settings.terms; return (t && !/\*\*/.test(t))? { settings:{ ...s.settings, terms:'**Terms & Conditions**\n'+t } } : {}; });
@@ -2497,6 +2497,9 @@ class Component extends DCLogic {
   // ---- settings persistence (debounced, silent header spinner) ----
   _maybePersistSettings(){
     if(!this.db || !this.state.authUser) return;
+    // sirf settings-permission wale users hi app/settings doc save kar sakte hain —
+    // baqi ke liye tabdeeliyan local-only rehti hain (warna Firestore permission-denied errors aate)
+    if(!this.canAct('settings','manage')) return;
     const j=JSON.stringify(this._settingsDoc());
     if(this._settingsJSON===undefined){ this._settingsJSON=j; return; }
     if(j===this._settingsJSON) return;
@@ -3692,7 +3695,7 @@ class Component extends DCLogic {
       { label:'Total pending', value:this.money(tPending), color:'#b8740a', sub:'Outstanding', icon:this.ic('clock',17), iconWrap:'width:30px;height:30px;border-radius:9px;background:#fdf2e0;color:#b8740a;display:flex;align-items:center;justify-content:center', stripe:'position:absolute;left:0;top:0;bottom:0;width:3px;background:#b8740a' },
       { label:'Bills created', value: S.privacy?'**':String(tCount), color:'#1a1d24', sub:this.periodLabel(), icon:this.ic('box',17), iconWrap:'width:30px;height:30px;border-radius:9px;background:#eef4ff;color:#1f6feb;display:flex;align-items:center;justify-content:center', stripe:'position:absolute;left:0;top:0;bottom:0;width:3px;background:#1f6feb' },
     ];
-    if(!this.canAct('reports','view')){ cards.forEach(c=>{ c.value='—'; c.sub='Reports ki ijazat nahi'; }); }
+    if(!this.canAct('reports','view')){ summaryCards.forEach(c=>{ c.value='—'; c.sub='Reports ki ijazat nahi'; }); }
 
     const mkCard=(b)=>{
       const d=this.derive(b); const m=this.statusMeta(d.status);
