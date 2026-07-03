@@ -340,8 +340,16 @@
                     </div>
                     <span style="{{ b.badge }}">{{ b.statusLabel }}</span>
                   </div>
-                  <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#8a8175; font-weight:500; margin-top:7px">
-                    <span style="display:flex; opacity:.7">{{ icons.carSm }}</span>{{ b.metaVeh }}
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:7px">
+                    <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#8a8175; font-weight:500; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis">
+                      <span style="display:flex; opacity:.7; flex:none">{{ icons.carSm }}</span><span style="overflow:hidden; text-overflow:ellipsis">{{ b.metaVeh }}</span>
+                    </div>
+                    <sc-if value="{{ b.hasBy }}" hint-placeholder-val="{{ true }}">
+                      <div title="{{ b.byTitle }}" style="display:flex; align-items:center; gap:5px; flex:none; background:#faf7f1; border:1px solid #f0e9de; border-radius:20px; padding:2px 8px 2px 3px">
+                        <span style="{{ b.byAv }}">{{ b.byIni }}</span>
+                        <span style="font-size:10.5px; font-weight:700; color:#8a8175">{{ b.byFirst }}</span>
+                      </div>
+                    </sc-if>
                   </div>
                   <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:11px; padding-top:10px; border-top:1px dashed #ece4d7">
                     <div>
@@ -712,7 +720,10 @@
             <div style="display:flex; flex-direction:column">
               <sc-for list="{{ allBillsView }}" as="b" hint-placeholder-count="8">
                 <div key="{{ b.rk }}" class="hlx" onClick="{{ b.onClick }}" style="display:flex; align-items:center; gap:11px; padding:13px 16px; border-bottom:1px solid #f4efe7; cursor:pointer" style-hover="display:flex; align-items:center; gap:11px; padding:13px 16px; border-bottom:1px solid #f4efe7; cursor:pointer; background:#faf7f1">
-                  <div style="width:8px; height:8px; border-radius:50%; background:{{ b.accent }}; flex:none"></div>
+                  <span title="{{ b.byTitle }}" style="position:relative; flex:none; display:flex">
+                    <span style="{{ b.byAvLg }}">{{ b.byIni }}</span>
+                    <span style="{{ b.byDot }}"></span>
+                  </span>
                   <div style="flex:1; min-width:0">
                     <div style="display:flex; align-items:baseline; gap:8px">
                       <span style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:13px; color:#1f6feb; flex:none">{{ b.no }}</span>
@@ -807,9 +818,13 @@
           <div class="stagger" style="display:flex; flex-direction:column; gap:9px">
             <sc-for list="{{ pendingBills }}" as="b" hint-placeholder-count="5">
               <div class="hl" onClick="{{ b.onClick }}" style="background:#fff; border:1px solid #ece4d7; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px" style-hover="background:#faf7f1; border:1px solid #ddd2c2; border-radius:13px; padding:13px 15px; cursor:pointer; display:flex; align-items:center; gap:13px">
+                <span title="{{ b.byTitle }}" style="position:relative; flex:none; display:flex">
+                  <span style="{{ b.byAvLg }}">{{ b.byIni }}</span>
+                  <span style="{{ b.byDot }}"></span>
+                </span>
                 <div style="flex:1; min-width:0">
-                  <div style="font-size:13.5px; font-weight:700; color:#1a1d24"><span style="font-family:'Bricolage Grotesque'">{{ b.no }}</span> · {{ b.name }}</div>
-                  <div style="font-size:11.5px; color:#8a8175; margin-top:2px">{{ b.meta2 }}</div>
+                  <div style="font-size:13.5px; font-weight:700; color:#1a1d24; white-space:nowrap; overflow:hidden; text-overflow:ellipsis"><span style="font-family:'Bricolage Grotesque'">{{ b.no }}</span> · {{ b.name }}</div>
+                  <div style="font-size:11.5px; color:#8a8175; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ b.meta2 }}</div>
                 </div>
                 <div style="text-align:right; flex:none">
                   <div style="font-size:10.5px; color:#a59c8c; font-weight:600; text-transform:uppercase; letter-spacing:.4px">Pending</div>
@@ -2606,6 +2621,8 @@ class Component extends DCLogic {
   }
 
   // ---------- helpers ----------
+  // creator ke liye stable pastel-strong color (name-hash se) — bill cards par avatar chip
+  _byColor(name){ const pal=['#5b3df5','#1f6feb','#0f7a52','#b8740a','#0e7490','#c0392b','#7c5c10']; let h=0; const s=String(name||''); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return pal[h%pal.length]; }
   fmt(v){ return this.state.settings.currency + ' ' + Math.round(Number(v)||0).toLocaleString('en-US'); }
   // ---- amount inputs: live thousand-separator formatting (100000 -> 100,000) ----
   fmtAmtStr(v){ const s=String(v==null?'':v).replace(/[^0-9]/g,''); return s? Number(s).toLocaleString('en-US') : ''; }
@@ -3730,9 +3747,19 @@ class Component extends DCLogic {
       // has no car number / phone. Each list gets a graceful default when everything is empty.
       const dot=(...parts)=>parts.filter(p=>p&&String(p).trim()&&String(p).trim()!=='-').join(' · ');
       const dateS=this.dateStr(b.ts);
+      // "kis ne banaya" — color user ki ID par based hai (naam badalne par bhi wahi rahega)
+      const byName=(b.createdBy||'').trim(); const byC=this._byColor((b.createdById||byName)||'?');
+      const byFirst=byName? byName.split(/\s+/)[0] : '';
       return { rk:b.id, id:b.id, no:b.no, name:b.name||'Walk-in customer', car:b.car, model:b.model, phone:b.phone, dateStr:dateS,
-        meta1: dot(b.car, b.phone, S.isMobile?null:dateS) || (S.isMobile?'No details':dateS),
-        meta2: dot(b.car, b.phone, dateS),
+        hasBy: !!byName, byFirst: byFirst||'—', byTitle: byName? ('Banaya: '+byName) : '',
+        byIni: byName? byName.split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase() : '?',
+        byAv:`width:16px;height:16px;border-radius:50%;background:${byC};color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex:none;font-family:'Bricolage Grotesque';letter-spacing:.2px`,
+        // list rows ke liye: tinted leading avatar + corner par status dot
+        byAvLg:`width:32px;height:32px;border-radius:50%;background:${byC}1c;color:${byC};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex:none;font-family:'Bricolage Grotesque';letter-spacing:.2px`,
+        byDot:`position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:${m.accent};border:2px solid #fff`,
+        byInk:byC, byNameHide: S.isMobile?'display:none':'display:inline',
+        meta1: dot(b.car, b.phone, S.isMobile?null:dateS, byFirst?('by '+byFirst):null) || (S.isMobile?'No details':dateS),
+        meta2: dot(b.car, S.isMobile?null:b.phone, dateS, byFirst?('by '+byFirst):null),
         metaVeh: dot(b.car, b.model) || 'No vehicle info',
         metaSearch: dot(b.phone, b.car, b.model) || 'No contact info',
         metaHist: dot(b.model, dateS),
