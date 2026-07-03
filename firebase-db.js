@@ -232,6 +232,7 @@ function makeLocalAdapter() {
       return { ok: true, user: userPublic(row.id, row) };
     },
     async logout() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} await this._emit(); },
+    async refreshAuthToken() { /* local mode: claims nahi hote */ },
     async listUsers() { const res = await this.query("users", { orderBy: ["createdAtMs", "asc"] }); return res.rows.map((r) => userPublic(r.id, r)); },
     async createUser({ email, fullName, password, role, perms, activityScope }) {
       const ex = await this.query("users", { where: [["email", "==", lower(email)]], limit: 1 });
@@ -359,6 +360,8 @@ async function makeFirebaseAdapter() {
     /* ---- Firebase Auth ---- */
     async _profileFor(user) {
       if (!user) return null;
+      // custom claims (permissions) taaza rakhein — admin ne perms badle hon to bina logout naya token mil jaye
+      try { await user.getIdToken(true); } catch (e) {}
       let snap = await fs.getDoc(ref("users/" + user.uid));
       if (!snap.exists()) {
         // self-bootstrap only for the known admin email
@@ -390,6 +393,8 @@ async function makeFirebaseAdapter() {
       }
     },
     async logout() { await authMod.signOut(auth); },
+    /* force-refresh custom claims (naye permissions ka token) — permission-denied ke baad app isse call karta hai */
+    async refreshAuthToken() { try { if (auth.currentUser) await auth.currentUser.getIdToken(true); } catch (e) {} },
     async listUsers() { const res = await this.query("users", { orderBy: ["createdAtMs", "asc"] }); return res.rows.map((r) => userPublic(r.id, r)); },
     async createUser(payload) { try { const r = await call("adminCreateUser")(payload); return { ok: true, id: r.data.uid }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
     async updateUser(id, patch) { try { await call("adminUpdateUser")({ uid: id, ...patch }); return { ok: true }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
@@ -493,6 +498,7 @@ function makeDB(A) {
     bootstrap: (seed) => A.bootstrap(seed),
     login: (email, pw) => A.login(email, pw),
     logout: () => A.logout(),
+    refreshAuthToken: () => (A.refreshAuthToken ? A.refreshAuthToken() : null),
     listUsers: () => A.listUsers(),
     createUser: (p) => A.createUser(p),
     updateUser: (id, patch) => A.updateUser(id, patch),

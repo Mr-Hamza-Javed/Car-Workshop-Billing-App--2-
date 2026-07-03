@@ -17,11 +17,15 @@ service cloud.firestore {
          rep av pd sm        = reports view / activity view / products delete / settings manage
        days + user-scope fine-graining is enforced by the app + Cloud Functions (claims
        have a 1000-byte limit, and rules can't express "last N days of another user's
-       bills" efficiently) — these flags are the hard on/off backstop. */
-    function perm(p) {
+       bills" efficiently) — these flags are the hard on/off backstop.
+       LEGACY FALLBACK: purane tokens me flags token.perms.<flat-key> ke andar the — jab tak
+       har user ke claims naye Cloud Functions se dobara set nahi hote, dono shapes qabool
+       hain taake naya rules-deploy purane logged-in users ko na tore. */
+    function perm(p, lg) {
       return signedIn() && (
         request.auth.token.admin == true ||
-        (request.auth.token.p != null && request.auth.token.p[p] == true)
+        (request.auth.token.p != null && request.auth.token.p[p] == true) ||
+        (request.auth.token.perms != null && request.auth.token.perms[lg] == true)
       );
     }
 
@@ -47,7 +51,7 @@ service cloud.firestore {
       // counter is written transactionally whenever a bill is created. 'access' (the kill switch) is
       // explicitly excluded here so NO client write path exists for it — only the restricted create +
       // console/Admin SDK edits in the /app/access block above can ever touch it.
-      allow write: if doc != 'access' && (doc == 'counter' ? perm('bc') : perm('sm'));
+      allow write: if doc != 'access' && (doc == 'counter' ? perm('bc', 'bills_create') : perm('sm', 'settings'));
     }
 
     /* ---------- bills ---------- */
@@ -55,19 +59,19 @@ service cloud.firestore {
       // read stays profile-gated: "view" days/user-scope filtering happens in the app
       // (a self-scoped user still needs to read own docs; Firestore can't filter that here).
       allow read:   if isKnownUser();
-      allow create: if perm('bc');
+      allow create: if perm('bc', 'bills_create');
       // edits, archive flips, payments, soft-delete land as updates; restore (from bin) too
-      allow update: if perm('be') || perm('ba') || perm('bd') || perm('bp') || perm('rr');
-      allow delete: if perm('rp');   // permanent delete / empty bin
+      allow update: if perm('be', 'bills_edit') || perm('ba', 'bills_archive') || perm('bd', 'bills_delete') || perm('bp', 'payments') || perm('rr', 'recycle');
+      allow delete: if perm('rp', 'bills_delete');   // permanent delete / empty bin
     }
 
     /* ---------- products ---------- */
     match /products/{id} {
       allow read:   if isKnownUser();
       // catalogue builds itself while creating bills; sirf delete ki alag permission hai
-      allow create: if perm('bc') || perm('pd');
-      allow update: if perm('bc') || perm('pd');
-      allow delete: if perm('pd');
+      allow create: if perm('bc', 'bills_create') || perm('pd', 'products');
+      allow update: if perm('bc', 'bills_create') || perm('pd', 'products');
+      allow delete: if perm('pd', 'products');
     }
 
     /* ---------- activity log (append-only; never edited/deleted from client) ---------- */
@@ -78,7 +82,7 @@ service cloud.firestore {
     }
 
     /* ---------- stats aggregates (day + month) ---------- */
-    match /stats/{day}    { allow read: if isKnownUser(); allow write: if perm('bc') || perm('be') || perm('bd') || perm('ba') || perm('bp') || perm('rr'); }
-    match /stats_m/{month}{ allow read: if isKnownUser(); allow write: if perm('bc') || perm('be') || perm('bd') || perm('ba') || perm('bp') || perm('rr'); }
+    match /stats/{day}    { allow read: if isKnownUser(); allow write: if perm('bc', 'bills_create') || perm('be', 'bills_edit') || perm('bd', 'bills_delete') || perm('ba', 'bills_archive') || perm('bp', 'payments') || perm('rr', 'recycle'); }
+    match /stats_m/{month}{ allow read: if isKnownUser(); allow write: if perm('bc', 'bills_create') || perm('be', 'bills_edit') || perm('bd', 'bills_delete') || perm('ba', 'bills_archive') || perm('bp', 'payments') || perm('rr', 'recycle'); }
   }
 }

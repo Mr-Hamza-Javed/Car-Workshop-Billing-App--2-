@@ -2328,7 +2328,17 @@ class Component extends DCLogic {
     this.setState(s=>({ busy: key?{...s.busy,[key]:true}:s.busy, ...(opts.block?{blocking:{msg:opts.block}}:{}), ...(opts.headerSave?{headerSaving:s.headerSaving+1}:{}) }));
     let res, err;
     try{ res = await fn(); }
-    catch(e){ err=e; console.error('[action '+key+']', e); this.toastMsg((e&&e.userMessage)||opts.errMsg||'Nahi ho saka - dobara koshish karein','warn'); }
+    catch(e){
+      err=e; console.error('[action '+key+']', e);
+      const pd = e && (e.code==='permission-denied' || /insufficient permissions/i.test(String(e&&e.message||'')));
+      if(pd){
+        // Firestore rules ne write rok di — aksar wajah: purane custom claims. Token refresh karo
+        // taake agli koshish naye claims ke saath jaye, aur user ko saaf wajah batao.
+        try{ if(this.db && this.db.refreshAuthToken) this.db.refreshAuthToken(); }catch(_e){}
+        this.toastMsg((e&&e.userMessage)||'Server ne ijazat nahi di — admin se apni permissions (Users page se) dobara save karwayen, phir app refresh karein','err');
+      }
+      else this.toastMsg((e&&e.userMessage)||opts.errMsg||'Nahi ho saka - dobara koshish karein','warn');
+    }
     this.setState(s=>{ const b={...s.busy}; if(key) delete b[key]; return { busy:b, ...(opts.block?{blocking:null}:{}), ...(opts.headerSave?{headerSaving:Math.max(0,s.headerSaving-1)}:{}) }; });
     if(err && opts.rethrow) throw err;
     return err? undefined : res;
@@ -2597,6 +2607,22 @@ class Component extends DCLogic {
 
   // ---------- helpers ----------
   fmt(v){ return this.state.settings.currency + ' ' + Math.round(Number(v)||0).toLocaleString('en-US'); }
+  // ---- amount inputs: live thousand-separator formatting (100000 -> 100,000) ----
+  fmtAmtStr(v){ const s=String(v==null?'':v).replace(/[^0-9]/g,''); return s? Number(s).toLocaleString('en-US') : ''; }
+  // controlled input ke saath caret sahi jagah rehta hai — caret se pehle ke DIGITS gin kar
+  // formatted value me wahi digit-position dhoond kar cursor wapas rakhte hain (delete/backspace bhi theek)
+  amtInput(ev, cb){
+    const el=ev.target; const raw=String(el.value||'');
+    const caret=(el.selectionStart==null)? raw.length : el.selectionStart;
+    const digitsLeft=(raw.slice(0,caret).match(/\d/g)||[]).length;
+    const clean=raw.replace(/[^0-9]/g,'').slice(0,12);
+    cb(clean);
+    requestAnimationFrame(()=>{ try{
+      const v=String(el.value||''); let pos=0, seen=0;
+      while(pos<v.length && seen<digitsLeft){ if(/\d/.test(v[pos])) seen++; pos++; }
+      el.setSelectionRange(pos, pos);
+    }catch(e){} });
+  }
   money(v){ return this.state.privacy ? this.state.settings.currency + ' ****' : this.fmt(v); }
   subOf(lines){ return lines.reduce((s,l)=> s + (Number(l.qty)||0)*(Number(l.price)||0), 0); }
   derive(b){
@@ -3797,8 +3823,8 @@ class Component extends DCLogic {
         const qn=(l.name||'').trim().toLowerCase();
         const opts=S.products.filter(p=> !qn || p.name.toLowerCase().indexOf(qn)>=0 ).slice(0,7).map(p=>({ rk:p.name, name:p.name, used:'Used in '+p.count, onPick:(ev)=>{ if(ev&&ev.preventDefault) ev.preventDefault(); this.pickProduct(i,p.name); } }));
         const exact=S.products.some(p=>p.name.toLowerCase()===qn);
-        return { name:l.name, qty:l.qty, price:l.price, lineTotal:this.fmt(lt), num:String(i+1),
-          onName:ev=>this.onLineName(i,ev.target.value), onQty:ev=>this.lineChange(i,'qty',ev.target.value), onPrice:ev=>this.lineChange(i,'price',ev.target.value), onRemove:()=>this.removeLine(i),
+        return { name:l.name, qty:l.qty, price:this.fmtAmtStr(l.price), lineTotal:this.fmt(lt), num:String(i+1),
+          onName:ev=>this.onLineName(i,ev.target.value), onQty:ev=>this.lineChange(i,'qty',ev.target.value), onPrice:ev=>this.amtInput(ev, v=>this.lineChange(i,'price',v)), onRemove:()=>this.removeLine(i),
           onFocus:()=>this.openDrop(i), onBlur:()=>{ setTimeout(()=>this.closeDrop(),180); },
           dropdownOpen: S.dropOpen===i, options:opts, hasOptions:opts.length>0, showAddNew: !!qn && !exact, addNewLabel:l.name.trim(), onAddNew:(ev)=>{ if(ev&&ev.preventDefault) ev.preventDefault(); this.closeDrop(); },
           canRemove: e.lines.length>1 };
@@ -3815,7 +3841,7 @@ class Component extends DCLogic {
         dtValue: this.toDatetimeLocal(e.ts instanceof Date?e.ts:new Date()),
         onDateTime: ev=>{ const v=ev.target.value; if(v) this.setEd({ts:new Date(v)}); },
         statusBadge:this.badgeStyle(st), statusLabel:m.label,
-        lines, discount:e.discount, total:String(total), paid:e.paid, comment:e.comment, note:e.note,
+        lines, discount:this.fmtAmtStr(e.discount), total:this.fmtAmtStr(String(total)), paid:this.fmtAmtStr(e.paid), comment:e.comment, note:e.note,
         subtotalDisp:this.fmt(sub), pendingDisp:this.fmt(pending), totalDisp:this.fmt(total),
         pendingBg: pending>0?'#fdf2e0':'#e7f5ee', pendingInk: pending>0?'#b8740a':'#0f7a52',
         payNote: e.lockedPaid>0?('Pehle se '+this.fmt(e.lockedPaid)+' paid - total isse kam nahi ho sakta.'):'Paid 0 se shuru hota hai - jo amount customer ne diya wo type karein, baqi pending rahega.',
@@ -3823,7 +3849,7 @@ class Component extends DCLogic {
         onPhoneCommit:()=>this.commitPhone(), onPhoneKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitPhone(); } },
         onCarCommit:()=>this.commitCar(), onCarKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitCar(); } },
         onComment:ev=>this.setEd({comment:ev.target.value}), onNote:ev=>this.setEd({note:ev.target.value}),
-        onDiscount:ev=>this.onDiscount(ev.target.value), onTotal:ev=>this.onTotal(ev.target.value), onPaid:ev=>this.onPaid(ev.target.value),
+        onDiscount:ev=>this.amtInput(ev, v=>this.onDiscount(v)), onTotal:ev=>this.amtInput(ev, v=>this.onTotal(v)), onPaid:ev=>this.amtInput(ev, v=>this.onPaid(v)),
         openHistory:()=>this.openHistory() };
     }
 
@@ -4302,8 +4328,8 @@ class Component extends DCLogic {
       billSearch:S.billSearch, onBillSearchInput:ev=>this.setBillSearch(ev.target.value), onBillSearchKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.applyBillSearch(); } }, runBillSearch:()=>this.applyBillSearch(), clearBillSearch:()=>this.clearBillSearch(),
       fltOpen:S.fltOpen, toggleFltPanel:()=>this.toggleFltPanel(), activeChips, hasActive, activeCount, clearFlt:()=>this.clearFlt(),
       billSortCtl, pendSortCtl, searchBtnLabel, fltBtnStyle,
-      fltStatus, fltAmtOps, fltPenOps, billFlt:S.billFlt,
-      onAmtVal:ev=>this.setFlt({amtVal:ev.target.value.replace(/[^0-9.]/g,'')}), onPenVal:ev=>this.setFlt({penVal:ev.target.value.replace(/[^0-9.]/g,'')}),
+      fltStatus, fltAmtOps, fltPenOps, billFlt:{ ...S.billFlt, amtVal:this.fmtAmtStr(S.billFlt.amtVal), penVal:this.fmtAmtStr(S.billFlt.penVal) },
+      onAmtVal:ev=>this.amtInput(ev, v=>this.setFlt({amtVal:v})), onPenVal:ev=>this.amtInput(ev, v=>this.setFlt({penVal:v})),
       onFromDate:ev=>this.setFlt({from:ev.target.value}), onToDate:ev=>this.setFlt({to:ev.target.value}),
       fltCommentCheck:ckStyle(flt.hasComment), fltCommentTick: flt.hasComment?this.ic('check',13):'', onToggleComment:()=>this.setFlt({hasComment:!flt.hasComment}),
       fltNoteCheck:ckStyle(flt.hasNote), fltNoteTick: flt.hasNote?this.ic('check',13):'', onToggleNote:()=>this.setFlt({hasNote:!flt.hasNote}),
@@ -4365,8 +4391,8 @@ class Component extends DCLogic {
       printBodyStyle:`flex:1; min-height:0; display:flex; ${S.isMobile?'flex-direction:column':''}`, printControlsW: S.isMobile?'100%':'264px',
       // history modal
       historyView, modalStyle:this._modal(), closeHistory:()=>this.setState({historyModal:null}),
-      payDraft:S.payDraft, setPayKind:()=>this.setState({payDraft:{...S.payDraft,kind:'payment'}}), setAdjKind:()=>this.setState({payDraft:{...S.payDraft,kind:'adjustment'}}),
-      payKindPayStyle, payKindAdjStyle, onPayAmount:ev=>this.setState({payDraft:{...S.payDraft,amount:ev.target.value.replace(/[^0-9.]/g,'')}}), onPayComment:ev=>this.setState({payDraft:{...S.payDraft,comment:ev.target.value}}), submitPayment:()=>this.submitPayment(), payHint, payHintColor,
+      payDraft:{ ...S.payDraft, amount:this.fmtAmtStr(S.payDraft.amount) }, setPayKind:()=>this.setState({payDraft:{...S.payDraft,kind:'payment'}}), setAdjKind:()=>this.setState({payDraft:{...S.payDraft,kind:'adjustment'}}),
+      payKindPayStyle, payKindAdjStyle, onPayAmount:ev=>this.amtInput(ev, v=>this.setState(s=>({payDraft:{...s.payDraft,amount:v}}))), onPayComment:ev=>this.setState({payDraft:{...S.payDraft,comment:ev.target.value}}), submitPayment:()=>this.submitPayment(), payHint, payHintColor,
       // list history modal
       listHistoryView, closeListHistory:()=>this.setState({listHistory:null}),
       // toast
