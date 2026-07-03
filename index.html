@@ -209,6 +209,7 @@
       <div style="margin-top:auto; padding-top:10px; border-top:1px solid rgba(255,255,255,.08); position:relative">
         <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{ false }}">
           <div style="position:absolute; left:4px; right:4px; bottom:56px; background:#23252c; border:1px solid rgba(255,255,255,.1); border-radius:13px; padding:6px; box-shadow:0 16px 40px rgba(0,0,0,.5); animation:popIn .18s ease both">
+            <button onClick="{{ openMyPw }}" style="display:flex; align-items:center; gap:10px; width:100%; padding:10px 11px; background:none; border:none; border-radius:9px; color:rgba(255,255,255,.85); font-size:13px; font-weight:600; cursor:pointer; text-align:left">{{ icons.lock }}<span>Change password</span></button>
             <button onClick="{{ onLogout }}" style="display:flex; align-items:center; gap:10px; width:100%; padding:10px 11px; background:none; border:none; border-radius:9px; color:#ff9a8f; font-size:13px; font-weight:600; cursor:pointer; text-align:left">{{ icons.logout }}<span>Log out</span></button>
           </div>
         </sc-if>
@@ -1052,46 +1053,71 @@
 
             <sc-if value="{{ selUser.showPerms }}" hint-placeholder-val="{{ true }}">
             <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:11px">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:11px; gap:10px; flex-wrap:wrap">
                 <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px">Role preset</div>
-                <span style="font-size:11.5px; color:#a59c8c; font-weight:500">Apply karte hi sab permissions set ho jati hain</span>
+                <span style="font-size:11.5px; color:#a59c8c; font-weight:500">Apply karte hi neeche ki sab permissions set ho jati hain — phir fine-tune karein</span>
               </div>
-              <div style="display:flex; gap:7px; flex-wrap:wrap; margin-bottom:18px">
+              <div style="display:flex; gap:7px; flex-wrap:wrap">
                 <sc-for list="{{ rolePresets }}" as="r" hint-placeholder-count="4">
                   <button key="{{ r.rk }}" onClick="{{ r.onClick }}" style="{{ r.style }}">{{ r.label }}</button>
                 </sc-for>
               </div>
-              <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px">Permissions</div>
-              <div style="display:flex; flex-direction:column">
-                <sc-for list="{{ permList }}" as="p" hint-placeholder-count="10">
-                  <label key="{{ p.rk }}" onClick="{{ p.onToggle }}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; padding:11px 2px; border-top:1px solid #f4efe7">
-                    <div style="min-width:0"><div style="font-size:13.5px; font-weight:600; color:#1a1d24">{{ p.label }}</div><div style="font-size:11.5px; color:#a59c8c; font-weight:500">{{ p.desc }}</div></div>
-                    <button style="{{ p.toggleWrap }}"><span style="{{ p.toggleKnob }}"></span></button>
-                  </label>
-                </sc-for>
-              </div>
-              <div style="display:flex; align-items:flex-start; gap:8px; font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:14px; line-height:1.45">{{ icons.infoSm }} <span>Har permission do jagah lagti hai — yahan UI me aur Firestore Security Rules me — taake seedhi database call bhi rukk jaye. User banana ek secure Cloud Function se hota hai, admin logged-in rehta hai.</span></div>
-            </div>
-
-            <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
-              <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px">Activity visibility</div>
-              <div style="font-size:12.5px; color:#8a8175; font-weight:500; margin-bottom:13px; line-height:1.45">{{ selUser.name }} Activity logs me kis ki activity dekh sakta/sakti hai.</div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap">
-                <sc-for list="{{ scopeButtons }}" as="s" hint-placeholder-count="3">
-                  <button key="{{ s.rk }}" onClick="{{ s.onClick }}" style="{{ s.style }}">{{ s.label }}</button>
-                </sc-for>
-              </div>
-              <sc-if value="{{ showScopeUsers }}" hint-placeholder-val="{{ false }}">
-                <div style="margin-top:14px; display:flex; flex-direction:column; gap:9px">
-                  <sc-for list="{{ scopeUserList }}" as="u" hint-placeholder-count="3">
-                    <label key="{{ u.rk }}" onClick="{{ u.onClick }}" style="display:flex; align-items:center; gap:11px; cursor:pointer; padding:8px 10px; background:#faf7f1; border:1px solid #f0e9de; border-radius:11px">
-                      <span style="{{ u.check }}">{{ u.tick }}</span>
-                      <span style="flex:1; min-width:0"><span style="font-size:13.5px; font-weight:600; color:#1a1d24">{{ u.name }}</span> <span style="font-size:11.5px; color:#8a8175">· {{ u.role }}</span></span>
-                    </label>
-                  </sc-for>
-                </div>
+              <sc-if value="{{ selUser.isAdminLocked }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; align-items:flex-start; gap:8px; font-size:11.5px; color:#8a6d2e; font-weight:500; background:#fdf6e7; border:1px solid #f0e2c8; border-radius:11px; padding:10px 12px; margin-top:12px; line-height:1.45">{{ icons.lock }} <span><b>Admin</b> ke paas hamesha SAB permissions hoti hain — neeche ke controls locked hain. Mehdood ijazat dene ke liye pehle role Manager / Cashier / Viewer par le jayein.</span></div>
               </sc-if>
             </div>
+
+            <sc-for list="{{ permCats }}" as="cat" hint-placeholder-count="6">
+              <div key="{{ cat.rk }}" style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px 18px 8px; {{ permsLockStyle }}">
+                <div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px">{{ cat.icon }} {{ cat.label }}</div>
+                <sc-for list="{{ cat.rows }}" as="p" hint-placeholder-count="3">
+                  <div key="{{ p.rk }}" style="border-top:1px solid #f4efe7; padding:12px 2px">
+                    <label onClick="{{ p.onToggle }}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer">
+                      <div style="min-width:0"><div style="font-size:13.5px; font-weight:600; color:#1a1d24">{{ p.label }}</div><div style="font-size:11.5px; color:#a59c8c; font-weight:500">{{ p.desc }}</div></div>
+                      <button style="{{ p.toggleWrap }}"><span style="{{ p.toggleKnob }}"></span></button>
+                    </label>
+                    <sc-if value="{{ p.open }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:11px; padding:13px; background:#faf7f1; border:1px solid #f0e9de; border-radius:12px; display:flex; flex-direction:column; gap:13px">
+                        <sc-if value="{{ p.hasDays }}" hint-placeholder-val="{{ true }}">
+                          <div>
+                            <div style="font-size:11px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px">Kitne din tak (record ki date)</div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center">
+                              <sc-for list="{{ p.dayChips }}" as="d" hint-placeholder-count="4">
+                                <button key="{{ d.rk }}" onClick="{{ d.onClick }}" style="{{ d.style }}">{{ d.label }}</button>
+                              </sc-for>
+                              <input value="{{ p.daysVal }}" onChange="{{ p.onDays }}" placeholder="Custom din" inputmode="numeric" style="width:90px; padding:6px 10px; background:#fff; border:1.5px solid #ece4d7; border-radius:9px; font-size:12px; font-weight:600; color:#1a1d24">
+                            </div>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ p.hasScope }}" hint-placeholder-val="{{ true }}">
+                          <div>
+                            <div style="font-size:11px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px">Kis ke banaye records par</div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap">
+                              <sc-for list="{{ p.scopeChips }}" as="sx" hint-placeholder-count="4">
+                                <button key="{{ sx.rk }}" onClick="{{ sx.onClick }}" style="{{ sx.style }}">{{ sx.label }}</button>
+                              </sc-for>
+                            </div>
+                            <sc-if value="{{ p.showUsers }}" hint-placeholder-val="{{ false }}">
+                              <div style="font-size:11.5px; color:#8a8175; font-weight:500; margin:10px 0 7px">{{ p.usersHint }}</div>
+                              <div style="display:flex; flex-direction:column; gap:7px">
+                                <sc-for list="{{ p.scopeUsers }}" as="u" hint-placeholder-count="3">
+                                  <label key="{{ u.rk }}" onClick="{{ u.onClick }}" style="display:flex; align-items:center; gap:11px; cursor:pointer; padding:8px 10px; background:#fff; border:1px solid #f0e9de; border-radius:11px">
+                                    <span style="{{ u.check }}">{{ u.tick }}</span>
+                                    <span style="flex:1; min-width:0"><span style="font-size:13px; font-weight:600; color:#1a1d24">{{ u.name }}</span> <span style="font-size:11.5px; color:#8a8175">· {{ u.role }}</span></span>
+                                  </label>
+                                </sc-for>
+                              </div>
+                            </sc-if>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+
+            <div style="display:flex; align-items:flex-start; gap:8px; font-size:11.5px; color:#a59c8c; font-weight:500; line-height:1.45; padding:0 4px">{{ icons.infoSm }} <span>Har permission do jagah lagti hai — UI me aur Firestore Security Rules (custom claims) me — taake seedhi database call bhi rukk jaye. Days aur user-scope app + Cloud Functions enforce karte hain. Koi bhi toggle badalte hi role <b>Custom</b> ho jata hai.</span></div>
             </sc-if>
           </div>
           </sc-if>
@@ -1396,6 +1422,7 @@
               <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:16px">{{ userName }}</div>
               <div style="font-size:12px; color:rgba(255,255,255,.5)">{{ userRole }} · {{ appSubtitle }}</div>
             </div>
+            <button onClick="{{ openMyPw }}" title="Change password" style="width:40px; height:40px; flex:none; border-radius:11px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:rgba(255,255,255,.85); display:flex; align-items:center; justify-content:center; cursor:pointer">{{ icons.lock }}</button>
             <button onClick="{{ onLogout }}" title="Log out" style="width:40px; height:40px; flex:none; border-radius:11px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#ff9a8f; display:flex; align-items:center; justify-content:center; cursor:pointer">{{ icons.logout }}</button>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
@@ -1816,7 +1843,7 @@
           <label style="display:flex; flex-direction:column; gap:6px">
             <span style="font-size:12.5px; font-weight:600; color:#3f4753">Password</span>
             <input value="{{ newUser.password }}" onChange="{{ onNuPassword }}" placeholder="Kam az kam 6 characters" autocomplete="off" style="{{ inputStyle }}">
-            <span style="font-size:11.5px; color:#a59c8c; font-weight:500">Aap jo set karenge wahi rahega — user khud change nahi kar sakta. Admin yahan se reset kar sakta hai.</span>
+            <span style="font-size:11.5px; color:#a59c8c; font-weight:500">User login ke baad apna password khud bhi change kar sakta hai. Admin yahan se kabhi bhi reset kar sakta hai.</span>
           </label>
           <div style="display:flex; flex-direction:column; gap:8px">
             <span style="font-size:12.5px; font-weight:600; color:#3f4753">Role</span>
@@ -1891,7 +1918,7 @@
           <label style="display:flex; flex-direction:column; gap:6px">
             <span style="font-size:12.5px; font-weight:600; color:#3f4753">New password</span>
             <input value="{{ pwDraft }}" onInput="{{ onPwDraft }}" placeholder="Kam az kam 6 characters" autocomplete="new-password" style="{{ inputStyle }}">
-            <span style="font-size:11.5px; color:#a59c8c; font-weight:500">User isse aage login karega. User khud password change nahi kar sakta.</span>
+            <span style="font-size:11.5px; color:#a59c8c; font-weight:500">User isse aage login karega. User apna password login ke baad khud bhi change kar sakta hai.</span>
           </label>
         </div>
         <div style="display:flex; gap:9px; padding:14px 20px; border-top:1px solid #f0e9de">
@@ -1902,9 +1929,43 @@
     </div>
   </sc-if>
 
+  <!-- ====== CHANGE MY PASSWORD MODAL ====== -->
+  <sc-if value="{{ myPwModal }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeMyPw }}" style="position:fixed; inset:0; background:rgba(20,15,5,.55); z-index:58; display:flex; align-items:flex-end; justify-content:center; animation:fadeIn .2s">
+      <div onClick="{{ stop }}" style="{{ addUserModalStyle }}">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid #f0e9de">
+          <div>
+            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:18px">Change password</div>
+            <div style="font-size:12.5px; color:#8a8175; font-weight:500">{{ userName }} — apna password badlein</div>
+          </div>
+          <button onClick="{{ closeMyPw }}" style="width:36px; height:36px; border-radius:10px; border:1px solid #e6ddd0; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#8a8175">{{ icons.x }}</button>
+        </div>
+        <div style="padding:18px 20px; display:flex; flex-direction:column; gap:12px">
+          <label style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; font-weight:600; color:#3f4753">Mojooda password</span>
+            <input type="password" value="{{ myPwDraft.cur }}" onInput="{{ onMyPwCur }}" autocomplete="current-password" style="{{ inputStyle }}">
+          </label>
+          <label style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; font-weight:600; color:#3f4753">Naya password</span>
+            <input type="password" value="{{ myPwDraft.nw }}" onInput="{{ onMyPwNw }}" placeholder="Kam az kam 6 characters" autocomplete="new-password" style="{{ inputStyle }}">
+          </label>
+          <label style="display:flex; flex-direction:column; gap:6px">
+            <span style="font-size:12.5px; font-weight:600; color:#3f4753">Naya password (dobara)</span>
+            <input type="password" value="{{ myPwDraft.nw2 }}" onInput="{{ onMyPwNw2 }}" autocomplete="new-password" style="{{ inputStyle }}">
+          </label>
+          <div style="font-size:11.5px; color:#a59c8c; font-weight:500; line-height:1.45">Sirf apna password change hota hai. Display name aur email sirf admin badal sakta hai.</div>
+        </div>
+        <div style="display:flex; gap:9px; padding:14px 20px; border-top:1px solid #f0e9de">
+          <button onClick="{{ closeMyPw }}" style="flex:1; padding:12px; background:#f4efe7; border:1px solid #e6ddd0; border-radius:11px; font-size:13.5px; font-weight:600; color:#3f4753; cursor:pointer">Cancel</button>
+          <button onClick="{{ submitMyPw }}" style="flex:2; display:flex; align-items:center; justify-content:center; gap:7px; padding:12px; background:#1f6feb; color:#fff; border:none; border-radius:11px; font-size:13.5px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(31,111,235,.3)">{{ icons.check }} Change password</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- ====== TOAST ====== -->
   <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:60; background:#1a1d24; color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; font-weight:600; box-shadow:0 12px 32px rgba(0,0,0,.3); animation:popIn .25s; display:flex; align-items:center; gap:9px">{{ toastIcon }} {{ toast }}</div>
+    <div style="{{ toastStyle }}">{{ toastIcon }} {{ toast }}</div>
   </sc-if>
 
 </div>
@@ -1916,6 +1977,7 @@ class Component extends DCLogic {
     authReady:false, authUser:null, dbMode:'local',
     accessBlocked:false, accessTitle:'', accessMessage:'',
     loginEmail:'', loginPw:'', loginErr:'', loggingIn:false, showPw:false, userMenuOpen:false,
+    myPwModal:false, myPwDraft:{cur:'',nw:'',nw2:''},
     route: 'dashboard', period: '28d', privacy: false, now: new Date(),
     isMobile: (typeof window!=='undefined' && window.innerWidth < 820),
     navOpen: false, editor: null, historyModal: null, listHistory: null, footerOpen: false, viewAnim: null, viewDir:0,
@@ -2117,7 +2179,147 @@ class Component extends DCLogic {
   }
   askLogout(){ this.askConfirm({ title:'Log out?', message:'Aap apne account se logout ho jayenge.', confirmLabel:'Log out', danger:false, onConfirm:()=>this.doLogout() }); }
   async doLogout(){ this.setState({ userMenuOpen:false, navOpen:false }); this._geo=null; this._geoPromise=null; try{ await this.db.logout(); }catch(e){} }
-  can(perm){ const u=this.state.authUser; if(!u) return false; if(u.role==='Admin') return true; return !!(u.perms && u.perms[perm]); }
+  // ---- apna password khud change karna (har logged-in user kar sakta hai) ----
+  openMyPw(){ this.setState({ myPwModal:true, myPwDraft:{cur:'',nw:'',nw2:''}, userMenuOpen:false, navOpen:false }); }
+  closeMyPw(){ this.setState({ myPwModal:false }); }
+  setMyPwDraft(patch){ this.setState(s=>({ myPwDraft:{ ...s.myPwDraft, ...patch } })); }
+  submitMyPw(){
+    const d=this.state.myPwDraft||{};
+    if(!d.cur){ this.toastMsg('Mojooda password likhein','warn'); return; }
+    if((d.nw||'').length<6){ this.toastMsg('Naya password kam az kam 6 characters','warn'); return; }
+    if(d.nw!==d.nw2){ this.toastMsg('Naye passwords match nahi karte','warn'); return; }
+    this.runAction('mypw', async()=>{
+      const r=await this.db.changeMyPassword(d.cur, d.nw);
+      if(!r.ok){ this.toastMsg(r.error||'Password change nahi hua','warn'); return; }
+      const u=this.state.authUser;
+      this.logActivity({ action:'update', entity:'user', entityId:(u&&u.id)||'', entityLabel:(u&&u.fullName)||'', summary:'Changed own password' });
+      this.setState({ myPwModal:false });
+      this.toastMsg('Password change ho gaya','ok');
+    }, { block:'Changing password...' });
+  }
+  // =====================================================================
+  // PERMISSIONS ENGINE (v2)
+  // Har action: { on, days (0 = sab din, warna sirf last N din ke records),
+  //               scope:{ mode:'self'|'all'|'include'|'exclude', users:[uid] } }
+  // - days  record ki DATE par lagta hai (bill ki date / activity ka waqt)
+  // - scope kis ke banaye records par ijazat hai; apne records hamesha shamil
+  // - reports ka sirf days hai (collective data), products/settings sirf on/off
+  // =====================================================================
+  PERM_CATALOG(){ return [
+    { cat:'bills', label:'Bills', icon:'receipt', acts:[
+      { act:'view', label:'Bills dekhna', desc:'Bills ki list, search aur tafseel', days:true, scope:true },
+      { act:'create', label:'Naya bill banana', desc:'Naye bills create kar sake' },
+      { act:'edit', label:'Bill edit karna', desc:'Mojooda bills me tabdeeli', days:true, scope:true },
+      { act:'payments', label:'Payment / refund add karna', desc:'Bill par raqam record karna', days:true, scope:true },
+      { act:'archive', label:'Archive / unarchive', desc:'Bills ko archive me bhejna ya nikalna', days:true, scope:true },
+      { act:'delete', label:'Bill delete karna', desc:'Bill ko Recycle bin me bhejna', days:true, scope:true },
+    ]},
+    { cat:'recycle', label:'Recycle bin', icon:'trash', acts:[
+      { act:'view', label:'Recycle bin dekhna', desc:'Deleted bills ki list', days:true, scope:true },
+      { act:'restore', label:'Bill restore karna', desc:'Bin se wapas laana', days:true, scope:true },
+      { act:'purge', label:'Hamesha ke liye delete', desc:'Delete forever / empty bin', days:true, scope:true },
+    ]},
+    { cat:'reports', label:'Reports', icon:'chart', acts:[
+      { act:'view', label:'Reports dekhna', desc:'Dashboard stats aur reports — collective data, is liye user-scope nahi', days:true },
+    ]},
+    { cat:'activity', label:'Activity log', icon:'activity', acts:[
+      { act:'view', label:'Activity dekhna', desc:'Kis user ne kya kiya', days:true, scope:true },
+    ]},
+    { cat:'products', label:'Products', icon:'box', acts:[
+      { act:'delete', label:'Product delete karna', desc:'Catalogue bills banate waqt khud banta hai — sirf delete ki permission hai' },
+    ]},
+    { cat:'settings', label:'Settings', icon:'gear', acts:[
+      { act:'manage', label:'Settings change karna', desc:'Business info, numbering, print templates waghera' },
+    ]},
+  ]; }
+  _blankAct(){ return { on:false, days:0, scope:{ mode:'self', users:[] } }; }
+  _normScope(s){
+    if(Array.isArray(s)) return { mode:'include', users:s.slice() };
+    if(!s || typeof s!=='object') return { mode:'self', users:[] };
+    const m=['self','all','include','exclude'].includes(s.mode)? s.mode : 'self';
+    return { mode:m, users:Array.isArray(s.users)? s.users.slice() : [] };
+  }
+  _normAct(a){
+    if(a===true) return { on:true, days:0, scope:{ mode:'all', users:[] } };
+    if(!a || typeof a!=='object') return this._blankAct();
+    return { on:!!a.on, days:Math.max(0, Math.min(3650, Math.round(Number(a.days)||0))), scope:this._normScope(a.scope) };
+  }
+  _isV2Perms(p){ return !!(p && p.bills && p.bills.view && typeof p.bills.view==='object' && ('on' in p.bills.view)); }
+  // kisi bhi user (stored shape kuch bhi ho) ke perms ko poora v2 object bana kar do
+  normPerms(u){
+    if(!u) return null;
+    if(this._isAdminUser(u)) return this._rolePerms('Admin');
+    const raw=u.perms||{};
+    const out={}; this.PERM_CATALOG().forEach(c=>{ out[c.cat]={}; c.acts.forEach(a=>{ out[c.cat][a.act]=this._blankAct(); }); });
+    if(this._isV2Perms(raw)){
+      this.PERM_CATALOG().forEach(c=> c.acts.forEach(a=>{ out[c.cat][a.act]=this._normAct(raw[c.cat] && raw[c.cat][a.act]); }));
+      return out;
+    }
+    // legacy flat keys (purana data) -> v2. Purane system me view par koi bandish nahi thi,
+    // is liye view sab-din/sab-users par migrate hota hai — admin baad me tang kar sakta hai.
+    const A=(v,mode)=>({ on:!!v, days:0, scope:{ mode:mode||'all', users:[] } });
+    const f=k=>!!raw[k];
+    const legacyScope=this._normScope(u.activityScope==='all'? {mode:'all'} : (Array.isArray(u.activityScope)? u.activityScope : {mode:'self'}));
+    out.bills.view=A(1); out.bills.create=A(f('bills_create')); out.bills.edit=A(f('bills_edit'));
+    out.bills.payments=A(f('payments')); out.bills.archive=A(f('bills_archive')); out.bills.delete=A(f('bills_delete'));
+    out.recycle.view=A(f('recycle')); out.recycle.restore=A(f('recycle')); out.recycle.purge=A(f('recycle')&&f('bills_delete'));
+    out.reports.view={ on:f('reports'), days:0, scope:{mode:'all',users:[]} };
+    out.activity.view={ on:true, days:0, scope:legacyScope };
+    out.products.delete=A(f('products')); out.settings.manage=A(f('settings'));
+    return out;
+  }
+  _myPerms(){ const u=this.state.authUser; if(!u) return null; if(this._pmSrc===u && this._pmVal) return this._pmVal; this._pmSrc=u; this._pmVal=this.normPerms(u); return this._pmVal; }
+  permOf(cat, act){ const p=this._myPerms(); const a=p && p[cat] && p[cat][act]; return a || this._blankAct(); }
+  canAct(cat, act){ return !!this.permOf(cat, act).on; }
+  _daysOk(days, ts){ const n=Number(days)||0; if(n<=0) return true; const t=(ts instanceof Date)? ts.getTime() : (Number(ts)||0); if(!t) return true; return (Date.now()-t) <= n*86400000; }
+  _scopeOk(scope, ownerId){
+    const me=this.state.authUser; const my=me&&me.id;
+    if(!scope || scope.mode==='all') return true;
+    if(ownerId && my && ownerId===my) return true;              // apne records hamesha
+    if(scope.mode==='self') return false;
+    const list=scope.users||[];
+    if(scope.mode==='include') return !!ownerId && list.includes(ownerId);
+    if(scope.mode==='exclude') return !ownerId || !list.includes(ownerId);
+    return true;
+  }
+  // rec = { ts, ownerId } (optional) — days + scope check ke liye
+  allowRec(cat, act, rec){
+    const a=this.permOf(cat, act);
+    if(!a.on) return { ok:false, why:'off' };
+    if(rec){
+      if(!this._daysOk(a.days, rec.ts)) return { ok:false, why:'days', days:a.days };
+      if(!this._scopeOk(a.scope, rec.ownerId)) return { ok:false, why:'scope' };
+    }
+    return { ok:true };
+  }
+  permLabel(cat, act){ let out=cat+' '+act; this.PERM_CATALOG().forEach(c=>{ if(c.cat===cat) c.acts.forEach(a=>{ if(a.act===act) out=c.label+': '+a.label; }); }); return out; }
+  // guard: fail par RED toast dikhata hai aur false deta hai
+  guard(cat, act, rec){
+    const r=this.allowRec(cat, act, rec);
+    if(r.ok) return true;
+    let msg;
+    if(r.why==='days') msg='Ijazat sirf pichhle '+r.days+' din ke records tak hai — yeh record us se purana hai';
+    else if(r.why==='scope') msg='Yeh record un users ka hai jin par aapko ijazat nahi';
+    else msg='Aapke paas yeh permission nahi hai — '+this.permLabel(cat, act);
+    this.toastMsg(msg, 'err');
+    return false;
+  }
+  _canSeeBill(b){ if(!b) return false; const cat=b.deleted? 'recycle' : 'bills'; return this.allowRec(cat, 'view', { ts:b.ts, ownerId:b.createdById }).ok; }
+  // route -> zaroori permission (dashboard/products/about/menu sab ke liye khule hain)
+  _routePerm(route){ return ({ bills:['bills','view'], pending:['bills','view'], reports:['reports','view'], activity:['activity','view'], bin:['recycle','view'], settings:['settings','manage'], templates:['settings','manage'] })[route]||null; }
+  _routeOk(key){
+    if(key==='admin') return this._isAdminUser(this.state.authUser);
+    if(key==='new' || key==='bill') return this.canAct('bills','create');
+    const rp=this._routePerm(key); return !rp || this.canAct(rp[0], rp[1]);
+  }
+  // legacy shim — purane call-sites ke liye. 'users' ab ADMIN-ONLY hai.
+  can(perm){
+    const u=this.state.authUser; if(!u) return false;
+    if(this._isAdminUser(u)) return true;
+    if(perm==='users') return false;
+    const map={ bills_view:['bills','view'], bills_create:['bills','create'], bills_edit:['bills','edit'], bills_delete:['bills','delete'], bills_archive:['bills','archive'], payments:['bills','payments'], products:['products','delete'], reports:['reports','view'], recycle:['recycle','view'], activity:['activity','view'], settings:['settings','manage'] };
+    const m=map[perm]; return m? this.canAct(m[0], m[1]) : false;
+  }
 
   // ---- loading model ----
   async runAction(key, fn, opts){
@@ -2220,9 +2422,14 @@ class Component extends DCLogic {
   _dayKeyOf(y,m,dd){ const p=n=>String(n).padStart(2,'0'); return y+'-'+p(m+1)+'-'+p(dd); }
   _lastNDayKeys(n){ const out=[]; const d=new Date(); d.setHours(0,0,0,0); for(let i=0;i<n;i++){ const x=new Date(d); x.setDate(d.getDate()-i); out.push(this._dayKeyOf(x.getFullYear(),x.getMonth(),x.getDate())); } return out; }
   async _loadDash(){
+    // reports permission: bina ijazat dashboard stats nahi; days-cap ke andar hi din shamil hon
+    const repPerm=this.permOf('reports','view');
+    if(!repPerm.on){ this.setState({ dashStats:{billed:0,paid:0,pending:0,count:0}, dashLoading:false }); return; }
     this.setState({ dashLoading:true });
     try{
-      const keys=this._lastNDayKeys(this._periodDays(this.state.period));
+      let nDays=this._periodDays(this.state.period);
+      if(repPerm.days>0) nDays=Math.min(nDays, repPerm.days);
+      const keys=this._lastNDayKeys(nDays);
       const map=await this.db.statsForDays(keys);
       let billed=0,paid=0,pending=0,count=0;
       keys.forEach(k=>{ const v=map[k]||{}; billed+=v.billed||0; paid+=v.paid||0; pending+=v.pending||0; count+=v.count||0; });
@@ -2263,6 +2470,18 @@ class Component extends DCLogic {
         Object.keys(map).forEach(k=>{ const y=k.slice(0,4); byYear[y]=byYear[y]||{amount:0,pending:0,count:0}; byYear[y].amount+=map[k].billed||0; byYear[y].pending+=map[k].pending||0; byYear[y].count+=map[k].count||0; });
         const cy=new Date().getFullYear(); const yrs=Object.keys(byYear).map(Number); let fy=yrs.length?Math.min(...yrs):cy; if(fy>cy) fy=cy;
         for(let y=fy;y<=cy;y++){ const v=byYear[y]||{}; buckets.push({ key:y, label:String(y), amount:Math.max(0,v.amount||0), pending:Math.max(0,v.pending||0), count:Math.max(0,v.count||0) }); }
+      }
+      // permission cap: reports sirf pichhle N din tak — purane periods ke totals zero dikhte hain
+      const repPerm=this.permOf('reports','view');
+      if(repPerm.days>0){
+        const cutoff=Date.now()-repPerm.days*86400000;
+        const endOf=(bk)=>{
+          if(view==='day') return new Date(a.getFullYear(),a.getMonth(),a.getDate(),23,59,59).getTime();
+          if(view==='month') return new Date(a.getFullYear(),a.getMonth(),Number(bk.key)||1,23,59,59).getTime();
+          if(view==='year') return new Date(a.getFullYear(),(Number(bk.key)||0)+1,0,23,59,59).getTime();
+          return new Date((Number(bk.key)||1970),11,31,23,59,59).getTime();
+        };
+        buckets=buckets.map(bk=> endOf(bk)<cutoff? { ...bk, amount:0, pending:0, count:0 } : bk);
       }
       this.setState({ reportData:{ buckets, view, firstYear:(buckets[0]&&buckets[0].key)||new Date().getFullYear() }, reportLoading:false });
     }catch(e){ console.warn('loadReport',e); this.setState({ reportData:{ buckets:[], view, firstYear:new Date().getFullYear() }, reportLoading:false }); }
@@ -2346,6 +2565,10 @@ class Component extends DCLogic {
       { id:'u4', name:'Rabia Aslam', username:'rabia', role:'Viewer', perms:{ bills:p(1,0,0,0), payments:p(1,0,0,0), products:p(1,0,0,0), templates:p(0,0,0,0), reports:p(1,0,0,0), settings:p(0,0,0,0), users:p(0,0,0,0), activity:p(1,0,0,0) }, activityScope:'self' },
     ];
     function clone(o){ return JSON.parse(JSON.stringify(o)); }
+    // demo seed ko v2 structured perms (role presets ke mutabiq)
+    users.forEach(u=>{ u.perms=this._rolePerms(u.role); delete u.activityScope; });
+    users[1].perms.bills.delete={ on:true, days:30, scope:{ mode:'include', users:['u3'] } };      // demo: Hina apne + Waqar ke bills (30 din tak) delete kar sakti hai
+    users[1].perms.activity.view={ on:true, days:0, scope:{ mode:'include', users:['u3'] } };
     const activity = this._seedActivity(bills, users);
     this.setState({ bills, products, users, activity });
   }
@@ -3119,7 +3342,7 @@ class Component extends DCLogic {
     else return;
     this.setState({ blocking:{ msg:'Loading bills...' } });
     this.db.billsForDay(dayMs).then(all=>{
-      const bills=all.filter(b=> b.ts.getTime()>=from && b.ts.getTime()<=to);
+      const bills=all.filter(b=> b.ts.getTime()>=from && b.ts.getTime()<=to && this._canSeeBill(b) && this._daysOk(this.permOf('reports','view').days, b.ts));
       this.setState({ blocking:null, route:'bills', billsSecondary:true, billsScopeLabel:label, billsReturn:'reports', searchResults:bills, billSearch:{q:'',applied:'__day__'}, billFlt:{ status:'all', from:'', to:'', amtOp:'any', amtVal:'', penOp:'any', penVal:'', hasComment:false, hasNote:false }, navOpen:false, userMenuOpen:false });
     }).catch(e=>{ this.setState({ blocking:null }); this.toastMsg('Bills load nahi huay','warn'); });
   }
@@ -3137,6 +3360,8 @@ class Component extends DCLogic {
 
   // ---------- read-only bill view + next/prev navigation ----------
   openView(id, ids, source, ctx){
+    const kb=this._bill(id);
+    if(kb && !this.guard(kb.deleted?'recycle':'bills','view',{ ts:kb.ts, ownerId:kb.createdById })) return;
     if(this.state.route!=='view') this._saveScroll();
     const list=(ids&&ids.length)?ids.slice():[id]; const src=(source&&source.length)?source.slice():list.slice();
     this._viewCtx = ctx||'bills';
@@ -3234,30 +3459,21 @@ class Component extends DCLogic {
   _removeFromArchived(id){ this.setState(s=>({ archivedBills:s.archivedBills.filter(x=>x.id!==id) })); }
   _upsertArchived(b){ this.setState(s=>({ archivedBills: s.archivedBills.find(x=>x.id===b.id)? s.archivedBills.map(x=>x.id===b.id?b:x) : [b, ...s.archivedBills] })); }
 
-  archiveBill(id){ const b=this._bill(id); if(!b) return; const arch=!b.archived;
+  archiveBill(id){ const b=this._bill(id); if(!b) return; if(!this.guard('bills','archive',{ ts:b.ts, ownerId:b.createdById })) return; const arch=!b.archived;
     this.runAction('arch-'+id, async()=>{ const nb=await this.db.archiveBill(id, b, arch); this._replaceBill(nb); if(arch){ this._removeFromActive(id); this._upsertArchived(nb); } else { this._upsertActive(nb); this._removeFromArchived(id); } this.logActivity({ action:arch?'archive':'unarchive', entity:'bill', entityId:id, entityLabel:b.no, summary:arch?'Archived bill':'Unarchived bill' }); this.toastMsg(arch?'Bill archive ho gaya':'Bill unarchive ho gaya','ok'); if(arch) this._afterRemoveFromView(id); this._refreshDerived(); }, { block: arch?'Archiving...':'Restoring...' });
   }
-  deleteBill(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete this bill?', message:b.no+' Recycle bin me chala jayega - kabhi bhi restore kar sakte hain.', confirmLabel:'Delete bill', danger:true, onConfirm:()=>this._doDeleteBill(id) }); }
+  deleteBill(id){ const b=this._bill(id); if(!b) return; if(!this.guard('bills','delete',{ ts:b.ts, ownerId:b.createdById })) return; this.askConfirm({ title:'Delete this bill?', message:b.no+' Recycle bin me chala jayega - kabhi bhi restore kar sakte hain.', confirmLabel:'Delete bill', danger:true, onConfirm:()=>this._doDeleteBill(id) }); }
   _doDeleteBill(id){ const b=this._bill(id); if(!b) return;
     this.runAction('del-'+id, async()=>{ await this.db.softDeleteBill(id, b); this._removeFromActive(id); this.setState(s=>({ pendingBills:s.pendingBills.filter(x=>x.id!==id), archivedBills:s.archivedBills.filter(x=>x.id!==id), binLoaded:false })); this.logActivity({ action:'delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Moved bill to Recycle bin' }); this.toastMsg('Bill Recycle bin me chala gaya','ok'); this._afterRemoveFromView(id); this._refreshDerived(); }, { block:'Deleting...' });
   }
-  restoreBill(id){ const b=this._bill(id); if(!b) return;
+  restoreBill(id){ const b=this._bill(id); if(!b) return; if(!this.guard('recycle','restore',{ ts:b.ts, ownerId:b.createdById })) return;
     this.runAction('rest-'+id, async()=>{ await this.db.restoreBill(id, b); this.setState(s=>({ binBills:s.binBills.filter(x=>x.id!==id), billsLoaded:false, archivedLoaded: b.archived? false : s.archivedLoaded })); this.logActivity({ action:'restore', entity:'bill', entityId:id, entityLabel:b.no, summary:'Restored bill from Recycle bin' }); this.toastMsg('Bill restore ho gaya','ok'); this._afterRemoveFromView(id); this._refreshDerived(); }, { block:'Restoring...' });
   }
-  permanentDelete(id){ const b=this._bill(id); if(!b) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this._purgeBillEverywhere(id); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._refreshDerived(); }, { block:'Deleting...' }) }); }
-  emptyBin(){ if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; const purged=[]; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); purged.push(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this._purgeBillEverywhere(purged); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin - '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); this._refreshDerived(); }, { block:'Emptying bin...' }) }); }
+  permanentDelete(id){ const b=this._bill(id); if(!b) return; if(!this.guard('recycle','purge',{ ts:b.ts, ownerId:b.createdById })) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this._purgeBillEverywhere(id); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._refreshDerived(); }, { block:'Deleting...' }) }); }
+  emptyBin(){ if(!this.guard('recycle','purge')) return; if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; const purged=[]; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); purged.push(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this._purgeBillEverywhere(purged); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin - '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); this._refreshDerived(); }, { block:'Emptying bin...' }) }); }
   _afterRemoveFromView(id){ if(this.state.route!=='view') return; const oldIds=this.state.viewIds||[]; const oldIdx=oldIds.indexOf(id); const ids=oldIds.filter(x=>x!==id); if(!ids.length){ this.viewBack(); return; } const nextId=ids[Math.min(Math.max(0,oldIdx), ids.length-1)]; this.setState({ viewIds:ids, viewId:nextId }); }
-  deleteProduct(name){ this.askConfirm({ title:'Delete product?', message:'"'+name+'" catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product - '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting...' }) }); }
-  // ---------- activity visibility (per user) ----------
-  setActivityScope(uid, mode){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; const scope = mode==='specific'? (Array.isArray(u.activityScope)?u.activityScope:[]) : mode;
-    this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, activityScope:scope}:x) }));
-    this._saveScopeDebounced(uid, scope, u.fullName||u.email);
-  }
-  toggleScopeUser(uid, targetId){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; let arr=Array.isArray(u.activityScope)?u.activityScope.slice():[]; if(arr.includes(targetId)) arr=arr.filter(x=>x!==targetId); else arr.push(targetId);
-    this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, activityScope:arr}:x) }));
-    this._saveScopeDebounced(uid, arr, u.fullName||u.email);
-  }
-  _saveScopeDebounced(uid, scope, label){ clearTimeout(this._scopeT); this._scopeQ={uid,scope,label}; this._scopeT=setTimeout(()=>{ const q=this._scopeQ; this._scopeQ=null; this.runAction('scope-'+q.uid, async()=>{ const r=await this.db.updateUser(q.uid, { activityScope:q.scope }); if(!r.ok){ this.toastMsg(r.error||'Save nahi hua','warn'); await this._loadUsers(); return; } this.logActivity({ action:'update', entity:'user', entityId:q.uid, entityLabel:q.label, summary:'Updated activity visibility' }); }, { headerSave:true }); }, 600); }
+  deleteProduct(name){ if(!this.guard('products','delete')) return; this.askConfirm({ title:'Delete product?', message:'"'+name+'" catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product - '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting...' }) }); }
+  // ---------- activity visibility ab perms.activity.view.scope ka hissa hai (Users page ka structured editor) ----------
   // ---------- settings (debounced single log entry) ----------
   setSetting(field, val, label){ this.setState(s=>({ settings:{...s.settings, [field]:val} })); this._dirty=this._dirty||new Set(); this._dirty.add(label); clearTimeout(this._setT); this._setT=setTimeout(()=>{ const fields=[...(this._dirty||[])]; this._dirty=new Set(); if(fields.length) this.logActivity({ action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated settings - '+fields.join(', ') }); }, 1500); if(field==='startNo' && this.db){ const n=Number(val); if(n>0) this.db.bumpCounterIfHigher(n).then(()=>this.db.peekCounter()).then(c=>{ if(c!=null) this.setState({ counter:c }); }).catch(()=>{}); } }
 
@@ -3287,7 +3503,9 @@ class Component extends DCLogic {
   go(route){
     if(route==='search') route='bills';
     this._saveScroll();
-    if(route==='new'){ if(!this.can('bills_create')){ this.toastMsg('Aapko naya bill banane ki ijazat nahi','warn'); return; } this.setState({ route:'bill', editor:this.blankEditor(), navOpen:false, editFrom:'new', dropOpen:-1, actMenuOpen:false, userMenuOpen:false }); return; }
+    if(route==='new'){ if(!this.guard('bills','create')) return; this.setState({ route:'bill', editor:this.blankEditor(), navOpen:false, editFrom:'new', dropOpen:-1, actMenuOpen:false, userMenuOpen:false }); return; }
+    if(route==='admin' && !this._isAdminUser(this.state.authUser)){ this.toastMsg('Aapke paas yeh permission nahi hai — Users manage karna sirf admin kar sakta hai','err'); return; }
+    const _rp=this._routePerm(route); if(_rp && !this.guard(_rp[0], _rp[1])) return;
     const fresh = route!==this.state.route;
     this.setState({ route, navOpen:false, actMenuOpen:false, dropOpen:-1, userMenuOpen:false, billsSecondary:false, billsReturn:null, billsScopeLabel:'', billsDayMs:null, searchResults: route==='bills'?this.state.searchResults:null });
     this._enterRoute(route);
@@ -3296,8 +3514,8 @@ class Component extends DCLogic {
   _mergeArr(a,b){ const seen={}, out=[]; (a||[]).concat(b||[]).forEach(x=>{ if(!seen[x]){ seen[x]=1; out.push(x); } }); return out; }
   blankEditor(){ const u=this.state.authUser; return { id:null, no:this.state.settings.prefix+'-'+(this.state.counter==null?'...':this.state.counter), name:'', phone:'', car:'', model:'', lines:[{name:'',qty:'1',price:''}], discount:'0', paid:'0', lockedPaid:0, paidTouched:false, comment:'', note:'', history:[], ts:new Date(), createdBy:(u&&u.fullName)||'', phoneInfoData:null, carInfoData:null, phoneCommitted:false, carCommitted:false }; }
   openBill(id){
-    if(!this.can('bills_edit')){ this.toastMsg('Aapko bill edit karne ki ijazat nahi','warn'); return; }
     const b = this._bill(id); if(!b) return;
+    if(!this.guard('bills','edit',{ ts:b.ts, ownerId:b.createdById })) return;
     const d = this.derive(b);
     const editor = { id:b.id, no:b.no, name:b.name, phone:b.phone, car:b.car, model:b.model,
       lines: b.lines.map(l=>({ name:l.name, qty:String(l.qty), price:String(l.price) })),
@@ -3337,7 +3555,10 @@ class Component extends DCLogic {
   }
   saveBill(){
     if(this.state.busy['savebill']) return;
-    const ed=this.state.editor; if(!ed) return; const sub=this.subOf(ed.lines);
+    const ed=this.state.editor; if(!ed) return;
+    if(ed.id){ const ob=this._bill(ed.id); if(!this.guard('bills','edit', ob? { ts:ob.ts, ownerId:ob.createdById } : null)) return; }
+    else if(!this.guard('bills','create')) return;
+    const sub=this.subOf(ed.lines);
     const disc=Math.max(0,Math.min(sub,Number(ed.discount)||0)); const total=sub-disc;
     const paid=Math.max(0,Math.min(total,Number(ed.paid)||0));
     const lines = ed.lines.filter(l=>l.name.trim() && (Number(l.qty)||0)>0).map(l=>({ name:l.name.trim(), qty:Number(l.qty)||0, price:Number(l.price)||0 }));
@@ -3385,10 +3606,11 @@ class Component extends DCLogic {
   }
 
   // ---------- payment modal ----------
-  openHistory(){ const ed=this.state.editor; if(!ed||!ed.id){ this.toastMsg('Save the bill before adding payments','warn'); return; } this.setState({ historyModal:ed.id, payDraft:{amount:'',comment:'',kind:'payment'} }); }
-  openHistoryFor(id, focus){ this.setState({ historyModal:id, payDraft:{amount:'',comment:'',kind:'payment'}, addPayFocus:!!focus }); if(focus){ setTimeout(()=>{ const el=document.getElementById('payAmountInput'); if(el) el.focus(); },140); } }
+  openHistory(){ const ed=this.state.editor; if(!ed||!ed.id){ this.toastMsg('Save the bill before adding payments','warn'); return; } const hb=this._bill(ed.id); if(hb && !this.guard('bills','payments',{ ts:hb.ts, ownerId:hb.createdById })) return; this.setState({ historyModal:ed.id, payDraft:{amount:'',comment:'',kind:'payment'} }); }
+  openHistoryFor(id, focus){ if(focus){ const b=this._bill(id); if(b && !this.guard('bills','payments',{ ts:b.ts, ownerId:b.createdById })) return; } this.setState({ historyModal:id, payDraft:{amount:'',comment:'',kind:'payment'}, addPayFocus:!!focus }); if(focus){ setTimeout(()=>{ const el=document.getElementById('payAmountInput'); if(el) el.focus(); },140); } }
   submitPayment(){
     const id=this.state.historyModal; const b=this._bill(id); if(!b) return;
+    if(!this.guard('bills','payments',{ ts:b.ts, ownerId:b.createdById })) return;
     if(this.state.busy['pay-'+id]) return;
     const d=this.derive(b); const raw=Math.round(Number(this.state.payDraft.amount)||0);
     if(raw<=0){ this.toastMsg('Amount likhein','warn'); return; }
@@ -3436,16 +3658,16 @@ class Component extends DCLogic {
 
     // nav
     const navDefs=[['dashboard','Dashboard','home'],['bills','Bills','receipt'],['new','New Bill','plus'],['pending','Pending','clock'],['products','Products','box'],['reports','Reports','chart'],['activity','Activity','activity'],['templates','Templates','printer'],['admin','Users','users'],['settings','Settings','gear'],['bin','Recycle bin','trash'],['about','About','info']];
-    const navItems=navDefs.map(([key,label,icon])=>{
+    const navItems=navDefs.filter(([key])=>this._routeOk(key)).map(([key,label,icon])=>{
       const active = ROUTE===key || (key==='new'&&ROUTE==='bill');
       return { key, label, rk:key+(active?'-on':'-off'), icon:this.ic(icon,19), onClick:()=>this.go(key),
         style:`display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:${active?700:500};color:${active?'#fff':'rgba(255,255,255,.6)'};background:${active?'rgba(255,255,255,.09)':'transparent'};position:relative;transition:all .15s`,
         bar:`position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:${active?'#2f7bf6':'transparent'}` };
     });
     const menuGridDefs=[['dashboard','Dashboard','home','Overview & recent bills'],['bills','All bills','receipt','Browse, search & filter'],['new','New bill','plus','Create a bill'],['pending','Pending','clock','Outstanding balances'],['products','Products','box','Catalogue'],['reports','Reports','chart','Trends & collection'],['activity','Activity','activity','Audit log of all actions'],['templates','Templates','printer','Print customiser'],['admin','Users','users','Staff & permissions'],['settings','Settings','gear','Preferences'],['bin','Recycle bin','trash','Deleted bills'],['about','About','info','App info & support']];
-    const menuItems=menuGridDefs.map(([key,label,icon,desc])=>({ key, label, desc, icon:this.ic(icon,22), onClick:()=>this.go(key) }));
+    const menuItems=menuGridDefs.filter(([key])=>this._routeOk(key)).map(([key,label,icon,desc])=>({ key, label, desc, icon:this.ic(icon,22), onClick:()=>this.go(key) }));
     const bottomDefs=[['dashboard','Home','home'],['bills','Bills','receipt'],['new','New','plus'],['pending','Pending','clock'],['menu','More','menu']];
-    const bottomNav=bottomDefs.map(([key,label,icon])=>{
+    const bottomNav=bottomDefs.filter(([key])=> key==='menu' || this._routeOk(key)).map(([key,label,icon])=>{
       const active = (key==='menu' && ROUTE==='menu') || (key!=='menu' && (ROUTE===key || (key==='new'&&ROUTE==='bill')));
       return { key, label, rk:key+(active?'-on':'-off'), icon:this.ic(icon,21), onClick: key==='menu'? ()=>this.go('menu') : ()=>this.go(key),
         style:`display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;padding:6px 2px;border:none;background:none;cursor:pointer;color:${active?'#1f6feb':'#a59c8c'}` };
@@ -3456,7 +3678,7 @@ class Component extends DCLogic {
     const segBase='padding:7px 0; flex:1; border:none; border-radius:9px; font-size:12.5px; font-weight:600; cursor:pointer; transition:all .15s';
     const periods=perDefs.map(([k,label])=>{
       const on=S.period===k;
-      return { key:k, label, rk:k+(on?'-on':'-off'), onClick:()=>this.setState({period:k}, ()=>this._loadDash()),
+      return { key:k, label, rk:k+(on?'-on':'-off'), onClick:()=>{ const rp=this.permOf('reports','view'); if(!rp.on){ this.toastMsg('Aapke paas yeh permission nahi hai — Reports dekhna','err'); return; } if(rp.days>0 && this._periodDays(k)>rp.days){ this.toastMsg('Ijazat sirf pichhle '+rp.days+' din ke reports tak hai','err'); return; } this.setState({period:k}, ()=>this._loadDash()); },
         style: on?`${segBase}; background:#1a1d24; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.18)`:`${segBase}; background:transparent; color:#8a8175`,
         styleAmber: on?`${segBase}; background:#9a5e08; color:#fff`:`${segBase}; background:transparent; color:#b8740a` };
     });
@@ -3470,6 +3692,7 @@ class Component extends DCLogic {
       { label:'Total pending', value:this.money(tPending), color:'#b8740a', sub:'Outstanding', icon:this.ic('clock',17), iconWrap:'width:30px;height:30px;border-radius:9px;background:#fdf2e0;color:#b8740a;display:flex;align-items:center;justify-content:center', stripe:'position:absolute;left:0;top:0;bottom:0;width:3px;background:#b8740a' },
       { label:'Bills created', value: S.privacy?'**':String(tCount), color:'#1a1d24', sub:this.periodLabel(), icon:this.ic('box',17), iconWrap:'width:30px;height:30px;border-radius:9px;background:#eef4ff;color:#1f6feb;display:flex;align-items:center;justify-content:center', stripe:'position:absolute;left:0;top:0;bottom:0;width:3px;background:#1f6feb' },
     ];
+    if(!this.canAct('reports','view')){ cards.forEach(c=>{ c.value='—'; c.sub='Reports ki ijazat nahi'; }); }
 
     const mkCard=(b)=>{
       const d=this.derive(b); const m=this.statusMeta(d.status);
@@ -3490,7 +3713,7 @@ class Component extends DCLogic {
         onClick:()=>this.openView(b.id,[b.id],null,'bills'), dateHide: S.isMobile?'display:none':'display:block', dateInline: S.isMobile?'':('- '+dateS) };
     };
     const withCtx=(arr, sourceIds, ctx)=>{ const ids=arr.map(x=>x.id); const src=(sourceIds&&sourceIds.length)?sourceIds:ids; arr.forEach(x=>{ x.onClick=()=>this.openView(x.id, ids, src, ctx||'bills'); }); return arr; };
-    const sorted=this._sortBills(S.bills,'created_desc');              // loaded active bills, newest-created first
+    const sorted=this._sortBills(S.bills.filter(b=>this._canSeeBill(b)),'created_desc');   // loaded active bills, sirf jo view-permission me aati hain
     const recentBills=withCtx(sorted.slice(0,10).map(mkCard), null, 'bills');
 
     // ===== bills: search + filters + infinite scroll (Firestore cursor pages) =====
@@ -3514,7 +3737,7 @@ class Component extends DCLogic {
     // base = search results when a query is applied, else the loaded active/archived page
     const searchActive = !!bq && Array.isArray(S.searchResults);
     const baseList = searchActive ? S.searchResults.slice().sort((a,b)=>b.ts-a.ts) : (useArchived ? S.archivedBills.slice().sort((a,b)=>b.ts-a.ts) : sorted);
-    const filtered = this._sortBills(baseList.filter(b=> (searchActive? !b.deleted : true) && inRange(b) && passFlt(b) && (useArchived? b.archived : !b.archived)), S.billSort);
+    const filtered = this._sortBills(baseList.filter(b=> this._canSeeBill(b) && (searchActive? !b.deleted : true) && inRange(b) && passFlt(b) && (useArchived? b.archived : !b.archived)), S.billSort);
     const fullIds = filtered.map(b=>b.id);
     const allBillsView = withCtx(filtered.map(mkCard), fullIds, S.billsSecondary?'secondary':'bills');
     const billsHasMore = S.billsSecondary? false : (searchActive? false : (useArchived? S.archivedHasMore : S.billsHasMore));
@@ -3550,7 +3773,7 @@ class Component extends DCLogic {
     const presetEditBtnStyle=`width:30px;height:30px;flex:none;border-radius:9px;border:1px solid ${S.presetEdit?'#1f6feb':'#e6ddd0'};background:${S.presetEdit?'#eef4ff':'#fff'};color:${S.presetEdit?'#1f6feb':'#8a8175'};cursor:pointer;display:flex;align-items:center;justify-content:center`;
     const presetEditIcon=S.presetEdit?this.ic('check',16):this.ic('edit',15);
     // recycle bin (server-paginated)
-    const deletedSorted=S.binBills.slice().sort((a,b)=> (b.deletedAt||b.ts)-(a.deletedAt||a.ts));
+    const deletedSorted=S.binBills.filter(b=>this._canSeeBill(b)).sort((a,b)=> (b.deletedAt||b.ts)-(a.deletedAt||a.ts));
     const binIds=deletedSorted.map(b=>b.id);
     const binView=deletedSorted.map(b=>{ const d=this.derive(b); const m=this.statusMeta(d.status); return { rk:b.id, id:b.id, no:b.no, name:b.name||'Walk-in customer', car:b.car||'-', phone:b.phone||'', metaBin:[b.name||'Walk-in customer', b.car].filter(p=>p&&String(p).trim()).join(' · '), total:this.money(d.total), statusLabel:m.label, badge:this.badgeStyle(d.status), deletedStr:b.deletedAt?('Deleted '+this.dateStr(b.deletedAt)):'Deleted', onOpen:()=>this.openView(b.id, binIds, binIds), onRestore:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.restoreBill(b.id); }, onPurge:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.permanentDelete(b.id); } }; });
     const binCount=deletedSorted.length;
@@ -3675,7 +3898,7 @@ class Component extends DCLogic {
 
     // pending page (server-paginated by pending desc)
     // pending page — default: newest created first (sortable via the sort menu)
-    const pendSorted=this._sortBills(S.pendingBills.slice().filter(b=>this.derive(b).pending>0), S.pendSort);
+    const pendSorted=this._sortBills(S.pendingBills.slice().filter(b=> this._canSeeBill(b) && this.derive(b).pending>0), S.pendSort);
     const pendingBills=withCtx(pendSorted.map(mkCard), null, 'pending');
     const pendingTotalDisp=this.money(S.pendingTotal||pendSorted.reduce((s,b)=>s+this.derive(b).pending,0));
     const pendingCountLabel=`${pendSorted.length}${S.pendingHasMore?'+':''} bills awaiting payment`;
@@ -3795,7 +4018,7 @@ class Component extends DCLogic {
     const recentIdForPrint = sorted.length? sorted[0].id : null;
 
     // admin
-    const roleColors={Admin:'#5b3df5',Manager:'#1f6feb',Cashier:'#0f7a52',Viewer:'#8a8175'};
+    const roleColors={Admin:'#5b3df5',Manager:'#1f6feb',Cashier:'#0f7a52',Viewer:'#8a8175',Custom:'#b8740a'};
     const ADMIN_EMAIL='admin@msa.com';
     const isAdminUser=(u)=> u && (u.role==='Admin' || String(u.email||'').toLowerCase()===ADMIN_EMAIL);
     const isPrimaryUser=(u)=> u && String(u.email||'').toLowerCase()===ADMIN_EMAIL;
@@ -3819,7 +4042,7 @@ class Component extends DCLogic {
     // primary: only itself, name-only. co-admin: only the primary can act. regular: normal perms gate.
     const canEditSel = !selUserObj ? false : selIsPrimary ? (iAmPrimary && selIsSelf) : selIsCoAdmin ? iAmPrimary : iCanManage;
     const selUser=selUserObj?{ name:selUserObj.fullName||selUserObj.email, email:selUserObj.email, role:selUserObj.role, initials:initialsOf(selUserObj.fullName||selUserObj.email),
-      isAdmin:selIsAdmin, isPrimary:selIsPrimary, canEdit:canEditSel, showPerms:!selIsPrimary && !!selUserObj,
+      isAdmin:selIsAdmin, isPrimary:selIsPrimary, isAdminLocked:selIsCoAdmin, canEdit:canEditSel, showPerms:!selIsPrimary && !!selUserObj,
       canDisable: canEditSel && !selIsPrimary && !selIsSelf, canDelete: canEditSel && !selIsPrimary && !selIsSelf,
       disableLabel: selUserObj.disabled?'Enable account':'Disable account',
       disableBtnStyle: selUserObj.disabled? 'display:flex;align-items:center;gap:6px;padding:8px 13px;background:#e7f5ee;border:1px solid #cdeadb;border-radius:10px;font-size:12.5px;font-weight:600;color:#0f7a52;cursor:pointer' : 'display:flex;align-items:center;gap:6px;padding:8px 13px;background:#fdf2e0;border:1px solid #f0e2c8;border-radius:10px;font-size:12.5px;font-weight:600;color:#b8740a;cursor:pointer',
@@ -3829,21 +4052,40 @@ class Component extends DCLogic {
     const pbase='padding:7px 14px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid;transition:all .14s';
     const curRole=selUserObj?selUserObj.role:'';
     const rolePresets=presets.map(r=>({ key:r, label:r, rk:r+(curRole===r?'-on':'-off'), onClick:()=> !canEditSel? null : (r==='Admin'&&!iAmPrimary)? this.toastMsg('Sirf primary admin kisi ko Admin bana sakta hai','warn') : this.applyPreset(selUserObj.id,r), style: curRole===r?`${pbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${pbase} #ece4d7;background:#fff;color:#3f4753` }));
-    // flat permission list
-    const featDefs=[['bills_create','Create bills','Naye bills bana sake'],['bills_edit','Edit bills','Mojooda bills edit kar sake'],['bills_delete','Delete bills','Bills delete kar sake (Recycle bin)'],['bills_archive','Archive bills','Bills archive/unarchive kar sake'],['payments','Record payments','Payments & adjustments add kar sake'],['products','Manage products','Products delete/manage kar sake'],['reports','View reports','Reports & trends dekh sake'],['recycle','Recycle bin','Bin dekh kar restore/empty kar sake'],['users','Manage users','Team add/edit/delete kar sake'],['settings','Edit settings','Settings & print templates badle']];
-    const permFlat=(selUserObj&&selUserObj.perms)||{};
+    // ===== structured permission editor (v2): category cards, days-cap, user-scope =====
     const mkToggleP=(on)=>({ wrap:`width:42px;height:24px;border-radius:14px;border:none;cursor:pointer;position:relative;background:${on?'#1f6feb':'#d8cfc2'};transition:.2s;flex:none`, knob:`position:absolute;top:3px;left:${on?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)` });
-    const permList=featDefs.map(([fk,label,desc])=>{ const on=!!permFlat[fk]; const t=mkToggleP(on); return { key:fk, rk:fk+(on?'1':'0'), label, desc, toggleWrap:t.wrap, toggleKnob:t.knob, onToggle:()=> canEditSel? this.togglePerm(selUserObj.id,fk) : null }; });
+    const selPerms = selUserObj? this.normPerms(selUserObj) : null;
+    const selLocked = selIsAdmin;                                    // Admin select ho to editor locked — sab kuch by-default on
+    const canTune = canEditSel && !selLocked;
+    const dayOptDefs=[[0,'Sab din'],[7,'7 din'],[30,'30 din'],[90,'90 din']];
+    const scopeOptDefs=[['self','Sirf apne'],['all','Sab ke'],['include','Chune hue ke bhi'],['exclude','Chune hue ke ilawa']];
+    const pchip=(on)=>`padding:6px 11px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid ${on?'#1f6feb':'#ece4d7'};background:${on?'#eef4ff':'#fff'};color:${on?'#1f6feb':'#3f4753'}`;
+    const permCats=(selPerms? this.PERM_CATALOG() : []).map(c=>({
+      key:c.cat, rk:c.cat+(selLocked?'L':''), label:c.label, icon:this.ic(c.icon,15),
+      rows:c.acts.map(a=>{
+        const v= selLocked? { on:true, days:0, scope:{mode:'all',users:[]} } : selPerms[c.cat][a.act];
+        const t=mkToggleP(v.on);
+        const isPresetDay=[0,7,30,90].includes(v.days);
+        return {
+          key:a.act, rk:c.cat+'_'+a.act+(v.on?'1':'0')+'_'+v.days+'_'+v.scope.mode+'_'+(v.scope.users||[]).length+(selLocked?'L':''),
+          label:a.label, desc:a.desc||'',
+          open: v.on && (!!a.days || !!a.scope), hasDays:!!a.days, hasScope:!!a.scope,
+          toggleWrap:t.wrap, toggleKnob:t.knob,
+          onToggle:()=> canTune? this.setPermAct(selUserObj.id, c.cat, a.act, { on:!v.on }) : (selLocked && canEditSel? this.toastMsg('Admin ke paas hamesha sab permissions hoti hain','warn') : null),
+          dayChips: dayOptDefs.map(([d,label])=>({ rk:'d'+d+((isPresetDay&&v.days===d)?'1':'0'), label, onClick:()=> canTune? this.setPermAct(selUserObj.id, c.cat, a.act, { days:d }) : null, style:pchip(isPresetDay&&v.days===d) })),
+          daysVal: (!isPresetDay && v.days>0)? String(v.days) : '',
+          onDays:(ev)=>{ if(!canTune) return; const n=Math.max(0,Math.min(3650,Math.round(Number(String(ev.target.value).replace(/[^0-9]/g,''))||0))); this.setPermAct(selUserObj.id, c.cat, a.act, { days:n }); },
+          scopeChips: scopeOptDefs.map(([m,label])=>({ rk:'s'+m+(v.scope.mode===m?'1':'0'), label, onClick:()=> canTune? this.setPermAct(selUserObj.id, c.cat, a.act, { scope:{ ...v.scope, mode:m } }) : null, style:pchip(v.scope.mode===m) })),
+          showUsers: v.on && !!a.scope && (v.scope.mode==='include'||v.scope.mode==='exclude'),
+          usersHint: v.scope.mode==='include'? 'Apne records ke saath IN users ke records par bhi ijazat:' : 'Sab users ke records par ijazat — sirf IN ke nahi:',
+          scopeUsers: (v.scope.mode==='include'||v.scope.mode==='exclude')? S.users.filter(x=>x.id!==(selUserObj&&selUserObj.id)).map(x=>{ const on2=(v.scope.users||[]).includes(x.id); return { rk:x.id+(on2?'1':'0'), name:x.fullName||x.email||x.name, role:x.role, onClick:()=> canTune? this.togglePermScopeUser(selUserObj.id, c.cat, a.act, x.id) : null, check:ckStyle(on2), tick:on2?this.ic('check',13):'' }; }) : [],
+        };
+      })
+    }));
+    const permsLockStyle = selLocked? 'opacity:.55; pointer-events:none' : '';
     const nu=S.newUser||{name:'',email:'',password:'',role:'Cashier'};
     const nuRoleBtns=presets.map(r=>({ rk:'nur'+r+(nu.role===r?'1':'0'), label:r, onClick:()=>this.setNewUser({role:r}), style: nu.role===r?`${pbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${pbase} #ece4d7;background:#fff;color:#3f4753` }));
-    // activity visibility
-    const selScope = selUserObj? (selUserObj.activityScope || (selIsPrimary?'all':'self')) : 'self';
-    const scopeMode = selScope==='all'?'all':(selScope==='self'?'self':'specific');
-    const scopeOpts=[['all','Everyone'],['self','Only themselves'],['specific','Specific users']];
-    const sbtn='padding:7px 12px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid';
-    const scopeButtons=scopeOpts.map(([k,label])=>({ rk:k+(scopeMode===k?'1':'0'), label, onClick:()=> canEditSel? this.setActivityScope(selUserObj.id,k):null, style: scopeMode===k?`${sbtn} #1f6feb;background:#eef4ff;color:#1f6feb`:`${sbtn} #ece4d7;background:#fff;color:#3f4753` }));
-    const showScopeUsers = scopeMode==='specific';
-    const scopeUserList = (showScopeUsers&&selUserObj)? S.users.filter(u=>u.id!==selUserObj.id).map(u=>{ const on=Array.isArray(selScope)&&selScope.includes(u.id); return { rk:u.id+(on?'1':'0'), name:u.fullName||u.email, role:u.role, onClick:()=>this.toggleScopeUser(selUserObj.id,u.id), check:`width:22px;height:22px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;border:1.5px solid ${on?'#1f6feb':'#d8cfc2'};background:${on?'#1f6feb':'#fff'};color:#fff`, tick:on?this.ic('check',13):'' }; }) : [];
+    // (activity visibility ab upar wale structured editor ka hissa hai — perms.activity.view.scope)
     const adminWrapStyle=S.isMobile?'display:flex;flex-direction:column;gap:14px':'display:flex;gap:16px';
     const adminListW=S.isMobile?'100%':'250px';
 
@@ -3879,12 +4121,10 @@ class Component extends DCLogic {
       listHistoryView={ kind, title: kind==='phone'?'Bills for this phone':'Bills for this car', subtitle:val+' - '+matches.length+' found', bills:matches, empty:!matches.length };
     }
 
-    // ===== activity log =====
-    const meUser = S.authUser || {activityScope:'all', id:''};
-    const myScope = (meUser.role==='Admin')?'all':(meUser.activityScope || 'self');
-    let visibleAct = S.activity;
-    if(myScope==='self') visibleAct = S.activity.filter(e=> e.userId===meUser.id);
-    else if(Array.isArray(myScope)) visibleAct = S.activity.filter(e=> e.userId===meUser.id || myScope.includes(e.userId));
+    // ===== activity log ===== (perms.activity.view: days + user scope)
+    const meUser = S.authUser || { id:'' };
+    const avPerm=this.permOf('activity','view');
+    let visibleAct = S.activity.filter(e=> this._daysOk(avPerm.days, e.ts) && this._scopeOk(avPerm.scope, e.userId));
     const af = S.actFilter;
     const Hd=24*3600*1000; const nowMs=Date.now(); let rFrom=null, rTo=null;
     if(af.range==='7d') rFrom=nowMs-7*Hd; else if(af.range==='28d') rFrom=nowMs-28*Hd; else if(af.range==='custom'){ if(af.from){ const f=new Date(af.from); f.setHours(0,0,0,0); rFrom=f.getTime(); } if(af.to){ const t2=new Date(af.to); t2.setHours(23,59,59,999); rTo=t2.getTime(); } }
@@ -3921,7 +4161,7 @@ class Component extends DCLogic {
     const actEntityOpts=[{v:'all',label:'All types'},{v:'bill',label:'Bills'},{v:'product',label:'Products'},{v:'user',label:'Users'},{v:'settings',label:'Settings'},{v:'auth',label:'Logins'}];
     const actActionOpts=[{v:'all',label:'All actions'},{v:'add',label:'Added'},{v:'update',label:'Updated'},{v:'delete',label:'Deleted'},{v:'login',label:'Logins'}];
     const activityCountLabel = actAll.length+' event'+(actAll.length===1?'':'s');
-    const actScopeNote = myScope==='all'?'You can see everyone\u2019s activity.':(myScope==='self'?'You can see only your own activity.':'You can see your own activity plus selected teammates\u2019.');
+    const actScopeNote = (avPerm.scope.mode==='all'?'Aap sab ki activity dekh sakte hain.':(avPerm.scope.mode==='self'?'Aap sirf apni activity dekh sakte hain.':(avPerm.scope.mode==='include'?'Aap apni aur chune hue users ki activity dekh sakte hain.':'Aap chune hue users ke ilawa sab ki activity dekh sakte hain.')))+(avPerm.days>0?(' Sirf pichhle '+avPerm.days+' din.'):'');
     const actSortLabel = af.sort==='new'?'Newest first':'Oldest first';
     const activityEmpty = actAll.length===0;
 
@@ -4085,7 +4325,7 @@ class Component extends DCLogic {
       onFontScale:ev=>this.setState({tpl:{...tpl,fontScale:Number(ev.target.value)}}), fontScaleVal:String(tpl.fontScale||1),
       toggleLogo:()=>this.setState({tpl:{...tpl,logo:!tpl.logo}}), onTplHeader:ev=>this.setState({tpl:{...tpl,header:ev.target.value}}), onTplFooter:ev=>this.setState({tpl:{...tpl,footer:ev.target.value}}), onPrint:()=> recentIdForPrint? this.openPrint(recentIdForPrint) : this.toastMsg('No saved bills to print yet','warn'),
       // admin
-      usersView, selUser, hasSelUser, canManageUsers:iCanManage, usersListLoading:(S.usersLoading && !S.usersLoaded), rolePresets, permList, adminWrapStyle, adminListW,
+      usersView, selUser, hasSelUser, canManageUsers:iCanManage, usersListLoading:(S.usersLoading && !S.usersLoaded), rolePresets, permCats, permsLockStyle, adminWrapStyle, adminListW,
       addUser:()=>this.openAddUser(), editUser:()=>this.openEditUser(selUserObj&&selUserObj.id), resetPwd:()=>this.openPwModal(selUserObj&&selUserObj.id), toggleDisable:()=>this.toggleDisable(selUserObj&&selUserObj.id), deleteUser:()=>this.confirmDeleteUser(selUserObj&&selUserObj.id),
       addUserModal:S.addUserModal, newUser:nu, nuRoleBtns, closeAddUser:()=>this.closeAddUser(), createUser:()=>this.createUser(),
       onNuName:ev=>this.setNewUser({name:ev.target.value}), onNuEmail:ev=>this.setNewUser({email:ev.target.value}), onNuPassword:ev=>this.setNewUser({password:ev.target.value}),
@@ -4108,7 +4348,8 @@ class Component extends DCLogic {
       binView, binCount, binEmpty, emptyBin:()=>this.emptyBin(), binHasMore, binRemaining, loadMoreBin:()=>this.loadMoreBin(), binListLoading,
       changesView, closeChanges:()=>this.closeChanges(),
       confirmView:S.confirm, closeConfirm:()=>this.closeConfirm(), runConfirm:()=>this.runConfirm(), confirmBtnStyle:(S.confirm&&S.confirm.danger)?'flex:1;padding:11px;background:#c0392b;border:none;border-radius:11px;font-size:13.5px;font-weight:700;color:#fff;cursor:pointer':'flex:1;padding:11px;background:#1f6feb;border:none;border-radius:11px;font-size:13.5px;font-weight:700;color:#fff;cursor:pointer', selStyle:'padding:9px 12px;background:#faf7f1;border:1.5px solid #ece4d7;border-radius:10px;font-size:13px;font-weight:600;color:#1a1d24;cursor:pointer',
-      scopeButtons, scopeUserList, showScopeUsers,
+      myPwModal:S.myPwModal, myPwDraft:S.myPwDraft||{cur:'',nw:'',nw2:''}, openMyPw:()=>this.openMyPw(), closeMyPw:()=>this.closeMyPw(), submitMyPw:()=>this.submitMyPw(),
+      onMyPwCur:ev=>this.setMyPwDraft({cur:ev.target.value}), onMyPwNw:ev=>this.setMyPwDraft({nw:ev.target.value}), onMyPwNw2:ev=>this.setMyPwDraft({nw2:ev.target.value}),
       // print modal
       printView, printPv, printControls, closePrint:()=>this.closePrint(), doPrint:()=>this.doPrint(), doSavePdf:()=>this.doSavePdf(),
       printZoom:S.printZoom, printZoomPct:Math.round((S.printZoom||1)*100)+'%', zoomIn:()=>this.zoomIn(), zoomOut:()=>this.zoomOut(), zoomReset:()=>this.zoomReset(),
@@ -4126,20 +4367,23 @@ class Component extends DCLogic {
       // list history modal
       listHistoryView, closeListHistory:()=>this.setState({listHistory:null}),
       // toast
-      toast:S.toast, toastIcon:this.ic(S.toastKind==='warn'?'info':'check',16),
+      toast:S.toast, toastIcon:this.ic(S.toastKind==='warn'?'info':(S.toastKind==='err'?'lock':'check'),16),
+      toastStyle:`position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:60; background:${S.toastKind==='err'?'#c0392b':'#1a1d24'}; color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; font-weight:600; box-shadow:0 12px 32px rgba(0,0,0,.3); animation:popIn .25s; display:flex; align-items:center; gap:9px; max-width:min(92vw,540px)`,
     };
   }
   _inp(extra){ return `width:100%;padding:11px 13px;background:#faf7f1;border:1.5px solid #ece4d7;border-radius:10px;font-size:14px;font-weight:500;color:#1a1d24;${extra||''}`; }
   _modal(){ const m=this.state.isMobile; return `background:#f6f2ec;width:${m?'100%':'520px'};max-width:100%;max-height:${m?'92vh':'86vh'};border-radius:${m?'20px 20px 0 0':'20px'};display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -10px 40px rgba(0,0,0,.25);animation:${m?'slideUp .28s':'popIn .28s'}`; }
 
   _rolePerms(role){
-    const ALL=['bills_create','bills_edit','bills_delete','bills_archive','payments','products','reports','recycle','users','settings'];
-    const set=(keys)=>{ const o={}; ALL.forEach(k=>o[k]=keys.includes(k)); return o; };
-    if(role==='Admin') return set(ALL);
-    if(role==='Manager') return set(['bills_create','bills_edit','bills_archive','payments','products','reports','recycle']);
-    if(role==='Cashier') return set(['bills_create','bills_edit','payments','products']);
-    if(role==='Viewer') return set(['reports']);
-    return set([]);
+    // v2 structured presets — har role ke liye poora perms object
+    const P={}; this.PERM_CATALOG().forEach(c=>{ P[c.cat]={}; c.acts.forEach(a=>{ P[c.cat][a.act]={ on:false, days:0, scope:{ mode:'self', users:[] } }; }); });
+    const setAll=(on)=>{ this.PERM_CATALOG().forEach(c=> c.acts.forEach(a=>{ P[c.cat][a.act]={ on:!!on, days:0, scope:{ mode:'all', users:[] } }; })); };
+    const A=(on,days,mode)=>({ on:!!on, days:days||0, scope:{ mode:mode||'all', users:[] } });
+    if(role==='Admin'){ setAll(true); return P; }
+    if(role==='Manager'){ setAll(true); P.settings.manage.on=false; P.recycle.purge.on=false; return P; }
+    if(role==='Cashier'){ P.bills.view=A(1,30,'all'); P.bills.create=A(1); P.bills.edit=A(1,1,'self'); P.bills.payments=A(1,30,'all'); P.activity.view=A(1,30,'self'); return P; }
+    if(role==='Viewer'){ P.bills.view=A(1,0,'all'); P.reports.view=A(1,0,'all'); P.activity.view=A(1,0,'self'); return P; }
+    return P;   // Custom: sab off — admin khud chun kar deta hai
   }
   _isAdminUser(u){ return u && (u.role==='Admin' || String(u.email||'').toLowerCase()==='admin@msa.com'); }
   _isPrimary(u){ return u && String(u.email||'').toLowerCase()==='admin@msa.com'; }
@@ -4148,7 +4392,7 @@ class Component extends DCLogic {
   // a co-admin (Admin role, not primary) can only be acted on BY the primary; regular users follow normal perms.
   _canActOn(u){ if(!u) return false; if(this._isPrimary(u)) return false; if(this._isAdminUser(u)) return this._iAmPrimary(); return this.can('users'); }
   // ---- create ----
-  openAddUser(){ if(!this.can('users')){ this.toastMsg('Aapko users manage karne ki ijazat nahi','warn'); return; } this.setState({ addUserModal:true, newUser:{name:'',email:'',password:'',role:'Cashier'} }); }
+  openAddUser(){ if(!this.can('users')){ this.toastMsg('Aapke paas yeh permission nahi hai — Users manage karna sirf admin kar sakta hai','err'); return; } this.setState({ addUserModal:true, newUser:{name:'',email:'',password:'',role:'Cashier'} }); }
   closeAddUser(){ this.setState({ addUserModal:false }); }
   setNewUser(patch){ this.setState(s=>({ newUser:{...s.newUser, ...patch} })); }
   createUser(){
@@ -4159,7 +4403,7 @@ class Component extends DCLogic {
     if(pwd.length<6){ this.toastMsg('Password kam az kam 6 characters ka ho','warn'); return; }
     if(role==='Admin' && !this._iAmPrimary()){ this.toastMsg('Sirf primary admin naya admin bana sakta hai','warn'); return; }
     this.runAction('createuser', async()=>{
-      const r=await this.db.createUser({ email, password:pwd, fullName:name, role, perms:this._rolePerms(role), activityScope: role==='Admin'?'all':'self' });
+      const r=await this.db.createUser({ email, password:pwd, fullName:name, role, perms:this._rolePerms(role) });
       if(!r.ok){ this.toastMsg(r.error||'User nahi bana','warn'); return; }
       this.logActivity({ action:'create', entity:'user', entityId:r.id, entityLabel:name, summary:'Created user - '+name+' ('+role+')' });
       await this._loadUsers(); this.setState({ addUserModal:false, selUserId:r.id });
@@ -4193,10 +4437,24 @@ class Component extends DCLogic {
     this.runAction('disable-'+uid, async()=>{ const r=await this.db.setDisabled(uid, dis); if(!r.ok){ this.toastMsg(r.error||'Nahi ho saka','warn'); return; } this.logActivity({ action:'update', entity:'user', entityId:uid, entityLabel:u.fullName||u.email, summary:(dis?'Disabled':'Enabled')+' account' }); await this._loadUsers(); this.toastMsg(dis?'Account disable ho gaya':'Account enable ho gaya','ok'); }, { block: dis?'Disabling...':'Enabling...' });
   }
   confirmDeleteUser(uid){ const u=this.state.users.find(x=>x.id===uid); if(!u) return; if(this._isPrimary(u)){ this.toastMsg('Primary admin delete nahi ho sakta','warn'); return; } if(!this._canActOn(u)){ this.toastMsg('Ijazat nahi','warn'); return; } this.askConfirm({ title:'Delete this user?', message:(u.fullName||u.email)+' ka account hamesha ke liye delete ho jayega.', confirmLabel:'Delete user', danger:true, onConfirm:()=> this.runAction('deluser-'+uid, async()=>{ const r=await this.db.deleteUser(uid); if(!r.ok){ this.toastMsg(r.error||'Delete nahi hua','warn'); return; } this.logActivity({ action:'delete', entity:'user', entityId:uid, entityLabel:u.fullName||u.email, summary:'Deleted user - '+(u.fullName||u.email) }); await this._loadUsers(); this.setState(s=>({ selUserId: (s.users[0]&&s.users[0].id)||null })); this.toastMsg('User delete ho gaya','ok'); }, { block:'Deleting user...' }) }); }
-  // ---- permissions (flat) + role preset ----
-  togglePerm(uid, key){ const u=this.state.users.find(x=>x.id===uid); if(!u || !this._canActOn(u)) return; const nextPerms={...(u.perms||{}), [key]: !(u.perms&&u.perms[key])};
-    this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, role:'Custom', perms:nextPerms}:x) }));   // optimistic
-    this._savePermsDebounced(uid, 'Custom', nextPerms, u.fullName||u.email);
+  // ---- permissions (v2 structured) + role preset ----
+  setPermAct(uid, cat, act, patch){
+    const u=this.state.users.find(x=>x.id===uid); if(!u || !this._canActOn(u)) return;
+    if(this._isAdminUser(u)){ this.toastMsg('Admin ke paas hamesha sab permissions hoti hain','warn'); return; }
+    const perms=this.normPerms(u); const cur=perms[cat][act];
+    const next={ ...cur, ...patch };
+    if(patch.scope) next.scope=this._normScope(patch.scope);
+    if(patch.days!=null) next.days=Math.max(0, Math.min(3650, Math.round(Number(patch.days)||0)));
+    perms[cat][act]=next;
+    this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, role:'Custom', perms}:x) }));   // optimistic
+    this._savePermsDebounced(uid, 'Custom', perms, u.fullName||u.email);
+  }
+  togglePermScopeUser(uid, cat, act, targetId){
+    const u=this.state.users.find(x=>x.id===uid); if(!u || !this._canActOn(u)) return;
+    const perms=this.normPerms(u); const sc=perms[cat][act].scope;
+    sc.users = sc.users.includes(targetId)? sc.users.filter(x=>x!==targetId) : sc.users.concat([targetId]);
+    this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, role:'Custom', perms}:x) }));
+    this._savePermsDebounced(uid, 'Custom', perms, u.fullName||u.email);
   }
   applyPreset(uid, role){ const u=this.state.users.find(x=>x.id===uid); if(!u || !this._canActOn(u)) return; const perms=this._rolePerms(role);
     this.setState(s=>({ users:s.users.map(x=> x.id===uid?{...x, role, perms}:x) }));                       // optimistic

@@ -68,11 +68,41 @@ const ADMIN_EMAIL = "admin@msa.com";
 const REGION = "us-central1";
 const opts = { region: REGION, cors: true };
 
+/* ---------- PERMISSIONS v2 (structured) ----------
+   Har action: { on, days (0 = sab din), scope:{ mode:'self'|'all'|'include'|'exclude', users:[uid] } }
+   Custom claims me sirf COMPACT on/off flags jaate hain (1000-byte limit) —
+   days + scope ki fine-grained enforcement client + Firestore profile se hoti hai. */
+const SC_ALL = () => ({ mode: "all", users: [] });
+const PA = () => ({ on: true, days: 0, scope: SC_ALL() });
 const FULL_PERMS = {
-  bills_create: true, bills_edit: true, bills_delete: true, bills_archive: true,
-  payments: true, products: true, reports: true, recycle: true,
-  users: true, settings: true,
+  bills:    { view: PA(), create: PA(), edit: PA(), payments: PA(), archive: PA(), delete: PA() },
+  recycle:  { view: PA(), restore: PA(), purge: PA() },
+  reports:  { view: { on: true, days: 0 } },
+  activity: { view: PA() },
+  products: { delete: PA() },
+  settings: { manage: PA() },
 };
+const PERM_SHAPE = {
+  bills: ["view", "create", "edit", "payments", "archive", "delete"],
+  recycle: ["view", "restore", "purge"],
+  reports: ["view"], activity: ["view"], products: ["delete"], settings: ["manage"],
+};
+function cleanScope(s) {
+  const modes = ["self", "all", "include", "exclude"];
+  const mode = (s && modes.includes(s.mode)) ? s.mode : "self";
+  const users = (s && Array.isArray(s.users)) ? s.users.filter((x) => typeof x === "string").slice(0, 100) : [];
+  return { mode, users };
+}
+/* compact claim flags for Firestore rules: { bv, bc, be, bp, ba, bd, rv, rr, rp, rep, av, pd, sm } */
+function claimPerms(p) {
+  const g = (c, a) => !!(p && p[c] && p[c][a] && p[c][a].on);
+  return {
+    bv: g("bills", "view"), bc: g("bills", "create"), be: g("bills", "edit"), bp: g("bills", "payments"),
+    ba: g("bills", "archive"), bd: g("bills", "delete"),
+    rv: g("recycle", "view"), rr: g("recycle", "restore"), rp: g("recycle", "purge"),
+    rep: g("reports", "view"), av: g("activity", "view"), pd: g("products", "delete"), sm: g("settings", "manage"),
+  };
+}
 
 /* ---------- helpers ---------- */
 function requireAuth(request) {
@@ -93,22 +123,33 @@ async function callerEmail(a) {
   try { const u = await auth.getUser(a.uid); return (u.email || "").toLowerCase(); } catch (e) { return ""; }
 }
 
-/* Caller must be the primary admin, OR an Admin-role/perms.users holder (for managing
-   REGULAR users only — admin-tier targets are gated separately, per-function, below). */
+/* User management is ADMIN-ONLY now: sirf primary admin ya Admin-role (custom claim) —
+   koi regular user (chahe pehle 'users' perm rakhta ho) users/permissions manage NAHI kar sakta. */
 async function requireUserManager(request) {
   const a = requireAuth(request);
   const email = await callerEmail(a);
   const isPrimary = email === ADMIN_EMAIL;
   if (isPrimary) return { uid: a.uid, email, isPrimary: true };
-  if (a.token && a.token.admin === true) return { uid: a.uid, email, isPrimary: false }; // co-admin: can manage regular users only
-  const prof = await loadProfile(a.uid);
-  if (prof && prof.disabled) throw new HttpsError("permission-denied", "Account band hai");
-  if (prof && prof.perms && prof.perms.users === true) return { uid: a.uid, email, isPrimary: false, prof };
-  throw new HttpsError("permission-denied", "Aapko users manage karne ki ijazat nahi");
+  if (a.token && a.token.admin === true) {
+    const prof = await loadProfile(a.uid);
+    if (prof && prof.disabled) throw new HttpsError("permission-denied", "Account band hai");
+    return { uid: a.uid, email, isPrimary: false }; // co-admin: can manage regular users only
+  }
+  throw new HttpsError("permission-denied", "Sirf admin users aur permissions manage kar sakta hai");
 }
+/* sanitize an incoming v2 perms object to the exact known shape (unknown keys drop) */
 function cleanPerms(p) {
   const out = {};
-  Object.keys(FULL_PERMS).forEach((k) => { out[k] = !!(p && p[k]); });
+  Object.keys(PERM_SHAPE).forEach((cat) => {
+    out[cat] = {};
+    PERM_SHAPE[cat].forEach((act) => {
+      const a = (p && p[cat] && p[cat][act]) || {};
+      const days = Math.max(0, Math.min(3650, Math.round(Number(a.days) || 0)));
+      const entry = { on: !!a.on, days };
+      if (!(cat === "reports" || cat === "products" || cat === "settings")) entry.scope = cleanScope(a.scope);
+      out[cat][act] = entry;
+    });
+  });
   return out;
 }
 function validEmail(e) { return typeof e === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
@@ -122,7 +163,7 @@ exports.bootstrapAdmin = onCall(opts, async (request) => {
   if ((user.email || "").toLowerCase() !== ADMIN_EMAIL) {
     throw new HttpsError("permission-denied", "Sirf admin account bootstrap kar sakta hai");
   }
-  await auth.setCustomUserClaims(a.uid, { admin: true, perms: FULL_PERMS });
+  await auth.setCustomUserClaims(a.uid, { admin: true, p: claimPerms(FULL_PERMS) });
   const ref = db.doc("users/" + a.uid);
   const snap = await ref.get();
   if (!snap.exists) {
@@ -157,7 +198,7 @@ exports.adminCreateUser = onCall(opts, async (request) => {
     throw new HttpsError("internal", e.message);
   }
   const cleanedPerms = wantAdmin ? FULL_PERMS : cleanPerms(perms);
-  await auth.setCustomUserClaims(userRecord.uid, { admin: wantAdmin, perms: cleanedPerms });
+  await auth.setCustomUserClaims(userRecord.uid, { admin: wantAdmin, p: claimPerms(cleanedPerms) });
   await db.doc("users/" + userRecord.uid).set({
     email: String(email).toLowerCase(), fullName: fullName || email,
     role: wantAdmin ? "Admin" : (role || "User"), perms: cleanedPerms,
@@ -214,7 +255,7 @@ exports.adminUpdateUser = onCall(opts, async (request) => {
   if (patch.perms || patch.role) {
     const newPerms = patch.perms || target.perms || {};
     const isAdminNow = (patch.role || target.role) === "Admin";
-    await auth.setCustomUserClaims(uid, { admin: isAdminNow, perms: isAdminNow ? FULL_PERMS : cleanPerms(newPerms) });
+    await auth.setCustomUserClaims(uid, { admin: isAdminNow, p: claimPerms(isAdminNow ? FULL_PERMS : cleanPerms(newPerms)) });
   }
   if (patch.fullName) { try { await auth.updateUser(uid, { displayName: patch.fullName }); } catch (e) {} }
   return { ok: true };

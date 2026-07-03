@@ -59,11 +59,23 @@ function pickMode() {
   return "local";
 }
 
-/* default permission set for a brand-new admin */
+/* =====================================================================
+   PERMISSIONS v2 — structured, per-category
+   Har action: { on:bool, days:int (0 = sab din, warna last N din), scope:{ mode:'self'|'all'|'include'|'exclude', users:[uid] } }
+   - days  : record ki DATE par lagta hai (bill ki date / activity ka waqt)
+   - scope : kis ke banaye records par ijazat hai (apne records hamesha shamil)
+   Reports ka sirf days hota hai (collective data), scope nahi.
+   ===================================================================== */
+const SC_ALL = () => ({ mode: "all", users: [] });
+const PA = () => ({ on: true, days: 0, scope: SC_ALL() });
+/* full permission set for a brand-new admin */
 export const FULL_PERMS = {
-  bills_create: true, bills_edit: true, bills_delete: true, bills_archive: true,
-  payments: true, products: true, reports: true, recycle: true,
-  users: true, settings: true,
+  bills:    { view: PA(), create: PA(), edit: PA(), payments: PA(), archive: PA(), delete: PA() },
+  recycle:  { view: PA(), restore: PA(), purge: PA() },
+  reports:  { view: { on: true, days: 0 } },
+  activity: { view: PA() },
+  products: { delete: PA() },
+  settings: { manage: PA() },
 };
 
 /* ---------- small utils ---------- */
@@ -231,6 +243,20 @@ function makeLocalAdapter() {
     },
     async updateUser(id, patch) { const clean = { ...patch }; delete clean.password; delete clean.email; await this.update("users/" + id, clean); return { ok: true }; },
     async setPassword(id, password) { const salt = randomSalt(); const hash = await hashPassword(password, salt); await this.update("users/" + id, { salt, hash }); return { ok: true }; },
+    /* apna password khud change karna — mojooda password verify karke */
+    async changeMyPassword(currentPw, newPw) {
+      let s; try { s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch (e) { s = null; }
+      if (!s || !s.uid) return { ok: false, error: "Login nahi mila" };
+      const row = read("users/" + s.uid);
+      if (!row) return { ok: false, error: "Account nahi mila" };
+      const hash = await hashPassword(currentPw, row.salt);
+      if (hash !== row.hash) return { ok: false, error: "Mojooda password ghalat hai" };
+      const salt = randomSalt(); const nh = await hashPassword(newPw, salt);
+      await this.update("users/" + s.uid, { salt, hash: nh });
+      const verifier = (await sha256Hex(nh)).slice(0, 24);
+      try { localStorage.setItem(SESSION_KEY, JSON.stringify({ uid: s.uid, verifier, ts: nowMs() })); } catch (e) {}
+      return { ok: true };
+    },
     async setDisabled(id, disabled) { await this.update("users/" + id, { disabled: !!disabled }); return { ok: true }; },
     async deleteUser(id) { await this.del("users/" + id); return { ok: true }; },
     async getClientGeo() {
@@ -368,6 +394,20 @@ async function makeFirebaseAdapter() {
     async createUser(payload) { try { const r = await call("adminCreateUser")(payload); return { ok: true, id: r.data.uid }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
     async updateUser(id, patch) { try { await call("adminUpdateUser")({ uid: id, ...patch }); return { ok: true }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
     async setPassword(id, password) { try { await call("adminSetPassword")({ uid: id, password }); return { ok: true }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
+    /* apna password khud change karna — Firebase Auth reauthenticate + updatePassword (koi Cloud Function nahi chahiye) */
+    async changeMyPassword(currentPw, newPw) {
+      const user = auth.currentUser;
+      if (!user || !user.email) return { ok: false, error: "Login nahi mila" };
+      try {
+        const cred = authMod.EmailAuthProvider.credential(user.email, currentPw);
+        await authMod.reauthenticateWithCredential(user, cred);
+        await authMod.updatePassword(user, newPw);
+        return { ok: true };
+      } catch (e) {
+        const map = { "auth/invalid-credential": "Mojooda password ghalat hai", "auth/wrong-password": "Mojooda password ghalat hai", "auth/weak-password": "Naya password kamzor hai", "auth/too-many-requests": "Bohat zyada koshishein — thodi der baad try karein", "auth/network-request-failed": "Network problem — internet check karein" };
+        return { ok: false, error: map[e.code] || ("Password change nahi hua: " + (e.code || e.message)) };
+      }
+    },
     async setDisabled(id, disabled) { try { await call("adminSetDisabled")({ uid: id, disabled: !!disabled }); return { ok: true }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
     async deleteUser(id) { try { await call("adminDeleteUser")({ uid: id }); return { ok: true }; } catch (e) { return { ok: false, error: friendlyFn(e) }; } },
     async getClientGeo() { try { const r = await call("getClientGeo")({}); return r.data || null; } catch (e) { return null; } },
@@ -457,6 +497,7 @@ function makeDB(A) {
     createUser: (p) => A.createUser(p),
     updateUser: (id, patch) => A.updateUser(id, patch),
     setPassword: (id, pw) => A.setPassword(id, pw),
+    changeMyPassword: (cur, nw) => A.changeMyPassword(cur, nw),
     setDisabled: (id, d) => A.setDisabled(id, d),
     deleteUser: (id) => A.deleteUser(id),
     getClientGeo: () => A.getClientGeo(),

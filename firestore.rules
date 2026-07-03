@@ -11,11 +11,17 @@ service cloud.firestore {
     // created via the adminCreateUser Cloud Function ever get one.
     function isKnownUser() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
     function isAdmin()  { return signedIn() && request.auth.token.admin == true; }
-    // permission from custom claims, e.g. perm('bills_create')
+    /* PERMISSIONS v2 — custom claims carry COMPACT on/off flags under token.p:
+         bv bc be bp ba bd   = bills: view / create / edit / payments / archive / delete
+         rv rr rp            = recycle bin: view / restore / purge (delete forever)
+         rep av pd sm        = reports view / activity view / products delete / settings manage
+       days + user-scope fine-graining is enforced by the app + Cloud Functions (claims
+       have a 1000-byte limit, and rules can't express "last N days of another user's
+       bills" efficiently) — these flags are the hard on/off backstop. */
     function perm(p) {
       return signedIn() && (
         request.auth.token.admin == true ||
-        (request.auth.token.perms != null && request.auth.token.perms[p] == true)
+        (request.auth.token.p != null && request.auth.token.p[p] == true)
       );
     }
 
@@ -41,24 +47,27 @@ service cloud.firestore {
       // counter is written transactionally whenever a bill is created. 'access' (the kill switch) is
       // explicitly excluded here so NO client write path exists for it — only the restricted create +
       // console/Admin SDK edits in the /app/access block above can ever touch it.
-      allow write: if doc != 'access' && (doc == 'counter' ? perm('bills_create') : perm('settings'));
+      allow write: if doc != 'access' && (doc == 'counter' ? perm('bc') : perm('sm'));
     }
 
     /* ---------- bills ---------- */
     match /bills/{id} {
+      // read stays profile-gated: "view" days/user-scope filtering happens in the app
+      // (a self-scoped user still needs to read own docs; Firestore can't filter that here).
       allow read:   if isKnownUser();
-      allow create: if perm('bills_create');
-      // edits, archive flips, soft-delete + restore all land as updates
-      allow update: if perm('bills_edit') || perm('bills_archive') || perm('bills_delete') || perm('payments');
-      allow delete: if perm('bills_delete');   // permanent delete (empty bin)
+      allow create: if perm('bc');
+      // edits, archive flips, payments, soft-delete land as updates; restore (from bin) too
+      allow update: if perm('be') || perm('ba') || perm('bd') || perm('bp') || perm('rr');
+      allow delete: if perm('rp');   // permanent delete / empty bin
     }
 
     /* ---------- products ---------- */
     match /products/{id} {
       allow read:   if isKnownUser();
-      allow create: if perm('bills_create') || perm('products');
-      allow update: if perm('bills_create') || perm('products');
-      allow delete: if perm('products');
+      // catalogue builds itself while creating bills; sirf delete ki alag permission hai
+      allow create: if perm('bc') || perm('pd');
+      allow update: if perm('bc') || perm('pd');
+      allow delete: if perm('pd');
     }
 
     /* ---------- activity log (append-only; never edited/deleted from client) ---------- */
@@ -69,7 +78,7 @@ service cloud.firestore {
     }
 
     /* ---------- stats aggregates (day + month) ---------- */
-    match /stats/{day}    { allow read: if isKnownUser(); allow write: if perm('bills_create') || perm('bills_edit') || perm('bills_delete') || perm('bills_archive') || perm('payments'); }
-    match /stats_m/{month}{ allow read: if isKnownUser(); allow write: if perm('bills_create') || perm('bills_edit') || perm('bills_delete') || perm('bills_archive') || perm('payments'); }
+    match /stats/{day}    { allow read: if isKnownUser(); allow write: if perm('bc') || perm('be') || perm('bd') || perm('ba') || perm('bp') || perm('rr'); }
+    match /stats_m/{month}{ allow read: if isKnownUser(); allow write: if perm('bc') || perm('be') || perm('bd') || perm('ba') || perm('bp') || perm('rr'); }
   }
 }
