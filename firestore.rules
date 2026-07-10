@@ -48,10 +48,16 @@ service cloud.firestore {
     }
     match /app/{doc} {
       allow read: if isKnownUser();
-      // counter is written transactionally whenever a bill is created. 'access' (the kill switch) is
-      // explicitly excluded here so NO client write path exists for it — only the restricted create +
-      // console/Admin SDK edits in the /app/access block above can ever touch it.
-      allow write: if doc != 'access' && (doc == 'counter' ? perm('bc', 'bills_create') : perm('sm', 'settings'));
+      // counter is written transactionally whenever a bill is created. noteTemplates (printed-Comment
+      // + Internal-note markdown templates) are shop-wide and MUST be editable by anyone who can
+      // create a bill — NOT gated behind settings — so they share the bills_create backstop with
+      // counter. printPresets (named print-appearance bundles) are readable by everyone (so the print
+      // dialog can list & apply them) but only WRITTEN from the settings-gated Template page, so they
+      // fall to the settings branch below. Everything else under /app (e.g. settings) needs settings.
+      // 'access' (the kill switch) is explicitly excluded here so NO client write path exists for it —
+      // only the restricted create + console/Admin SDK edits in the /app/access block above can touch it.
+      allow write: if doc != 'access'
+                   && ((doc == 'counter' || doc == 'noteTemplates') ? perm('bc', 'bills_create') : perm('sm', 'settings'));
     }
 
     /* ---------- bills ---------- */

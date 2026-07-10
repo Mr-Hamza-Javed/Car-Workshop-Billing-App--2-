@@ -487,14 +487,50 @@
           <div style="{{ billCardStyle }}">
             <div style="{{ billLabelStyle }}">Notes</div>
             <div style="{{ custGridStyle }}">
-              <label style="display:flex; flex-direction:column; gap:6px">
+              <div style="display:flex; flex-direction:column; gap:7px">
                 <span style="display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:#3f4753">Comment <span style="font-size:10.5px; font-weight:700; color:#0f7a52; background:#e7f5ee; padding:1px 7px; border-radius:20px">Prints on bill</span></span>
-                <textarea value="{{ ed.comment }}" onChange="{{ ed.onComment }}" rows="2" placeholder="e.g. Next service due after 5,000 km" style="width:100%; padding:11px 13px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical"></textarea>
-              </label>
-              <label style="display:flex; flex-direction:column; gap:6px">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+                  <div style="position:relative; display:flex">
+                    <button type="button" onClick="{{ ed.toggleTplComment }}" style="display:flex; align-items:center; gap:6px; padding:6px 11px; background:#fff; border:1.5px solid #ece4d7; border-radius:9px; font-size:12px; font-weight:600; color:#3f4753; cursor:pointer">{{ icons.tplList }} Templates <span style="display:flex; transform:rotate(90deg)">{{ icons.chevron }}</span></button>
+                    <sc-if value="{{ ed.tplMenuComment }}" hint-placeholder-val="{{ false }}">
+                      <div onClick="{{ ed.closeTplMenu }}" style="position:fixed; inset:0; z-index:39"></div>
+                      <div style="position:absolute; top:calc(100% + 6px); left:0; z-index:40; background:#fff; border:1px solid #e6ddd0; border-radius:12px; box-shadow:0 14px 34px rgba(60,40,10,.18); padding:6px; min-width:230px; max-height:260px; overflow:auto">
+                        <sc-if value="{{ ed.tplsCommentEmpty }}" hint-placeholder-val="{{ false }}">
+                          <div style="padding:9px 11px; font-size:12px; color:#a59c8c; line-height:1.5">Koi template nahi — <b>Manage</b> se add karein.</div>
+                        </sc-if>
+                        <sc-for list="{{ ed.tplsComment }}" as="t" hint-placeholder-count="0">
+                          <button key="{{ t.rk }}" type="button" onClick="{{ t.onPick }}" style="display:block; width:100%; text-align:left; padding:9px 11px; background:none; border:none; border-radius:8px; font-size:13px; font-weight:600; color:#1a1d24; cursor:pointer" style-hover="background:#f4efe7">{{ t.name }}</button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                  <button type="button" onClick="{{ ed.openMgrComment }}" style="display:flex; align-items:center; gap:6px; padding:6px 11px; background:#fff; border:1.5px solid #ece4d7; border-radius:9px; font-size:12px; font-weight:600; color:#3f4753; cursor:pointer">{{ icons.gearSm }} Manage</button>
+                </div>
+                <textarea id="ntArea-comment" value="{{ ed.comment }}" onChange="{{ ed.onComment }}" rows="9" placeholder="e.g. **Note:** Next service due after 5,000 km" style="width:100%; min-height:190px; padding:11px 13px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.55; resize:vertical; font-family:inherit"></textarea>
+                <span style="font-size:11px; color:#a59c8c; font-weight:500; line-height:1.5">Markdown: <b>**bold**</b>, <em>*italic*</em>, <code style="font-family:'JetBrains Mono',monospace; font-size:.92em">``code``</code>, <b>-</b> bullet, <b>1.</b> number, <b>---</b> line. Nayi line kaam karti hai.</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:7px">
                 <span style="display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:#3f4753">Internal note <span style="font-size:10.5px; font-weight:700; color:#8a8175; background:#f0ece4; padding:1px 7px; border-radius:20px">Staff only</span></span>
-                <textarea value="{{ ed.note }}" onChange="{{ ed.onNote }}" rows="2" placeholder="Never printed — visible to staff only" style="width:100%; padding:11px 13px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical"></textarea>
-              </label>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+                  <div style="position:relative; display:flex">
+                    <button type="button" onClick="{{ ed.toggleTplNote }}" style="display:flex; align-items:center; gap:6px; padding:6px 11px; background:#fff; border:1.5px solid #ece4d7; border-radius:9px; font-size:12px; font-weight:600; color:#3f4753; cursor:pointer">{{ icons.tplList }} Templates <span style="display:flex; transform:rotate(90deg)">{{ icons.chevron }}</span></button>
+                    <sc-if value="{{ ed.tplMenuNote }}" hint-placeholder-val="{{ false }}">
+                      <div onClick="{{ ed.closeTplMenu }}" style="position:fixed; inset:0; z-index:39"></div>
+                      <div style="position:absolute; top:calc(100% + 6px); left:0; z-index:40; background:#fff; border:1px solid #e6ddd0; border-radius:12px; box-shadow:0 14px 34px rgba(60,40,10,.18); padding:6px; min-width:230px; max-height:260px; overflow:auto">
+                        <sc-if value="{{ ed.tplsNoteEmpty }}" hint-placeholder-val="{{ false }}">
+                          <div style="padding:9px 11px; font-size:12px; color:#a59c8c; line-height:1.5">Koi template nahi — <b>Manage</b> se add karein.</div>
+                        </sc-if>
+                        <sc-for list="{{ ed.tplsNote }}" as="t" hint-placeholder-count="0">
+                          <button key="{{ t.rk }}" type="button" onClick="{{ t.onPick }}" style="display:block; width:100%; text-align:left; padding:9px 11px; background:none; border:none; border-radius:8px; font-size:13px; font-weight:600; color:#1a1d24; cursor:pointer" style-hover="background:#f4efe7">{{ t.name }}</button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                  <button type="button" onClick="{{ ed.openMgrNote }}" style="display:flex; align-items:center; gap:6px; padding:6px 11px; background:#fff; border:1.5px solid #ece4d7; border-radius:9px; font-size:12px; font-weight:600; color:#3f4753; cursor:pointer">{{ icons.gearSm }} Manage</button>
+                </div>
+                <textarea id="ntArea-note" value="{{ ed.note }}" onChange="{{ ed.onNote }}" rows="9" placeholder="Never printed — visible to staff only" style="width:100%; min-height:190px; padding:11px 13px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.55; resize:vertical; font-family:inherit"></textarea>
+                <span style="font-size:11px; color:#a59c8c; font-weight:500; line-height:1.5">Markdown supported · staff only, kabhi print nahi hota.</span>
+              </div>
             </div>
           </div>
         </div>
@@ -580,13 +616,13 @@
                 <sc-if value="{{ vw.hasComment }}" hint-placeholder-val="{{ false }}">
                   <div style="padding:12px 14px; background:#f7f4ef; border:1px solid #ece4d7; border-radius:12px">
                     <div style="font-size:10.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px">Note on bill</div>
-                    <div style="font-size:13px; color:#3f4753; font-weight:500; line-height:1.5">{{ vw.comment }}</div>
+                    {{ vw.commentEl }}
                   </div>
                 </sc-if>
                 <sc-if value="{{ vw.hasNote }}" hint-placeholder-val="{{ false }}">
                   <div style="padding:12px 14px; background:#fbf6ef; border:1px dashed #e3d4bd; border-radius:12px">
                     <div style="display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; color:#b8740a; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px">{{ icons.lock }} Internal note · staff only</div>
-                    <div style="font-size:13px; color:#7a6a52; font-weight:500; line-height:1.5">{{ vw.note }}</div>
+                    {{ vw.noteEl }}
                   </div>
                 </sc-if>
               </div>
@@ -931,32 +967,81 @@
         <div style="{{ templatesWrapStyle }}">
           <!-- controls -->
           <div style="flex:none; width:{{ tplControlsW }}; display:flex; flex-direction:column; gap:14px">
+            <!-- PRESET MANAGER -->
+            <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:16px">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px">
+                <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px">Presets</div>
+                <button onClick="{{ presetMgr.onNew }}" style="display:flex; align-items:center; gap:5px; padding:5px 10px; background:#eef4ff; border:1px solid #b9d2fb; border-radius:9px; font-size:11.5px; font-weight:700; color:#1f6feb; cursor:pointer">{{ icons.plusSm }} New preset</button>
+              </div>
+              <div style="font-size:11.5px; color:#a59c8c; font-weight:500; line-height:1.5; margin-bottom:11px">Neeche saari settings ko naam de kar preset save karein — print dialog me select karke apply hota hai.</div>
+              <sc-if value="{{ presetMgr.naming }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; gap:7px; margin-bottom:11px">
+                  <input value="{{ presetMgr.nameDraft }}" onInput="{{ presetMgr.onNameDraft }}" placeholder="e.g. B&amp;W Print, Blue for PDF" style="flex:1; min-width:0; padding:9px 12px; background:#faf7f1; border:1.5px solid #b9d2fb; border-radius:10px; font-size:13px; font-weight:600; color:#1a1d24">
+                  <button onClick="{{ presetMgr.onCommitNew }}" style="flex:none; padding:0 13px; background:#1f6feb; color:#fff; border:none; border-radius:10px; font-size:12.5px; font-weight:700; cursor:pointer">Save</button>
+                  <button onClick="{{ presetMgr.onCancelNew }}" style="flex:none; width:38px; border:1px solid #ece4d7; background:#fff; border-radius:10px; cursor:pointer; color:#8a8175; display:flex; align-items:center; justify-content:center">{{ icons.closeX }}</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ presetMgr.empty }}" hint-placeholder-val="{{ true }}">
+                <div style="padding:10px 12px; background:#faf7f1; border:1px dashed #ddd2c2; border-radius:11px; font-size:12px; color:#a59c8c; font-weight:500; line-height:1.5">Abhi koi preset nahi. Settings adjust karke <b>New preset</b> se save karein.</div>
+              </sc-if>
+              <sc-for list="{{ presetMgr.items }}" as="it" hint-placeholder-count="0">
+                <div key="{{ it.rk }}" style="{{ it.rowStyle }}">
+                  <sc-if value="{{ it.renaming }}" hint-placeholder-val="{{ false }}">
+                    <input value="{{ it.renameDraft }}" onInput="{{ it.onRenameDraft }}" style="flex:1; min-width:0; padding:6px 9px; background:#fff; border:1.5px solid #b9d2fb; border-radius:8px; font-size:12.5px; font-weight:600; color:#1a1d24">
+                    <button onClick="{{ it.onCommitRename }}" title="Save" style="{{ it.iconBtn }}">{{ icons.checkSm }}</button>
+                    <button onClick="{{ it.onCancelRename }}" title="Cancel" style="{{ it.iconBtn }}">{{ icons.closeX }}</button>
+                  </sc-if>
+                  <sc-if value="{{ it.notRenaming }}" hint-placeholder-val="{{ true }}">
+                    <span onClick="{{ it.onApply }}" style="{{ it.nameStyle }}">{{ it.name }}</span>
+                    <sc-if value="{{ it.active }}" hint-placeholder-val="{{ false }}"><span style="flex:none; font-size:9.5px; font-weight:800; color:#1f6feb; background:#dce9ff; padding:2px 7px; border-radius:20px; letter-spacing:.3px">ACTIVE</span></sc-if>
+                    <button onClick="{{ it.onRename }}" title="Rename" style="{{ it.iconBtn }}">{{ icons.miniEdit }}</button>
+                    <button onClick="{{ it.onDelete }}" title="Delete" style="{{ it.iconBtn }}">{{ icons.miniTrash }}</button>
+                  </sc-if>
+                </div>
+              </sc-for>
+              <div style="display:flex; align-items:center; gap:9px; margin-top:4px; padding:10px 12px; background:#faf7f1; border:1px solid #f0e9de; border-radius:11px">
+                <div style="flex:1; min-width:0">
+                  <div style="font-size:10.5px; font-weight:700; color:#a59c8c; text-transform:uppercase; letter-spacing:.4px">Editing</div>
+                  <div style="font-size:13px; font-weight:700; color:#1a1d24; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ presetMgr.activeName }}</div>
+                </div>
+                <sc-if value="{{ presetMgr.canUpdate }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ presetMgr.onUpdate }}" style="flex:none; display:flex; align-items:center; gap:6px; padding:8px 12px; background:#1f6feb; color:#fff; border:none; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer">{{ icons.checkSm }} Update</button>
+                </sc-if>
+                <sc-if value="{{ presetMgr.isCustom }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ presetMgr.onNew }}" style="flex:none; padding:8px 12px; background:#1f6feb; color:#fff; border:none; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer">Save as preset</button>
+                </sc-if>
+              </div>
+            </div>
+
+            <!-- PAGE SIZE -->
             <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:16px">
               <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:12px">Page size</div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px">
-                <sc-for list="{{ tplSizes }}" as="s" hint-placeholder-count="5">
+                <sc-for list="{{ tplCtl.sizes }}" as="s" hint-placeholder-count="5">
                   <button key="{{ s.rk }}" onClick="{{ s.onClick }}" style="{{ s.style }}">{{ s.label }}</button>
                 </sc-for>
               </div>
-              <div style="font-size:11px; color:#a59c8c; font-weight:500; margin-top:9px">{{ tplSizeNote }}</div>
+              <div style="font-size:11px; color:#a59c8c; font-weight:500; margin-top:9px">{{ tplCtl.sizeNote }}</div>
             </div>
+
+            <!-- APPEARANCE -->
             <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:14px">
               <div>
                 <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px">Accent colour</div>
-                <div style="display:flex; gap:9px">
-                  <sc-for list="{{ tplColors }}" as="c" hint-placeholder-count="5">
+                <div style="display:flex; gap:9px; flex-wrap:wrap">
+                  <sc-for list="{{ tplCtl.colors }}" as="c" hint-placeholder-count="6">
                     <button key="{{ c.rk }}" onClick="{{ c.onClick }}" style="{{ c.style }}"></button>
                   </sc-for>
                 </div>
               </div>
               <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                 <span style="font-size:13px; font-weight:600; color:#3f4753">Show logo</span>
-                <button onClick="{{ toggleLogo }}" style="{{ logoToggleStyle }}"><span style="{{ logoKnobStyle }}"></span></button>
+                <button onClick="{{ tplCtl.onLogo }}" style="{{ tplCtl.logoTg.wrap }}"><span style="{{ tplCtl.logoTg.knob }}"></span></button>
               </label>
               <div>
                 <div style="font-size:13px; font-weight:600; color:#3f4753; margin-bottom:8px">Table columns</div>
                 <div style="display:flex; flex-direction:column; gap:8px">
-                  <sc-for list="{{ tplCols }}" as="col" hint-placeholder-count="3">
+                  <sc-for list="{{ tplCtl.cols }}" as="col" hint-placeholder-count="3">
                     <label key="{{ col.rk }}" onClick="{{ col.onClick }}" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                       <span style="font-size:12.5px; color:#3f4753">{{ col.label }}</span>
                       <span style="{{ col.check }}">{{ col.tick }}</span>
@@ -966,41 +1051,112 @@
               </div>
               <label style="display:flex; flex-direction:column; gap:6px">
                 <span style="font-size:12.5px; font-weight:600; color:#3f4753">Header text</span>
-                <input value="{{ tpl.header }}" onChange="{{ onTplHeader }}" style="{{ inputStyle }}">
+                <input value="{{ tplCtl.header }}" onChange="{{ tplCtl.onHeader }}" style="{{ inputStyle }}">
               </label>
               <label style="display:flex; flex-direction:column; gap:6px">
                 <span style="font-size:12.5px; font-weight:600; color:#3f4753">Footer text</span>
-                <input value="{{ tpl.footer }}" onChange="{{ onTplFooter }}" style="{{ inputStyle }}">
+                <input value="{{ tplCtl.footer }}" onChange="{{ tplCtl.onFooter }}" style="{{ inputStyle }}">
               </label>
               <div>
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
-                  <span style="font-size:13px; font-weight:600; color:#3f4753">Font size</span>
-                  <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ fontPct }}</span>
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Font size <span style="font-weight:500; color:#a59c8c; font-size:11px">· {{ tplCtl.fontDef }}</span></span>
+                  <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ tplCtl.fontPct }}</span>
                 </div>
-                <input type="range" min="0.4" max="1.4" step="0.05" value="{{ fontScaleVal }}" onChange="{{ onFontScale }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+                <input type="range" min="0.4" max="1.4" step="0.05" value="{{ tplCtl.fontVal }}" onChange="{{ tplCtl.onFont }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+              </div>
+              <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Logo size <span style="font-weight:500; color:#a59c8c; font-size:11px">· {{ tplCtl.logoSizeDef }}</span></span>
+                  <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ tplCtl.logoSizePct }}</span>
+                </div>
+                <input type="range" min="0.5" max="2.4" step="0.05" value="{{ tplCtl.logoSizeVal }}" onChange="{{ tplCtl.onLogoSize }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+              </div>
+              <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Items text weight <span style="font-weight:500; color:#a59c8c; font-size:11px">· {{ tplCtl.itemWDef }}</span></span>
+                  <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ tplCtl.itemWVal }}</span>
+                </div>
+                <input type="range" min="400" max="700" step="25" value="{{ tplCtl.itemWVal }}" onChange="{{ tplCtl.onItemW }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+              </div>
+              <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Table header weight <span style="font-weight:500; color:#a59c8c; font-size:11px">· {{ tplCtl.headWDef }}</span></span>
+                  <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ tplCtl.headWVal }}</span>
+                </div>
+                <input type="range" min="600" max="900" step="25" value="{{ tplCtl.headWVal }}" onChange="{{ tplCtl.onHeadW }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+              </div>
+              <div style="border:1px solid #f0e9de; border-radius:12px; overflow:hidden">
+                <button onClick="{{ tplCtl.toggleWeights }}" style="display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:11px 13px; background:#faf7f1; border:none; cursor:pointer; font-size:12.5px; font-weight:700; color:#3f4753">
+                  <span>Per-element text weight</span>
+                  <span style="{{ tplCtl.weightsChevStyle }}">{{ icons.chevron }}</span>
+                </button>
+                <sc-if value="{{ tplCtl.weightsOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:13px; display:flex; flex-direction:column; gap:14px">
+                    <div style="font-size:11px; color:#a59c8c; font-weight:500; line-height:1.5">Har cheez ka apna weight — jo pehle invoice par tha wahi default hai.</div>
+                    <sc-for list="{{ tplCtl.weights }}" as="w" hint-placeholder-count="14">
+                      <div key="{{ w.rk }}">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:7px">
+                          <span style="font-size:12.5px; font-weight:600; color:#3f4753">{{ w.label }} <span style="font-weight:500; color:#a59c8c; font-size:10.5px">· {{ w.defLabel }}</span></span>
+                          <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ w.val }}</span>
+                        </div>
+                        <input type="range" min="100" max="900" step="100" value="{{ w.val }}" onChange="{{ w.onInput }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
               </div>
               <div style="display:flex; flex-direction:column; gap:11px; padding-top:2px">
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Show business info</span>
-                  <button onClick="{{ toggleBizInfo }}" style="{{ tgBizInfoWrap }}"><span style="{{ tgBizInfoKnob }}"></span></button>
+                  <button onClick="{{ tplCtl.onBizInfoTg }}" style="{{ tplCtl.bizInfoTg.wrap }}"><span style="{{ tplCtl.bizInfoTg.knob }}"></span></button>
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Show comments</span>
-                  <button onClick="{{ toggleComments }}" style="{{ tgCommentsWrap }}"><span style="{{ tgCommentsKnob }}"></span></button>
+                  <button onClick="{{ tplCtl.onComments }}" style="{{ tplCtl.comments.wrap }}"><span style="{{ tplCtl.comments.knob }}"></span></button>
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Show custom section</span>
-                  <button onClick="{{ toggleTerms }}" style="{{ tgTermsWrap }}"><span style="{{ tgTermsKnob }}"></span></button>
+                  <button onClick="{{ tplCtl.onTermsTg }}" style="{{ tplCtl.termsTg.wrap }}"><span style="{{ tplCtl.termsTg.knob }}"></span></button>
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Show paid / pending</span>
-                  <button onClick="{{ togglePayInfo }}" style="{{ tgPayWrap }}"><span style="{{ tgPayKnob }}"></span></button>
+                  <button onClick="{{ tplCtl.onPay }}" style="{{ tplCtl.pay.wrap }}"><span style="{{ tplCtl.pay.knob }}"></span></button>
                 </label>
-                <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
-                  <span style="font-size:13px; font-weight:600; color:#3f4753">Repeat header on every page</span>
-                  <button onClick="{{ toggleRepeatHeader }}" style="{{ tgRepeatWrap }}"><span style="{{ tgRepeatKnob }}"></span></button>
+                <label style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; cursor:pointer">
+                  <span style="min-width:0"><span style="display:block; font-size:13px; font-weight:600; color:#3f4753">Black mode</span><span style="display:block; font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:2px; line-height:1.4">B&amp;W printer ke liye sab kuch pure black</span></span>
+                  <button onClick="{{ tplCtl.onBlack }}" style="{{ tplCtl.blackM.wrap }}"><span style="{{ tplCtl.blackM.knob }}"></span></button>
+                </label>
+                <label style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; cursor:pointer">
+                  <span style="min-width:0"><span style="display:block; font-size:13px; font-weight:600; color:#3f4753">Repeat header on every page</span><span style="display:block; font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:2px; line-height:1.4">{{ tplCtl.repeatHeaderHint }}</span></span>
+                  <button onClick="{{ tplCtl.onRepeatHeader }}" style="{{ tplCtl.repeatHeader.wrap }}"><span style="{{ tplCtl.repeatHeader.knob }}"></span></button>
                 </label>
               </div>
+            </div>
+
+            <!-- LETTERHEAD & TEXT (saved inside the preset) -->
+            <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:15px">
+              <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px">Letterhead &amp; text</div>
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <span style="font-size:12.5px; font-weight:600; color:#3f4753">Business logo</span>
+                <div style="display:flex; align-items:center; gap:13px">
+                  <div style="width:60px; height:60px; border-radius:12px; border:1.5px dashed #d8cfc2; background:#faf7f1; display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none">{{ tplCtl.logoPreviewEl }}</div>
+                  <div style="flex:1; min-width:0; display:flex; gap:8px; flex-wrap:wrap">
+                    <label style="display:inline-flex; align-items:center; gap:7px; padding:8px 13px; background:#1f6feb; color:#fff; border-radius:10px; font-size:12.5px; font-weight:600; cursor:pointer">{{ icons.plusSm }} Upload<input type="file" accept="image/*" onChange="{{ tplCtl.onLogoFile }}" style="display:none"></label>
+                    <sc-if value="{{ tplCtl.hasLogo }}" hint-placeholder-val="{{ false }}"><button onClick="{{ tplCtl.onRemoveLogo }}" style="padding:8px 13px; background:#fdf4f3; color:#c0392b; border:1px solid #f0e2e0; border-radius:10px; font-size:12.5px; font-weight:600; cursor:pointer">Remove</button></sc-if>
+                  </div>
+                </div>
+                <span style="font-size:11px; color:#a59c8c; font-weight:500; line-height:1.5">≤ 250px tak resize hoti hai; is preset ke saath save hoti hai.</span>
+              </div>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; font-weight:600; color:#3f4753">Business info (letterhead)</span>
+                <textarea value="{{ tplCtl.bizInfoText }}" onChange="{{ tplCtl.onBizInfoText }}" rows="5" placeholder="Shop # 12, Main GT Road, Lahore&#10;0300-1234567&#10;**Bank:** Meezan 0123-4567890" style="width:100%; padding:11px 13px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical; font-family:inherit"></textarea>
+                <span style="font-size:11px; color:#a59c8c; font-weight:500; line-height:1.5">Markdown: <b>**bold**</b>, <em>*italic*</em>, nayi line = nayi line.</span>
+              </label>
+              <label style="display:flex; flex-direction:column; gap:6px">
+                <span style="font-size:12.5px; font-weight:600; color:#3f4753">Custom section (invoice ka aakhir)</span>
+                <textarea value="{{ tplCtl.termsText }}" onChange="{{ tplCtl.onTermsText }}" rows="5" placeholder="**Terms &amp; Conditions**&#10;- Goods once sold are not returnable&#10;&#10;**Warranty**&#10;30 din ki service warranty" style="width:100%; padding:11px 13px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical; font-family:inherit"></textarea>
+                <span style="font-size:11px; color:#a59c8c; font-weight:500; line-height:1.5">Heading aap khud likhte hain. Markdown supported.</span>
+              </label>
               <button onClick="{{ onPrint }}" style="display:flex; align-items:center; justify-content:center; gap:7px; padding:11px; background:#1a1d24; color:#fff; border:none; border-radius:11px; font-size:13px; font-weight:600; cursor:pointer">{{ icons.printerSm }} Open print dialog</button>
             </div>
           </div>
@@ -1144,28 +1300,11 @@
         <div style="max-width:680px; margin:0 auto; width:100%; display:flex; flex-direction:column; gap:14px">
           <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
             <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:14px">Business &amp; branding</div>
-            <label style="display:flex; flex-direction:column; gap:6px; margin-bottom:13px">
+            <label style="display:flex; flex-direction:column; gap:6px">
               <span style="font-size:12.5px; font-weight:600; color:#3f4753">Business name</span>
               <input value="{{ settings.businessName }}" onChange="{{ onBizName }}" style="{{ inputStyle }}">
             </label>
-            <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:13px">
-              <span style="font-size:12.5px; font-weight:600; color:#3f4753">Business logo</span>
-              <div style="display:flex; align-items:center; gap:14px">
-                <div style="width:64px; height:64px; border-radius:12px; border:1.5px dashed #d8cfc2; background:#faf7f1; display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none">{{ logoPreview }}</div>
-                <div style="flex:1; min-width:0">
-                  <div style="display:flex; gap:8px; flex-wrap:wrap">
-                    <label style="display:inline-flex; align-items:center; gap:7px; padding:9px 14px; background:#1f6feb; color:#fff; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer">
-                      {{ icons.plusSm }} Upload logo
-                      <input type="file" accept="image/*" onChange="{{ onLogoFile }}" style="display:none">
-                    </label>
-                    <sc-if value="{{ hasLogo }}" hint-placeholder-val="{{ false }}">
-                      <button onClick="{{ removeLogo }}" style="padding:9px 14px; background:#fdf4f3; color:#c0392b; border:1px solid #f0e2e0; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer">Remove</button>
-                    </sc-if>
-                  </div>
-                  <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:8px; line-height:1.4">Auto-resized to ≤ 250px and stored as text (data-URL) in Firestore. Shows on printed bills only.</div>
-                </div>
-              </div>
-            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px; font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:12px; line-height:1.45">{{ icons.infoSm }} <span>Logo, letterhead (business info) aur invoice ka custom section ab <b>Templates</b> page par hain — har preset apni copy rakhta hai.</span></div>
           </div>
           <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
             <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:14px">Regional</div>
@@ -1194,18 +1333,6 @@
               </label>
             </div>
             <div style="margin-top:13px; padding:11px 14px; background:#f4efe7; border-radius:11px; font-size:13px; color:#3f4753; font-weight:500">Next bill will be <b style="font-family:'Bricolage Grotesque'; color:#1a1d24">{{ nextBillPreview }}</b> · increments via an atomic Firestore counter.</div>
-          </div>
-          <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
-            <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px">Business info (invoice par)</div>
-            <div style="font-size:12.5px; color:#8a8175; font-weight:500; line-height:1.5; margin-bottom:12px">Aapki dukaan ki maloomat — address, phone, email, bank account waghera. Invoice ke header mein business name ke neeche khoobsurat letterhead ki tarah chhapegi.</div>
-            <textarea value="{{ settings.bizInfo }}" onChange="{{ onBizInfo }}" rows="5" placeholder="Shop # 12, Main GT Road, Lahore&#10;0300-1234567 · 042-1234567&#10;msa@workshop.com&#10;**Bank:** Meezan 0123-4567890" style="width:100%; padding:12px 14px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical"></textarea>
-            <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:9px; line-height:1.5">Markdown: <b>**bold**</b>, <em>*italic*</em>, nayi line = nayi line. Khali chhorein to invoice par kuch nahi aayega.</div>
-          </div>
-          <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
-            <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px">Invoice ka aakhri section</div>
-            <div style="font-size:12.5px; color:#8a8175; font-weight:500; line-height:1.5; margin-bottom:12px">Is section ka koi fixed naam nahi — heading aap khud likhte hain. Jaise <b>**Terms &amp; Conditions**</b> likh kar neeche terms, phir chahen to <b>**Warranty**</b> jaisi aur headings bhi.</div>
-            <textarea value="{{ settings.terms }}" onChange="{{ onTerms }}" rows="6" placeholder="**Terms &amp; Conditions**&#10;- Goods once sold are not returnable&#10;- Parts carry manufacturer warranty only&#10;&#10;**Warranty**&#10;30 din ki service warranty" style="width:100%; padding:12px 14px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical"></textarea>
-            <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:9px; line-height:1.5">Markdown: <b>**heading/bold**</b>, <em>*italic*</em>, <b>- </b>se bullet list, khali line se paragraph. Print dialog se per-bill hide bhi ho sakta hai.</div>
           </div>
           <div style="background:#fff; border:1px solid #ece4d7; border-radius:16px; padding:18px">
             <div style="font-size:12px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:14px">Lists &amp; loading</div>
@@ -1674,12 +1801,17 @@
           <!-- controls -->
           <div style="{{ printControlsStyle }}">
             <div>
-              <div style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:9px">Template size</div>
-              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px">
-                <sc-for list="{{ printControls.sizes }}" as="s" hint-placeholder-count="5">
-                  <button key="{{ s.rk }}" onClick="{{ s.onClick }}" style="{{ s.style }}">{{ s.label }}</button>
-                </sc-for>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px">
+                <span style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px">Preset</span>
+                <sc-if value="{{ printPresetSel.isCustom }}" hint-placeholder-val="{{ false }}"><span style="font-size:9.5px; font-weight:800; color:#b8740a; background:#fdf2e0; padding:2px 8px; border-radius:20px; letter-spacing:.3px">CUSTOM</span></sc-if>
               </div>
+              <select value="{{ printPresetSel.value }}" onChange="{{ printPresetSel.onChange }}" style="width:100%; padding:10px 12px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:11px; font-size:13px; font-weight:700; color:#1a1d24; cursor:pointer">
+                <option value="__custom">Custom (unsaved)</option>
+                <sc-for list="{{ printPresetSel.options }}" as="o" hint-placeholder-count="0">
+                  <option key="{{ o.rk }}" value="{{ o.id }}">{{ o.name }}</option>
+                </sc-for>
+              </select>
+              <sc-if value="{{ printPresetSel.empty }}" hint-placeholder-val="{{ true }}"><div style="font-size:11px; color:#a59c8c; font-weight:500; line-height:1.5; margin-top:7px">Koi saved preset nahi — Templates page se banayein.</div></sc-if>
             </div>
             <button onClick="{{ printControls.toggleMore }}" style="display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:11px 13px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:11px; cursor:pointer; font-size:12.5px; font-weight:700; color:#3f4753">
               <span>All print settings</span>
@@ -1688,28 +1820,104 @@
             <sc-if value="{{ printControls.moreOpen }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex; flex-direction:column; gap:18px">
             <div>
-              <div style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px">Fonts</div>
+              <div style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:9px">Template size</div>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px">
+                <sc-for list="{{ printControls.sizes }}" as="s" hint-placeholder-count="5">
+                  <button key="{{ s.rk }}" onClick="{{ s.onClick }}" style="{{ s.style }}">{{ s.label }}</button>
+                </sc-for>
+              </div>
+              <div style="font-size:11px; color:#a59c8c; font-weight:500; margin-top:8px">{{ printControls.sizeNote }}</div>
+            </div>
+            <div>
+              <div style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px">Colour &amp; text</div>
+              <div style="display:flex; flex-direction:column; gap:13px">
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:#3f4753; margin-bottom:8px">Accent colour</div>
+                  <div style="display:flex; gap:9px; flex-wrap:wrap">
+                    <sc-for list="{{ printControls.colors }}" as="c" hint-placeholder-count="6">
+                      <button key="{{ c.rk }}" onClick="{{ c.onClick }}" style="{{ c.style }}"></button>
+                    </sc-for>
+                  </div>
+                </div>
+                <label style="display:flex; flex-direction:column; gap:6px">
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Header text</span>
+                  <input value="{{ printControls.header }}" onChange="{{ printControls.onHeader }}" style="width:100%; padding:10px 12px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13px; font-weight:500; color:#1a1d24">
+                </label>
+                <label style="display:flex; flex-direction:column; gap:6px">
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Footer text</span>
+                  <input value="{{ printControls.footer }}" onChange="{{ printControls.onFooter }}" style="width:100%; padding:10px 12px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13px; font-weight:500; color:#1a1d24">
+                </label>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px">Letterhead &amp; text</div>
+              <div style="display:flex; flex-direction:column; gap:13px">
+                <div style="display:flex; align-items:center; gap:12px">
+                  <div style="width:54px; height:54px; border-radius:11px; border:1.5px dashed #d8cfc2; background:#faf7f1; display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none">{{ printControls.logoPreviewEl }}</div>
+                  <div style="flex:1; min-width:0; display:flex; gap:7px; flex-wrap:wrap">
+                    <label style="display:inline-flex; align-items:center; gap:6px; padding:8px 12px; background:#1f6feb; color:#fff; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer">{{ icons.plusSm }} Upload logo<input type="file" accept="image/*" onChange="{{ printControls.onLogoFile }}" style="display:none"></label>
+                    <sc-if value="{{ printControls.hasLogo }}" hint-placeholder-val="{{ false }}"><button onClick="{{ printControls.onRemoveLogo }}" style="padding:8px 12px; background:#fdf4f3; color:#c0392b; border:1px solid #f0e2e0; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer">Remove</button></sc-if>
+                  </div>
+                </div>
+                <label style="display:flex; flex-direction:column; gap:6px">
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Business info</span>
+                  <textarea value="{{ printControls.bizInfoText }}" onChange="{{ printControls.onBizInfoText }}" rows="4" placeholder="Address, phone, bank…" style="width:100%; padding:10px 12px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:12.5px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical; font-family:inherit"></textarea>
+                </label>
+                <label style="display:flex; flex-direction:column; gap:6px">
+                  <span style="font-size:13px; font-weight:600; color:#3f4753">Custom section</span>
+                  <textarea value="{{ printControls.termsText }}" onChange="{{ printControls.onTermsText }}" rows="4" placeholder="**Terms &amp; Conditions**…" style="width:100%; padding:10px 12px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:12.5px; font-weight:500; color:#1a1d24; line-height:1.5; resize:vertical; font-family:inherit"></textarea>
+                </label>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11.5px; font-weight:700; color:#8a8175; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px">Fonts &amp; sizing</div>
               <div style="display:flex; flex-direction:column; gap:13px">
                 <div>
                   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
-                    <span style="font-size:13px; font-weight:600; color:#3f4753">Font size</span>
+                    <span style="font-size:13px; font-weight:600; color:#3f4753">Font size <span style="font-weight:500; color:#a59c8c; font-size:11px">· {{ printControls.fontDef }}</span></span>
                     <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ printControls.fontPct }}</span>
                   </div>
                   <input type="range" min="0.4" max="1.4" step="0.05" value="{{ printControls.fontVal }}" onChange="{{ printControls.onFont }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
                 </div>
                 <div>
                   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
-                    <span style="font-size:13px; font-weight:600; color:#3f4753">Items text weight</span>
+                    <span style="font-size:13px; font-weight:600; color:#3f4753">Logo size <span style="font-weight:500; color:#a59c8c; font-size:11px">· {{ printControls.logoSizeDef }}</span></span>
+                    <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ printControls.logoSizePct }}</span>
+                  </div>
+                  <input type="range" min="0.5" max="2.4" step="0.05" value="{{ printControls.logoSizeVal }}" onChange="{{ printControls.onLogoSize }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+                    <span style="font-size:13px; font-weight:600; color:#3f4753">Items text weight <span style="font-weight:500; color:#a59c8c; font-size:11px">· {{ printControls.itemWDef }}</span></span>
                     <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ printControls.itemWVal }}</span>
                   </div>
                   <input type="range" min="400" max="700" step="25" value="{{ printControls.itemWVal }}" onChange="{{ printControls.onItemW }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
                 </div>
                 <div>
                   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
-                    <span style="font-size:13px; font-weight:600; color:#3f4753">Table header weight</span>
+                    <span style="font-size:13px; font-weight:600; color:#3f4753">Table header weight <span style="font-weight:500; color:#a59c8c; font-size:11px">· {{ printControls.headWDef }}</span></span>
                     <span style="font-size:12px; font-weight:700; color:#1f6feb">{{ printControls.headWVal }}</span>
                   </div>
                   <input type="range" min="600" max="900" step="25" value="{{ printControls.headWVal }}" onChange="{{ printControls.onHeadW }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+                </div>
+                <div style="border:1px solid #f0e9de; border-radius:12px; overflow:hidden">
+                  <button onClick="{{ printControls.toggleWeights }}" style="display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:10px 12px; background:#faf7f1; border:none; cursor:pointer; font-size:12.5px; font-weight:700; color:#3f4753">
+                    <span>Per-element text weight</span>
+                    <span style="{{ printControls.weightsChevStyle }}">{{ icons.chevron }}</span>
+                  </button>
+                  <sc-if value="{{ printControls.weightsOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:12px; display:flex; flex-direction:column; gap:13px">
+                      <sc-for list="{{ printControls.weights }}" as="w" hint-placeholder-count="14">
+                        <div key="{{ w.rk }}">
+                          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+                            <span style="font-size:12px; font-weight:600; color:#3f4753">{{ w.label }} <span style="font-weight:500; color:#a59c8c; font-size:10px">· {{ w.defLabel }}</span></span>
+                            <span style="font-size:11.5px; font-weight:700; color:#1f6feb">{{ w.val }}</span>
+                          </div>
+                          <input type="range" min="100" max="900" step="100" value="{{ w.val }}" onChange="{{ w.onInput }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
                 </div>
               </div>
             </div>
@@ -1718,7 +1926,7 @@
               <div style="display:flex; flex-direction:column; gap:11px">
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Logo</span>
-                  <button onClick="{{ printControls.onLogo }}" style="{{ printControls.logo.wrap }}"><span style="{{ printControls.logo.knob }}"></span></button>
+                  <button onClick="{{ printControls.onLogo }}" style="{{ printControls.logoTg.wrap }}"><span style="{{ printControls.logoTg.knob }}"></span></button>
                 </label>
                 <sc-for list="{{ printControls.cols }}" as="c" hint-placeholder-count="3">
                   <label key="{{ c.rk }}" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
@@ -1728,7 +1936,7 @@
                 </sc-for>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Business info</span>
-                  <button onClick="{{ printControls.onBizInfo }}" style="{{ printControls.bizInfo.wrap }}"><span style="{{ printControls.bizInfo.knob }}"></span></button>
+                  <button onClick="{{ printControls.onBizInfoTg }}" style="{{ printControls.bizInfoTg.wrap }}"><span style="{{ printControls.bizInfoTg.knob }}"></span></button>
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Comments</span>
@@ -1736,7 +1944,7 @@
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Custom section</span>
-                  <button onClick="{{ printControls.onTerms }}" style="{{ printControls.terms.wrap }}"><span style="{{ printControls.terms.knob }}"></span></button>
+                  <button onClick="{{ printControls.onTermsTg }}" style="{{ printControls.termsTg.wrap }}"><span style="{{ printControls.termsTg.knob }}"></span></button>
                 </label>
                 <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                   <span style="font-size:13px; font-weight:600; color:#3f4753">Paid / pending</span>
@@ -1978,6 +2186,63 @@
     </div>
   </sc-if>
 
+  <!-- ====== NOTE TEMPLATES — MANAGE MODAL ====== -->
+  <sc-if value="{{ tplMgrView }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ tplMgrView.onClose }}" style="position:fixed; inset:0; background:rgba(20,15,5,.5); z-index:54; display:flex; align-items:center; justify-content:center; animation:fadeIn .2s; padding:16px">
+      <div onClick="{{ stop }}" style="width:100%; max-width:780px; max-height:90vh; background:#fff; border-radius:18px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 70px rgba(0,0,0,.35); animation:popIn .24s">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 20px; border-bottom:1px solid #f0e9de">
+          <div style="min-width:0">
+            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:18px; color:#1a1d24">{{ tplMgrView.title }}</div>
+            <div style="font-size:12px; color:#8a8175; font-weight:500; line-height:1.45; margin-top:2px">{{ tplMgrView.subtitle }}</div>
+          </div>
+          <button onClick="{{ tplMgrView.onClose }}" style="width:36px; height:36px; flex:none; border-radius:10px; border:1px solid #e6ddd0; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#8a8175">{{ icons.closeX }}</button>
+        </div>
+        <div style="display:flex; flex:1; min-height:0; flex-wrap:wrap; align-items:stretch">
+          <div style="flex:1 1 250px; min-width:0; border-right:1px solid #f0e9de; padding:14px; overflow:auto; max-height:62vh; background:#faf7f1">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px">
+              <div style="font-size:11px; font-weight:700; color:#a59c8c; text-transform:uppercase; letter-spacing:.4px">Saved templates</div>
+              <button onClick="{{ tplMgrView.onNew }}" style="display:flex; align-items:center; gap:5px; padding:5px 9px; background:#eef4ff; border:1px solid #b9d2fb; border-radius:8px; font-size:11.5px; font-weight:700; color:#1f6feb; cursor:pointer">{{ icons.plusSm }} New</button>
+            </div>
+            <sc-if value="{{ tplMgrView.empty }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:16px 10px; font-size:12.5px; color:#a59c8c; line-height:1.5; text-align:center">Abhi koi template nahi. Naam aur text likh kar <b>Save</b> karein.</div>
+            </sc-if>
+            <sc-for list="{{ tplMgrView.items }}" as="it" hint-placeholder-count="0">
+              <div key="{{ it.rk }}" onClick="{{ it.onPick }}" style="{{ it.rowStyle }}">
+                <div style="flex:1; min-width:0">
+                  <div style="font-size:13px; font-weight:700; color:#1a1d24; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ it.name }}</div>
+                  <div style="font-size:11px; color:#a59c8c; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px">{{ it.snippet }}</div>
+                </div>
+                <button onClick="{{ it.onDelete }}" title="Delete" style="width:30px; height:30px; flex:none; border-radius:8px; border:1px solid #f0e2e0; background:#fdf4f3; color:#c0392b; cursor:pointer; display:flex; align-items:center; justify-content:center">{{ icons.miniTrash }}</button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:2 1 340px; min-width:0; padding:16px; overflow:auto; max-height:62vh; display:flex; flex-direction:column; gap:13px">
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; font-weight:600; color:#3f4753">Template name</span>
+              <input value="{{ tplMgrView.name }}" onInput="{{ tplMgrView.onName }}" placeholder="e.g. Next service reminder" style="{{ inputStyle }}">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; font-weight:600; color:#3f4753">Template text · markdown</span>
+              <textarea value="{{ tplMgrView.md }}" onInput="{{ tplMgrView.onMd }}" rows="6" placeholder="**Note:** " style="width:100%; padding:11px 13px; background:#faf7f1; border:1.5px solid #ece4d7; border-radius:10px; font-size:13.5px; font-weight:500; color:#1a1d24; line-height:1.55; resize:vertical; font-family:inherit"></textarea>
+              <span style="font-size:11px; color:#a59c8c; font-weight:500; line-height:1.5">Markdown: <b>**bold**</b>, <em>*italic*</em>, <code style="font-family:'JetBrains Mono',monospace; font-size:.92em">``code``</code>, <b>-</b> bullet, <b>1.</b> number, <b>---</b> line.</span>
+            </label>
+            <div style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:12.5px; font-weight:600; color:#3f4753">Live preview</span>
+              <div style="padding:12px 14px; background:#f7f4ef; border:1px solid #ece4d7; border-radius:10px; min-height:46px">
+                <sc-if value="{{ tplMgrView.hasPreview }}" hint-placeholder-val="{{ false }}">{{ tplMgrView.previewEl }}</sc-if>
+                <sc-if value="{{ tplMgrView.noPreview }}" hint-placeholder-val="{{ true }}"><span style="font-size:12.5px; color:#bcae9a; font-weight:500">Yahan preview dikhega…</span></sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:9px; padding:14px 20px; border-top:1px solid #f0e9de">
+          <button onClick="{{ tplMgrView.onClose }}" style="flex:1; padding:12px; background:#f4efe7; border:1px solid #e6ddd0; border-radius:11px; font-size:13.5px; font-weight:600; color:#3f4753; cursor:pointer">Close</button>
+          <button onClick="{{ tplMgrView.onSave }}" style="flex:2; display:flex; align-items:center; justify-content:center; gap:7px; padding:12px; background:#1f6feb; color:#fff; border:none; border-radius:11px; font-size:13.5px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(31,111,235,.3)">{{ icons.check }} {{ tplMgrView.saveLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- ====== TOAST ====== -->
   <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
     <div style="{{ toastStyle }}">{{ toastIcon }} {{ toast }}</div>
@@ -2006,8 +2271,18 @@ class Component extends DCLogic {
     // ---- settings / counter ----
     settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', bizInfo:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owners risk.', listBatch:25, autoLoad:true, animSpeed:1 },
     counter: null,
-    tpl: { size:'A4', logo:true, color:'#1f6feb', cols:{qty:true,price:true,total:true}, fontScale:1, itemWeight:400, headWeight:700, blackMode:false, showComments:true, showTerms:true, showPayInfo:true, repeatHeader:true, header:'Service & Repair Invoice', footer:'Thank you for your business' },
-    printBill: null, printCfg: null, invMeasure: {}, printZoom:1, printTab:'preview', printMore:false,
+    // ---- note templates (printed Comment + Internal note) — shop-wide, synced, own doc ----
+    msgTpls: { comment: [], note: [] },   // each: { id, name, md }
+    noteTplMenu: null,   // 'comment' | 'note' | null  (which insert-dropdown is open)
+    tplMgr: null,        // { kind, editId, name, md }  (manage modal)
+    tpl: { size:'A4', logo:true, color:'#1f6feb', cols:{qty:true,price:true,total:true}, fontScale:1, itemWeight:400, headWeight:700, blackMode:false, showComments:true, showTerms:true, showPayInfo:true, repeatHeader:true, header:'Service & Repair Invoice', footer:'Thank you for your business', bizInfo:undefined, terms:undefined, logoData:undefined },
+    // ---- print presets (named full print-appearance bundles; shop-wide, synced) ----
+    printPresets: [],        // [{ id, name, cfg }]
+    activePresetId: null,    // applied preset id, or null = "Custom"
+    presetRename: null,      // { id, name } while renaming inline
+    presetNaming: false,     // true while the "new preset" name field is open
+    presetNameDraft: '',
+    printBill: null, printCfg: null, invMeasure: {}, printZoom:1, printTab:'preview', printMore:false, printWeightsOpen:false, tplWeightsOpen:false,
     // ---- data caches (progressively loaded; NOT the full DB) ----
     bills: [], billsCursor:null, billsHasMore:false, billsLoading:true, billsLoaded:false,
     archivedBills: [], archivedCursor:null, archivedHasMore:false, archivedLoading:false, archivedLoaded:false,
@@ -2144,6 +2419,100 @@ class Component extends DCLogic {
     closeLists();
     return html;
   }
+  // ---- compact note markdown -> HTML (used on the bill view AND printed invoice).
+  //      Escapes first, then a narrow whitelist: **bold**, *italic*, `code`/``code``,
+  //      [text](url), '- '/'* ' bullets, '1.' numbered, '---' rule, real newlines.
+  //      Block elements set NO font-size (they inherit the caller's, so print scales). ----
+  _noteMd(md){
+    if(md==null) return '';
+    const src=String(md); if(!src.trim()) return '';
+    const esc=(s)=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const inl=(s)=>{
+      let t=esc(s);
+      // pull code spans out first (double- then single-backtick) so their contents aren't re-parsed
+      const code=[]; const stash=(c)=>{ code.push(c); return '\u0000'+(code.length-1)+'\u0000'; };
+      t=t.replace(/``([^`]+?)``/g,(m,c)=>stash(c)).replace(/`([^`]+?)`/g,(m,c)=>stash(c));
+      t=t.replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
+      t=t.replace(/(^|[^*])\*(?!\*)([^*]+?)\*(?!\*)/g,'$1<em>$2</em>');
+      t=t.replace(/\[([^\]]+?)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">$1</a>');
+      t=t.replace(/\u0000(\d+)\u0000/g,(m,i)=>'<code style="background:rgba(0,0,0,.06);padding:.5px 5px;border-radius:4px;font-family:\'JetBrains Mono\',ui-monospace,monospace;font-size:.9em">'+code[+i]+'</code>');
+      return t;
+    };
+    const lines=src.replace(/\r\n/g,'\n').split('\n');
+    let html=''; let inUl=false, inOl=false;
+    const closeL=()=>{ if(inUl){ html+='</ul>'; inUl=false; } if(inOl){ html+='</ol>'; inOl=false; } };
+    lines.forEach(raw=>{
+      const line=raw.trim(); let m;
+      if(!line){ closeL(); html+='<div style="height:.4em"></div>'; return; }
+      if(/^(-{3,}|\*{3,}|_{3,})$/.test(line)){ closeL(); html+='<hr style="border:none;border-top:1px solid currentColor;opacity:.22;margin:5px 0">'; return; }
+      if((m=line.match(/^[-*\u2022]\s+(.*)$/))){ if(inOl){ html+='</ol>'; inOl=false; } if(!inUl){ html+='<ul style="margin:3px 0;padding-left:18px">'; inUl=true; } html+='<li style="margin:1px 0">'+inl(m[1])+'</li>'; return; }
+      if((m=line.match(/^\d+\.\s+(.*)$/))){ if(inUl){ html+='</ul>'; inUl=false; } if(!inOl){ html+='<ol style="margin:3px 0;padding-left:20px">'; inOl=true; } html+='<li style="margin:1px 0">'+inl(m[1])+'</li>'; return; }
+      closeL(); html+='<div style="margin:1px 0">'+inl(line)+'</div>';
+    });
+    closeL();
+    return html;
+  }
+  _noteMdEl(md, style){ const h=this._noteMd(md); if(!h) return null; return React.createElement('div',{style, dangerouslySetInnerHTML:{__html:h}}); }
+
+  // ---------- note templates (insert + manage) ----------
+  _tplLabel(kind){ return kind==='comment' ? 'printed-note' : 'internal-note'; }
+  _persistNoteTpls(next, summary, action){
+    this.setState({ msgTpls: next });
+    if(this.db) this.runAction('notetpl-save', ()=> this.db.saveNoteTemplates({ comment: next.comment||[], note: next.note||[] }), { headerSave:true });
+    this.logActivity({ action: action||'settings', entity:'settings', entityId:'note-templates', entityLabel:'Note templates', summary });
+  }
+  toggleTplMenu(kind){ this.setState(s=>({ noteTplMenu: s.noteTplMenu===kind ? null : kind })); }
+  closeTplMenu(){ this.setState({ noteTplMenu:null }); }
+  insertTpl(kind, id){
+    const t=(this.state.msgTpls[kind]||[]).find(x=>x.id===id); if(!t) return;
+    const taId = kind==='comment' ? 'ntArea-comment' : 'ntArea-note';
+    const ta=document.getElementById(taId);
+    const cur=(this.state.editor && this.state.editor[kind]) || '';
+    let pos = (ta && ta.selectionStart!=null) ? ta.selectionStart : cur.length;
+    const before=cur.slice(0,pos), after=cur.slice(pos);
+    const md=t.md||'';
+    const nl = (before && !before.endsWith('\n')) ? '\n' : '';
+    const ins = nl + md;
+    const nextVal = before + ins + after;
+    this.setEd({ [kind]: nextVal });
+    this.setState({ noteTplMenu:null });
+    const caret=(before+ins).length;
+    requestAnimationFrame(()=>{ const t2=document.getElementById(taId); if(t2){ try{ t2.focus(); t2.setSelectionRange(caret,caret); }catch(e){} } });
+  }
+  openTplMgr(kind){ this.setState({ noteTplMenu:null, tplMgr:{ kind, editId:null, name:'', md:'' } }); }
+  closeTplMgr(){ this.setState({ tplMgr:null }); }
+  tplMgrPick(id){ const k=this.state.tplMgr&&this.state.tplMgr.kind; const t=(this.state.msgTpls[k]||[]).find(x=>x.id===id); if(!t) return; this.setState(s=>({ tplMgr:{ ...s.tplMgr, editId:t.id, name:t.name, md:t.md||'' } })); }
+  tplMgrNew(){ this.setState(s=>({ tplMgr:{ ...s.tplMgr, editId:null, name:'', md:'' } })); }
+  tplMgrSetName(v){ this.setState(s=>({ tplMgr:{ ...s.tplMgr, name:v } })); }
+  tplMgrSetMd(v){ this.setState(s=>({ tplMgr:{ ...s.tplMgr, md:v } })); }
+  tplMgrSave(){
+    const m=this.state.tplMgr; if(!m) return; const k=m.kind; const name=(m.name||'').trim();
+    if(!name){ this.toastMsg('Template ka naam likhein','warn'); return; }
+    const list=(this.state.msgTpls[k]||[]).slice();
+    if(list.some(t=>t.name.trim().toLowerCase()===name.toLowerCase() && t.id!==m.editId)){ this.toastMsg('Is naam ka template pehle se maujood hai','warn'); return; }
+    let landId=m.editId;
+    if(m.editId){
+      const i=list.findIndex(t=>t.id===m.editId); if(i<0) return;
+      const old=list[i]; list[i]={ ...old, name, md:m.md||'' };
+      const renamed = old.name!==name;
+      this._persistNoteTpls({ ...this.state.msgTpls, [k]:list }, (renamed?'Renamed & updated ':'Updated ')+this._tplLabel(k)+' template "'+name+'"', 'update');
+    } else {
+      landId='nt_'+Date.now()+'_'+Math.floor(Math.random()*1e5);
+      list.push({ id:landId, name, md:m.md||'' });
+      this._persistNoteTpls({ ...this.state.msgTpls, [k]:list }, 'Added '+this._tplLabel(k)+' template "'+name+'"', 'create');
+    }
+    this.setState(s=>({ tplMgr:{ ...s.tplMgr, editId:landId } }));
+    this.toastMsg('Template save ho gaya','ok');
+  }
+  tplMgrDelete(id){
+    const m=this.state.tplMgr; if(!m) return; const k=m.kind;
+    const t=(this.state.msgTpls[k]||[]).find(x=>x.id===id); if(!t) return;
+    this.askConfirm({ title:'Delete template?', message:'"'+t.name+'" hamesha ke liye hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=>{
+      const list=(this.state.msgTpls[k]||[]).filter(x=>x.id!==id);
+      this._persistNoteTpls({ ...this.state.msgTpls, [k]:list }, 'Deleted '+this._tplLabel(k)+' template "'+t.name+'"', 'delete');
+      this.setState(s=> (s.tplMgr && s.tplMgr.editId===id) ? ({ tplMgr:{ ...s.tplMgr, editId:null, name:'', md:'' } }) : {});
+    }});
+  }
   async _onAuth(user){
     if(!user){
       this.setState({ authReady:true, authUser:null, userMenuOpen:false, route:'dashboard',
@@ -2164,12 +2533,23 @@ class Component extends DCLogic {
     const st = await this.db.getSettings();
     if(st){ const { tpl, ...rest } = st; this.setState(s=>({ settings:{ ...s.settings, ...rest }, tpl:{ ...s.tpl, ...(tpl||{}) } })); }
     else { try{ if(this.canAct('settings','manage')) await this.db.saveSettings(this._settingsDoc()); }catch(e){} }
-    // one-time migration: old plain terms text becomes the open markdown section, keeping its
-    // familiar heading. Idempotent (skips anything already containing markdown bold markers).
-    this.setState(s=>{ const t=s.settings.terms; return (t && !/\*\*/.test(t))? { settings:{ ...s.settings, terms:'**Terms & Conditions**\n'+t } } : {}; });
+    // migrate business identity (info / custom section / logo) INTO the print config so every
+    // preset can carry its own copy — the Template page & Print dialog now own these, not Settings.
+    // Idempotent: only seeds a field the tpl doesn't already have (undefined = never migrated).
+    this.setState(s=>{ const t=s.tpl, set=s.settings, patch={};
+      if(t.bizInfo===undefined) patch.bizInfo = set.bizInfo||'';
+      if(t.terms===undefined)   patch.terms   = set.terms||'';
+      if(t.logoData===undefined)patch.logoData= set.logoData||'';
+      return Object.keys(patch).length ? { tpl:{ ...t, ...patch } } : {};
+    });
+    // one-time migration: old plain custom-section text becomes an open markdown section, keeping
+    // its familiar heading. Idempotent (skips anything already containing markdown bold markers).
+    this.setState(s=>{ const t=s.tpl.terms; return (t && !/\*\*/.test(t))? { tpl:{ ...s.tpl, terms:'**Terms & Conditions**\n'+t } } : {}; });
     const startNo = Number((st&&st.startNo) || this.state.settings.startNo) || 1000;
     try{ await this.db.initCounter(startNo); }catch(e){}
     try{ const c = await this.db.peekCounter(); this.setState({ counter: c==null? startNo : c }); }catch(e){ this.setState({ counter:startNo }); }
+    try{ const nt = await this.db.getNoteTemplates(); if(nt) this.setState({ msgTpls:{ comment: Array.isArray(nt.comment)?nt.comment:[], note: Array.isArray(nt.note)?nt.note:[] } }); }catch(e){ console.warn('noteTemplates', e); }
+    try{ const pp = await this.db.getPrintPresets(); if(pp){ this.setState({ printPresets: Array.isArray(pp.presets)?pp.presets:[], activePresetId: pp.activeId||null }); } }catch(e){ console.warn('printPresets', e); }
     this._settingsJSON = JSON.stringify(this._settingsDoc());
   }
   _settingsDoc(){ return { ...this.state.settings, tpl:this.state.tpl }; }
@@ -2684,6 +3064,11 @@ class Component extends DCLogic {
   }
   makeInvoiceView(bill, cfg, opts){
     opts=opts||{}; const h=React.createElement; const set=this.state.settings; const cur=set.currency;
+    // business identity now lives IN the print config (cfg) so each preset carries its own —
+    // fall back to the legacy Settings values for old configs that predate the migration.
+    const bizInfoTxt = (cfg.bizInfo!==undefined && cfg.bizInfo!==null) ? cfg.bizInfo : (set.bizInfo||'');
+    const termsTxt   = (cfg.terms!==undefined   && cfg.terms!==null)   ? cfg.terms   : (set.terms||'');
+    const logoDataSrc= (cfg.logoData!==undefined&& cfg.logoData!==null)? cfg.logoData: (set.logoData||'');
     const d=this.derive(bill);
     const thermal = cfg.size==='80mm'||cfg.size==='58mm';
     const narrow = cfg.size==='58mm';
@@ -2702,15 +3087,28 @@ class Component extends DCLogic {
     const tblFam = thermal? fam : "'Archivo','Plus Jakarta Sans',sans-serif";   // items table: crisp, print-legible grotesque
     const itemW = Math.min(700, Math.max(400, Number(cfg.itemWeight)||400));    // items text weight (user slider)
     const headW = Math.min(900, Math.max(600, Number(cfg.headWeight)||700));    // table header weight (user slider)
+    // ---- per-element weight overrides (user sliders). Each falls back to its ORIGINAL default
+    //      weight so untouched configs + old presets render exactly as before (seamless). ----
+    const W = (key, def) => { const v=Number(cfg[key]); return (v>=100 && v<=900) ? v : def; };
+    const wHeader=W('wHeader',400), wBizName=W('wBizName',800), wBizInfo=W('wBizInfo',400),
+          wCustName=W('wCustName',700), wPhone=W('wPhone',400), wCarNo=W('wCarNo',700), wCarModel=W('wCarModel',400),
+          wSubtotal=W('wSubtotal',400), wDiscount=W('wDiscount',400), wPaid=W('wPaid',400), wPending=W('wPending',700),
+          wNote=W('wNote',400), wTerms=W('wTerms',400), wFooter=W('wFooter',400);
+    // logo size multiplier (user slider). Default 1 = the original size. Clamped for sane layout.
+    const logoScale = Math.min(2.4, Math.max(0.5, Number(cfg.logoScale)||1));
     const money = v => cur+' '+Math.round(Number(v)||0).toLocaleString('en-US');
     const paper = { background:'#fff', width:paperW+'px', minWidth:paperW+'px', flexShrink:0, boxSizing:'border-box', padding:pad+'px', fontFamily:fam, color:K('#222'), fontSize:px(base), lineHeight:1.45, overflowWrap:'anywhere', wordBreak:'break-word', boxShadow: opts.shadow?'0 8px 28px rgba(0,0,0,.13)':'none', height: paperH?paperH+'px':'auto', minHeight: paperH?paperH+'px':'auto', display:'flex', flexDirection:'column' };
     // logo node
     let logoNode=null;
     if(cfg.logo){
-      const dim = thermal? (narrow?30:34) : 40;
-      logoNode = set.logoData
-        ? h('img',{src:set.logoData, alt:'logo', style:{width:dim+'px',height:dim+'px',objectFit:'contain',borderRadius:'6px',filter: black?'grayscale(1) contrast(1.5)':'none'}})
-        : h('div',{style:{width:dim+'px',height:dim+'px',borderRadius:'7px',background:AC,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:px(h1),fontFamily:fam}}, (set.businessName||'M')[0]);
+      const dim = Math.round((thermal? (narrow?30:34) : 40) * logoScale);
+      // Black mode: use a PRE-GRAYSCALED copy of the logo (computed on a canvas) instead of a CSS
+      // `filter` — html2canvas (PDF export) can't rasterise CSS filters, so the filter approach
+      // printed fine but came out coloured in the PDF. A real grayscale bitmap works everywhere.
+      const bwSrc = black ? (this._bwLogo(logoDataSrc) || logoDataSrc) : logoDataSrc;
+      logoNode = logoDataSrc
+        ? h('img',{src:bwSrc, alt:'logo', style:{width:dim+'px',height:dim+'px',objectFit:'contain',borderRadius:'6px',flex:'none',filter: black?'grayscale(1)':'none'}})
+        : h('div',{style:{width:dim+'px',height:dim+'px',borderRadius:'7px',background:AC,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:px(h1),fontFamily:fam,flex:'none'}}, (set.businessName||'M')[0]);
     }
     const showBiz = cfg.showBizInfo!==false;
     // Adaptive name size: long business names step DOWN so the name never wraps into an ugly
@@ -2718,8 +3116,8 @@ class Component extends DCLogic {
     const nameLen=(set.businessName||'').length;
     const nameScale = nameLen<=14?1 : nameLen<=22?0.86 : nameLen<=30?0.74 : nameLen<=40?0.65 : 0.58;
     const nameSize = Math.max(narrow?9:10.5, h1*nameScale*(cfg.size==='A5'?0.92:1));
-    const biz = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif", fontWeight:800, fontSize:px(nameSize), color:thermal?K('#222'):AC, lineHeight:1.12, overflowWrap:'anywhere'}}, set.businessName||'');
-    const headerTxt = cfg.header? h('div',{style:{fontSize:px(small),color:K('#666'),marginTop:'1px'}}, cfg.header):null;
+    const biz = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif", fontWeight:wBizName, fontSize:px(nameSize), color:thermal?K('#222'):AC, lineHeight:1.12, overflowWrap:'anywhere'}}, set.businessName||'');
+    const headerTxt = cfg.header? h('div',{style:{fontSize:px(small),fontWeight:wHeader,color:K('#666'),marginTop:'1px'}}, cfg.header):null;
     // business info (markdown from Settings): address, phones, email, bank details...
     // Standard sizes: right-aligned contact block in the top-right of the letterhead (classic
     // professional invoice). Thermal: centered under the shop name. All sizes ride px().
@@ -2729,10 +3127,10 @@ class Component extends DCLogic {
       liStyle:{display:'flex',gap:px(4),margin:'0',alignItems:'baseline',justifyContent:alignEnd?'flex-end':'flex-start'},
       gap:px(4)
     });
-    const bizInfoNode = (showBiz && set.bizInfo)? h('div',{style: thermal
-        ? {fontSize:px(narrow?7.5:small-0.5),color:K('#555'),marginTop:px(3),lineHeight:1.5}
-        : {fontSize:px(cfg.size==='A5'? small-1 : small-0.5),color:K('#666'),lineHeight:1.55,textAlign:'right'}},
-      this._invMd(set.bizInfo, mdOpts(narrow?8:small-0.5, K(thermal?'#333':'#444'), !thermal))) : null;
+    const bizInfoNode = (showBiz && bizInfoTxt)? h('div',{style: thermal
+        ? {fontSize:px(narrow?7.5:small-0.5),fontWeight:wBizInfo,color:K('#555'),marginTop:px(3),lineHeight:1.5}
+        : {fontSize:px(cfg.size==='A5'? small-1 : small-0.5),fontWeight:wBizInfo,color:K('#666'),lineHeight:1.55,textAlign:'right'}},
+      this._invMd(bizInfoTxt, mdOpts(narrow?8:small-0.5, K(thermal?'#333':'#444'), !thermal))) : null;
     const billNoNode = h('div',{style:{fontFamily: thermal?fam:"'Bricolage Grotesque',sans-serif",fontWeight:700,fontSize:px(h2),color:K('#1a1d24')}}, bill.no);
     const dateNode = h('div',{style:{fontSize:px(small),color:K('#666')}}, this.dateStrFull(bill.ts));
     const byNode = bill.createdBy ? h('div',{style:{fontSize:px(small),color:K('#888'),marginTop:px(1)}}, 'By '+bill.createdBy) : null;
@@ -2766,8 +3164,8 @@ class Component extends DCLogic {
     }
     // customer
     const customer = h('div',{style:{display:'flex',justifyContent:'space-between',gap:'10px',fontSize:px(small),color:K('#444'),marginBottom:px(10),textAlign:thermal?'left':'left'}},
-      h('div',null, h('b',null,bill.name||'Walk-in'), h('br'), bill.phone||''),
-      h('div',{style:{textAlign:'right'}}, h('b',null,bill.car||''), h('br'), bill.model||''));
+      h('div',null, h('span',{style:{fontWeight:wCustName}},bill.name||'Walk-in'), h('br'), h('span',{style:{fontWeight:wPhone}},bill.phone||'')),
+      h('div',{style:{textAlign:'right'}}, h('span',{style:{fontWeight:wCarNo}},bill.car||''), h('br'), h('span',{style:{fontWeight:wCarModel}},bill.model||'')));
     // table builder for a slice of lines
     const showQty=cfg.cols.qty, showPrice=cfg.cols.price, showTotal=cfg.cols.total;
     const grid=['1fr']; if(showQty)grid.push(narrow?'16px':thermal?'22px':'30px'); if(showPrice)grid.push(narrow?'42px':thermal?'52px':'64px'); if(showTotal)grid.push(narrow?'46px':thermal?'56px':'70px');
@@ -2789,25 +3187,25 @@ class Component extends DCLogic {
       return h('div',{style:{display:'grid',gridTemplateColumns:gridCols,fontSize:px(small),fontFamily:tblFam,borderTop:'1px solid '+K('#ccc')}}, rows);
     };
     // totals / comment / terms (appear once, on last page)
-    const totRow=(label,val,strong)=> h('div',{style:{display:'flex',justifyContent:'space-between',padding:px(2)+' 0',color:strong?AC:K('#444'),fontWeight:strong?700:400,fontSize:strong?px(h2):px(small),borderTop:strong?'2px solid '+AC:'none',marginTop:strong?px(4):0}}, h('span',null,label), h('span',null,money(val)));
-    const totalsInner=[ totRow('Subtotal',d.sub), d.disc>0&&totRow('Discount',d.disc), totRow('Total',d.total,true) ];
-    if(cfg.showPayInfo){ totalsInner.push(totRow('Paid',d.paid)); totalsInner.push(h('div',{key:'pend',style:{display:'flex',justifyContent:'space-between',padding:px(2)+' 0',fontWeight:700,fontSize:px(small),color: black?'#000':(d.pending>0?'#b8740a':'#0f7a52')}}, h('span',null,'Pending'), h('span',null,money(d.pending)))); }
+    const totRow=(label,val,strong,w)=> h('div',{style:{display:'flex',justifyContent:'space-between',padding:px(2)+' 0',color:strong?AC:K('#444'),fontWeight:strong?700:(w||400),fontSize:strong?px(h2):px(small),borderTop:strong?'2px solid '+AC:'none',marginTop:strong?px(4):0}}, h('span',null,label), h('span',null,money(val)));
+    const totalsInner=[ totRow('Subtotal',d.sub,false,wSubtotal), d.disc>0&&totRow('Discount',d.disc,false,wDiscount), totRow('Total',d.total,true) ];
+    if(cfg.showPayInfo){ totalsInner.push(totRow('Paid',d.paid,false,wPaid)); totalsInner.push(h('div',{key:'pend',style:{display:'flex',justifyContent:'space-between',padding:px(2)+' 0',fontWeight:wPending,fontSize:px(small),color: black?'#000':(d.pending>0?'#b8740a':'#0f7a52')}}, h('span',null,'Pending'), h('span',null,money(d.pending)))); }
     const totals = h('div',{style:{display:'flex',justifyContent:'flex-end',marginTop:px(10)}}, h('div',{style:{width: thermal?'100%':'58%',fontSize:px(small)}}, totalsInner));
     let commentNode=null;
-    if(cfg.showComments && bill.comment){ commentNode = h('div',{style:{marginTop:px(10),padding:px(7)+' '+px(9),background:black?'#ededed':'#f7f4ef',borderRadius:'4px',fontSize:px(small),color:K('#555')}}, h('b',null,'Note: '), bill.comment); }
+    if(cfg.showComments && bill.comment && bill.comment.trim()){ commentNode = h('div',{style:{marginTop:px(10),padding:px(7)+' '+px(9),background:black?'#ededed':'#f7f4ef',borderRadius:'4px',fontSize:px(small),fontWeight:wNote,color:K('#555'),lineHeight:1.5}, dangerouslySetInnerHTML:{__html:this._noteMd(bill.comment)}}); }
     let termsNode=null;
-    if(cfg.showTerms && set.terms){
+    if(cfg.showTerms && termsTxt){
       // open markdown section — the USER writes its heading (e.g. **Terms & Conditions**) and
       // can add any other headed blocks below; bold / italic / bullets / blank lines supported.
-      termsNode = h('div',{style:{marginTop:px(10),paddingTop:px(7),borderTop:'1px solid '+K('#e2e2e2'),fontSize:px(narrow?7.5:small-0.5),color:K('#888'),lineHeight:1.45}},
-        this._invMd(set.terms, {
+      termsNode = h('div',{style:{marginTop:px(10),paddingTop:px(7),borderTop:'1px solid '+K('#e2e2e2'),fontSize:px(narrow?7.5:small-0.5),fontWeight:wTerms,color:K('#888'),lineHeight:1.45}},
+        this._invMd(termsTxt, {
           headStyle:{fontWeight:700,color:K('#666'),fontSize:px(narrow?8:small),margin:px(4)+' 0 '+px(1)},
           pStyle:{margin:px(1)+' 0'},
           liStyle:{display:'flex',gap:px(4),margin:px(1)+' 0',alignItems:'baseline'},
           gap:px(4)
         }));
     }
-    const footerFor=(pageNo,pageCount)=> h('div',{style:{marginTop:'auto',paddingTop:px(8),borderTop:'1px dashed '+K('#ccc'),display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:px(small),color:K('#888')}},
+    const footerFor=(pageNo,pageCount)=> h('div',{style:{marginTop:'auto',paddingTop:px(8),borderTop:'1px dashed '+K('#ccc'),display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:px(small),fontWeight:wFooter,color:K('#888')}},
       h('span',null, cfg.footer||''), pageCount>1? h('span',null,'Page '+pageNo+' of '+pageCount):null);
 
     // ---- THERMAL: single continuous page ----
@@ -2815,7 +3213,7 @@ class Component extends DCLogic {
       const cont = Object.assign({}, paper, {height:'auto',minHeight:'auto'});
       return h('div',{style:cont, className: opts.printArea?'print-area':'', id: opts.printArea?'print-area':undefined},
         header, customer, buildTable(bill.lines,0), totals, commentNode, termsNode,
-        cfg.footer? h('div',{style:{marginTop:px(12),paddingTop:px(8),borderTop:'1px dashed '+K('#ccc'),textAlign:'center',fontSize:px(small),color:K('#888')}}, cfg.footer):null);
+        cfg.footer? h('div',{style:{marginTop:px(12),paddingTop:px(8),borderTop:'1px dashed '+K('#ccc'),textAlign:'center',fontSize:px(small),fontWeight:wFooter,color:K('#888')}}, cfg.footer):null);
     }
 
     // single thead row and single body row, used only for measuring real heights
@@ -2825,14 +3223,14 @@ class Component extends DCLogic {
     // ---- PAGED: measure real DOM heights, then distribute ----
     const contentH = paperH - 2*pad;          // inner content box height
     const contentW = paperW - 2*pad;
-    const layoutKey = [cfg.size,fs,itemW,headW,cfg.logo,cfg.cols.qty,cfg.cols.price,cfg.cols.total,cfg.showComments,cfg.showTerms,cfg.showPayInfo,cfg.showBizInfo!==false,bill.id,bill.lines.length,(set.businessName||'').length,(set.bizInfo||'').length,(set.terms||'').length,(bill.comment||'').length,cur,opts.printArea?'p':'v'].join('|');
+    const layoutKey = [cfg.size,fs,itemW,headW,logoScale,wBizName,wBizInfo,wHeader,wNote,wTerms,wFooter,cfg.logo,cfg.cols.qty,cfg.cols.price,cfg.cols.total,cfg.showComments,cfg.showTerms,cfg.showPayInfo,cfg.showBizInfo!==false,bill.id,bill.lines.length,(set.businessName||'').length,(bizInfoTxt||'').length,(termsTxt||'').length,(logoDataSrc||'').length,(bill.comment||'').length,cur,opts.printArea?'p':'v'].join('|');
     const mm = (this.state.invMeasure && this.state.invMeasure[layoutKey]) || null;
     // estimate fallback (used only for the first frame before measurement lands)
     const lh=small*1.5*fs, cpad2=(narrow?3:5)*fs;
     const estRowH=lh+2*cpad2+1, estHeaderH=2+12*fs+Math.max(cfg.logo?40:0,2*(h1*1.15*fs)+lh)+12*fs, estCustH=2*lh+10*fs, estFootH=8*fs+1+lh+8;
     const estTot=12*fs+(3+(d.disc>0?1:0)+(cfg.showPayInfo?2:0))*(lh+4*fs);
     const estNote=commentNode?(12*fs+Math.max(1,Math.ceil((bill.comment||'').length/50))*lh+14*fs):0;
-    const estTerms=termsNode?(12*fs+(Math.max(1,Math.ceil((set.terms||'').length/58))+1)*lh+12*fs):0;
+    const estTerms=termsNode?(12*fs+(Math.max(1,Math.ceil((termsTxt||'').length/58))+1)*lh+12*fs):0;
     const HH=mm?mm.headerH:estHeaderH, CH=mm?mm.custH:estCustH, THH=mm?mm.theadH:estRowH, RH=mm?mm.rowH:estRowH, FH=mm?mm.footerH:estFootH;
     const TOT=mm?mm.totalsH:estTot, NOT=commentNode?(mm?mm.noteH:estNote):0, TER=termsNode?(mm?mm.termsH:estTerms):0;
     const repeatHead = cfg.repeatHeader!==false;
@@ -2936,7 +3334,133 @@ class Component extends DCLogic {
   // ---------- print modal ----------
   openPrint(id){ const b=this.state.bills.find(x=>x.id===id); if(!b){ this.toastMsg('Open a saved bill first','warn'); return; } this.setState({ printBill:id, printCfg: JSON.parse(JSON.stringify(this.state.tpl)) }); }
   closePrint(){ this.setState({ printBill:null, printCfg:null }); }
-  setPrintCfg(patch){ this.setState(s=> ({ printCfg:{ ...s.printCfg, ...patch }, tpl:{ ...s.tpl, ...patch } })); }
+  // any manual control change marks the config "Custom" (activePresetId=null) — the user then
+  // saves it as / into a preset on the Template page. setPrintCfg = from the Print dialog (patches
+  // both the live printCfg and the persisted tpl); patchTpl = from the Template page (patches tpl,
+  // and the open printCfg too so both previews stay in sync).
+  setPrintCfg(patch){ this.setState(s=> ({ printCfg:{ ...s.printCfg, ...patch }, tpl:{ ...s.tpl, ...patch }, activePresetId:null })); }
+  patchTpl(patch){ this.setState(s=> ({ tpl:{ ...s.tpl, ...patch }, activePresetId:null, ...(s.printCfg? { printCfg:{ ...s.printCfg, ...patch } } : {}) })); }
+
+  // ---------- print presets (named full print-appearance bundles) ----------
+  _PRESET_KEYS(){ return ['size','color','logo','logoScale','cols','fontScale','itemWeight','headWeight','blackMode','showComments','showTerms','showPayInfo','showBizInfo','repeatHeader','header','footer','bizInfo','terms','logoData','wHeader','wBizName','wBizInfo','wCustName','wPhone','wCarNo','wCarModel','wSubtotal','wDiscount','wPaid','wPending','wNote','wTerms','wFooter']; }
+  // ---- black-mode logo: grayscale bitmap cache (html2canvas can't rasterise CSS filters) ----
+  _bwLogo(dataUrl){
+    if(!dataUrl) return null;
+    this.__bwLogo = this.__bwLogo || {};
+    if(this.__bwLogo[dataUrl]!==undefined) return this.__bwLogo[dataUrl];  // may be null while computing
+    this.__bwLogo[dataUrl]=null;                                           // mark in-flight
+    try{
+      const img=new Image();
+      img.onload=()=>{ try{
+        const cv=document.createElement('canvas'); cv.width=img.naturalWidth||img.width; cv.height=img.naturalHeight||img.height;
+        const ctx=cv.getContext('2d'); ctx.drawImage(img,0,0);
+        const d=ctx.getImageData(0,0,cv.width,cv.height), p=d.data;
+        for(let i=0;i<p.length;i+=4){ const g=0.299*p[i]+0.587*p[i+1]+0.114*p[i+2]; p[i]=p[i+1]=p[i+2]=g; }
+        ctx.putImageData(d,0,0);
+        this.__bwLogo[dataUrl]=cv.toDataURL('image/png');
+        this.forceUpdate();
+      }catch(e){ /* tainted canvas etc. — fall back to filter */ } };
+      img.src=dataUrl;
+    }catch(e){}
+    return null;
+  }
+  _cfgSnapshot(src){ src=src||{}; const o={}; this._PRESET_KEYS().forEach(k=>{ let v=src[k]; if(k==='cols') v=Object.assign({qty:true,price:true,total:true}, v||{}); o[k]= v===undefined? this.state.tpl[k] : v; }); return JSON.parse(JSON.stringify(o)); }
+  _savePresets(list, activeId, summary, action){
+    const nextActive = (activeId===undefined) ? this.state.activePresetId : activeId;
+    this.setState({ printPresets:list, activePresetId:nextActive });
+    if(this.db && this.canAct('settings','manage')) this.runAction('presets-save', ()=> this.db.savePrintPresets({ presets:list, activeId: nextActive||null }), { headerSave:true });
+    if(summary) this.logActivity({ action:action||'settings', entity:'settings', entityId:'print-presets', entityLabel:'Print presets', summary });
+  }
+  applyPrintPreset(id){
+    const p=this.state.printPresets.find(x=>x.id===id); if(!p) return;
+    const cfg=this._cfgSnapshot(p.cfg||{});
+    this.setState(s=>({ tpl:{ ...s.tpl, ...cfg }, activePresetId:id, ...(s.printCfg? { printCfg:{ ...s.printCfg, ...cfg } } : {}) }));
+    if(this.db && this.canAct('settings','manage')) this.runAction('presets-active', ()=> this.db.savePrintPresets({ presets:this.state.printPresets, activeId:id }), { headerSave:true });
+  }
+  startNewPreset(){ this.setState({ presetNaming:true, presetNameDraft:'', presetRename:null }); }
+  cancelNewPreset(){ this.setState({ presetNaming:false, presetNameDraft:'' }); }
+  onPresetNameDraft(v){ this.setState({ presetNameDraft:v }); }
+  commitNewPreset(){
+    const name=(this.state.presetNameDraft||'').trim();
+    if(!name){ this.toastMsg('Preset ka naam likhein','warn'); return; }
+    if(this.state.printPresets.some(p=>p.name.trim().toLowerCase()===name.toLowerCase())){ this.toastMsg('Is naam ka preset pehle se hai','warn'); return; }
+    const id='pp_'+Date.now()+'_'+Math.floor(Math.random()*1e5);
+    const list=[...this.state.printPresets, { id, name, cfg:this._cfgSnapshot(this.state.tpl) }];
+    this._savePresets(list, id, 'Added print preset "'+name+'"', 'create');
+    this.setState({ presetNaming:false, presetNameDraft:'' });
+    this.toastMsg('Preset save ho gaya','ok');
+  }
+  updateActivePreset(){
+    const id=this.state.activePresetId; if(!id) return;
+    const list=this.state.printPresets.map(p=> p.id===id? { ...p, cfg:this._cfgSnapshot(this.state.tpl) } : p);
+    const nm=(list.find(p=>p.id===id)||{}).name||'';
+    this._savePresets(list, id, 'Updated print preset "'+nm+'"', 'update');
+    this.toastMsg('Preset update ho gaya','ok');
+  }
+  startRenamePreset(id){ const p=this.state.printPresets.find(x=>x.id===id); if(!p) return; this.setState({ presetRename:{ id, name:p.name }, presetNaming:false }); }
+  onRenameDraft(v){ this.setState(s=>({ presetRename:{ ...s.presetRename, name:v } })); }
+  cancelRename(){ this.setState({ presetRename:null }); }
+  commitRename(){
+    const r=this.state.presetRename; if(!r) return; const name=(r.name||'').trim();
+    if(!name){ this.toastMsg('Naam khaali nahi ho sakta','warn'); return; }
+    if(this.state.printPresets.some(p=>p.id!==r.id && p.name.trim().toLowerCase()===name.toLowerCase())){ this.toastMsg('Is naam ka preset pehle se hai','warn'); return; }
+    const list=this.state.printPresets.map(p=> p.id===r.id? { ...p, name } : p);
+    this._savePresets(list, undefined, 'Renamed print preset to "'+name+'"', 'update');
+    this.setState({ presetRename:null });
+  }
+  deletePreset(id){
+    const p=this.state.printPresets.find(x=>x.id===id); if(!p) return;
+    this.askConfirm({ title:'Delete preset?', message:'"'+p.name+'" hamesha ke liye hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=>{
+      const list=this.state.printPresets.filter(x=>x.id!==id);
+      const nextActive=this.state.activePresetId===id? null : this.state.activePresetId;
+      this._savePresets(list, nextActive, 'Deleted print preset "'+p.name+'"', 'delete');
+    }});
+  }
+  _readLogo(file, apply){ if(!file) return; const reader=new FileReader(); reader.onload=()=>{ const img=new Image(); img.onload=()=>{ const max=250; let w=img.width,hh=img.height; if(w>max||hh>max){ const r=Math.min(max/w,max/hh); w=Math.round(w*r); hh=Math.round(hh*r); } const cv=document.createElement('canvas'); cv.width=w; cv.height=hh; cv.getContext('2d').drawImage(img,0,0,w,hh); apply({ logoData:cv.toDataURL('image/png') }); this.toastMsg('Logo saved ('+w+'x'+hh+')','ok'); }; img.src=reader.result; }; reader.readAsDataURL(file); }
+  // unified builder for the FULL set of print-appearance controls — used identically by the
+  // Template page (apply=patchTpl) and the Print dialog (apply=setPrintCfg), so both expose the
+  // exact same settings. kp = react-key prefix to keep the two instances distinct.
+  _printCfgControls(cfg, apply, kp){
+    const mkT=(on)=>({ wrap:`width:42px;height:24px;border-radius:14px;border:none;cursor:pointer;position:relative;background:${on?'#1f6feb':'#d8cfc2'};transition:.2s;flex:none`, knob:`position:absolute;top:3px;left:${on?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)` });
+    const thermal = cfg.size==='80mm'||cfg.size==='58mm';
+    const sizeDefs=[['A4','A4'],['A5','A5'],['Letter','Letter'],['80mm','Thermal 80mm'],['58mm','Thermal 58mm']];
+    const sbtn='padding:9px 6px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid';
+    const colorOpts=['#1f6feb','#0f7a52','#5b3df5','#c0392b','#1a1d24','#b8740a'];
+    const colDefs=[['qty','Quantity'],['price','Unit price'],['total','Line total']];
+    const logoData=(cfg.logoData!==undefined&&cfg.logoData!==null)?cfg.logoData:(this.state.settings.logoData||'');
+    return {
+      sizes: sizeDefs.map(([k,label])=>({ key:k, label, rk:kp+'sz'+k+(cfg.size===k?'1':'0'), onClick:()=>apply({size:k}), style: cfg.size===k?`${sbtn} #1f6feb;background:#eef4ff;color:#1f6feb`:`${sbtn} #ece4d7;background:#fff;color:#3f4753` })),
+      sizeNote: thermal? 'Continuous roll — content flows down, no page breaks.' : 'Multi-page: products overflow to new pages; header & footer repeat.',
+      colors: colorOpts.map(c=>({ color:c, rk:kp+'clr'+c+(cfg.color===c?'1':'0'), onClick:()=>apply({color:c}), style:`width:30px;height:30px;border-radius:50%;background:${c};cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 ${cfg.color===c?'2px '+c:'1px #ddd'}` })),
+      logoTg:mkT(!!cfg.logo), onLogo:()=>apply({logo:!cfg.logo}),
+      cols: colDefs.map(([k,label])=>{ const on=cfg.cols[k]; const t=mkT(on); return { key:k, label, rk:kp+'col'+k+(on?'1':'0'), onClick:()=>apply({cols:{...cfg.cols,[k]:!cfg.cols[k]}}), wrap:t.wrap, knob:t.knob, check:`width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;border:1.5px solid ${on?'#1f6feb':'#d8cfc2'};background:${on?'#1f6feb':'#fff'};color:#fff`, tick:on?this.ic('check',13):'' }; }),
+      fontVal:String(cfg.fontScale||1), fontPct:Math.round((cfg.fontScale||1)*100)+'%', onFont:ev=>apply({fontScale:Number(ev.target.value)}), fontDef:'default 100%',
+      itemWVal:String(cfg.itemWeight||400), onItemW:ev=>apply({itemWeight:Number(ev.target.value)}), itemWDef:'default 400',
+      headWVal:String(cfg.headWeight||700), onHeadW:ev=>apply({headWeight:Number(ev.target.value)}), headWDef:'default 700',
+      logoSizeVal:String(cfg.logoScale||1), logoSizePct:Math.round((cfg.logoScale||1)*100)+'%', onLogoSize:ev=>apply({logoScale:Number(ev.target.value)}), logoSizeDef:'default 100%',
+      // per-element text weights — each shows its default; slider blank/unset => that default applies
+      weights: [
+        ['wHeader','Header text',400],['wBizName','Business name',800],['wBizInfo','Business info',400],
+        ['wCustName','Customer name',700],['wPhone','Phone number',400],['wCarNo','Car number',700],['wCarModel','Car model',400],
+        ['wSubtotal','Subtotal',400],['wDiscount','Discount',400],['wPaid','Paid',400],['wPending','Pending',700],
+        ['wNote','Note',400],['wTerms','Terms & conditions',400],['wFooter','Footer text',400]
+      ].map(([key,label,def])=>{ const v=Number(cfg[key])||def; return { key, label, def, rk:kp+key, val:String(v), cur:v, isDefault:v===def, defLabel:'default '+def, onInput:ev=>apply({[key]:Number(ev.target.value)}), onReset:()=>apply({[key]:def}) }; }),
+      comments:mkT(!!cfg.showComments), onComments:()=>apply({showComments:!cfg.showComments}),
+      bizInfoTg:mkT(cfg.showBizInfo!==false), onBizInfoTg:()=>apply({showBizInfo:!(cfg.showBizInfo!==false)}),
+      termsTg:mkT(!!cfg.showTerms), onTermsTg:()=>apply({showTerms:!cfg.showTerms}),
+      pay:mkT(!!cfg.showPayInfo), onPay:()=>apply({showPayInfo:!cfg.showPayInfo}),
+      blackM:mkT(!!cfg.blackMode), onBlack:()=>apply({blackMode:!cfg.blackMode}),
+      repeatHeader:mkT(cfg.repeatHeader!==false), onRepeatHeader:()=>apply({repeatHeader:!(cfg.repeatHeader!==false)}),
+      repeatHeaderHint:(cfg.repeatHeader!==false)?'Header & customer details repeat on pages 2, 3…':'Only the first page shows the header; later pages start with items.',
+      header:cfg.header||'', onHeader:ev=>apply({header:ev.target.value}),
+      footer:cfg.footer||'', onFooter:ev=>apply({footer:ev.target.value}),
+      bizInfoText:(cfg.bizInfo!==undefined&&cfg.bizInfo!==null)?cfg.bizInfo:(this.state.settings.bizInfo||''), onBizInfoText:ev=>apply({bizInfo:ev.target.value}),
+      termsText:(cfg.terms!==undefined&&cfg.terms!==null)?cfg.terms:(this.state.settings.terms||''), onTermsText:ev=>apply({terms:ev.target.value}),
+      logoData, hasLogo:!!logoData, onLogoFile:ev=>this._readLogo(ev.target.files&&ev.target.files[0], apply), onRemoveLogo:()=>apply({logoData:''}),
+      logoPreviewEl: logoData? React.createElement('img',{src:logoData,alt:'logo',style:{width:'100%',height:'100%',objectFit:'contain'}}) : React.createElement('span',{style:{color:'#c3b9a8'}}, this.ic('box',18)),
+      thermal,
+    };
+  }
   // Meaningful, filesystem-safe PDF file name: bill no + customer name + car number + date.
   // Chrome/Edge/Safari all suggest document.title (sanitized) as the Save-as-PDF file name,
   // so we swap the tab title just before printing and restore it right after.
@@ -3876,6 +4400,13 @@ class Component extends DCLogic {
         onPhoneCommit:()=>this.commitPhone(), onPhoneKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitPhone(); } },
         onCarCommit:()=>this.commitCar(), onCarKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitCar(); } },
         onComment:ev=>this.setEd({comment:ev.target.value}), onNote:ev=>this.setEd({note:ev.target.value}),
+        tplMenuComment: S.noteTplMenu==='comment', tplMenuNote: S.noteTplMenu==='note',
+        toggleTplComment:()=>this.toggleTplMenu('comment'), toggleTplNote:()=>this.toggleTplMenu('note'),
+        closeTplMenu:()=>this.closeTplMenu(),
+        openMgrComment:()=>this.openTplMgr('comment'), openMgrNote:()=>this.openTplMgr('note'),
+        tplsComment:(S.msgTpls.comment||[]).map(t=>({ rk:t.id, name:t.name, onPick:()=>this.insertTpl('comment', t.id) })),
+        tplsNote:(S.msgTpls.note||[]).map(t=>({ rk:t.id, name:t.name, onPick:()=>this.insertTpl('note', t.id) })),
+        tplsCommentEmpty: !(S.msgTpls.comment||[]).length, tplsNoteEmpty: !(S.msgTpls.note||[]).length,
         onDiscount:ev=>this.amtInput(ev, v=>this.onDiscount(v)), onTotal:ev=>this.amtInput(ev, v=>this.onTotal(v)), onPaid:ev=>this.amtInput(ev, v=>this.onPaid(v)),
         openHistory:()=>this.openHistory() };
     }
@@ -3928,6 +4459,8 @@ class Component extends DCLogic {
           pendingLabel:d.pending>0?'Pending':'Fully paid',
           comment:vb.comment||'', hasComment:!!(vb.comment&&vb.comment.trim()),
           note:vb.note||'', hasNote:!!(vb.note&&vb.note.trim()),
+          commentEl:this._noteMdEl(vb.comment, {fontSize:'13px', color:'#3f4753', fontWeight:500, lineHeight:1.5}),
+          noteEl:this._noteMdEl(vb.note, {fontSize:'13px', color:'#7a6a52', fontWeight:500, lineHeight:1.5}),
           posLabel:'Bill '+(idx+1)+' of '+n, posShort:(idx+1)+' / '+n, animKey:'v_'+vb.id+'_'+(S.viewAnim||'x'),
           navHint: S.isMobile?'Neeche diye arrows ya Prev / Next buttons se doosra bill dekhein.':'Tip: use \u2190 \u2192 arrow keys to move between bills',
           onPrev:()=>this.viewGo(-1), onNext:()=>this.viewGo(1), onBack:()=>this.viewBack(),
@@ -4046,32 +4579,37 @@ class Component extends DCLogic {
 
     const report={ viewBtns:repViewBtns, view:repView, periodLabel:repPeriodLabel, bars:repBars, totAmount:this.money(repTotAmt), totPending:this.money(repTotPen), totCount: S.privacy?'**':String(repTotCnt), canNav:repView!=='total', onPrev:()=>this.repNav(-1), onNext:()=>this.repNav(1), onRepair:()=>this.repairReports(), repairLabel:(this.isBusy('repair-reports')?'Recalculating...':'Recalculate'), hint:(repView==='day'?'Har bar = ek ghanta. Bar par click se detail.':(repView==='total'?'Har bar = ek saal. Double-click ya "Open" se us saal ke months.':'Bar par click = detail, double-click ya "Open" se androni view.')), sel:repSel, loading:repLoading, showChart:(!repLoading && repB.buckets.length>0), empty:(!repLoading && repTotCnt===0) };
 
-    // templates
+    // ---------- templates page: preset manager + full print-config controls ----------
     const tpl=S.tpl;
-    const sizeDefs=[['A4','A4'],['A5','A5'],['Letter','Letter'],['80mm','Thermal 80mm'],['58mm','Thermal 58mm']];
-    const tbase='padding:9px 6px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid';
-    const tplSizes=sizeDefs.map(([k,label])=>({ key:k, label, rk:k+(tpl.size===k?'-on':'-off'), onClick:()=>this.setState({tpl:{...tpl,size:k}}), style: tpl.size===k?`${tbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${tbase} #ece4d7;background:#fff;color:#3f4753` }));
-    const thermal = tpl.size==='80mm'||tpl.size==='58mm';
-    const tplSizeNote = thermal? 'Continuous roll - content flows down, no page breaks.' : 'Multi-page: products overflow to new pages, header & footer repeat.';
-    const colorOpts=['#1f6feb','#0f7a52','#5b3df5','#c0392b','#1a1d24'];
-    const tplColors=colorOpts.map(c=>({ color:c, rk:c+(tpl.color===c?'-on':'-off'), onClick:()=>this.setState({tpl:{...tpl,color:c}}), style:`width:30px;height:30px;border-radius:50%;background:${c};cursor:pointer;border:${tpl.color===c?'3px solid #fff':'2px solid #fff'};box-shadow:0 0 0 ${tpl.color===c?'2px '+c:'1px #ddd'}` }));
-    const colDefs=[['qty','Quantity'],['price','Unit price'],['total','Line total']];
-    const tplCols=colDefs.map(([k,label])=>{
-      const on=tpl.cols[k];
-      return { key:k, label, rk:k+(on?'-on':'-off'), onClick:()=>this.setState({tpl:{...tpl,cols:{...tpl.cols,[k]:!tpl.cols[k]}}}),
-        check:`width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;border:1.5px solid ${on?'#1f6feb':'#d8cfc2'};background:${on?'#1f6feb':'#fff'};color:#fff`,
-        tick: on? this.ic('check',13):'' };
-    });
-    const tplControlsW = S.isMobile? '100%' : '290px';
+    const tplCtl = this._printCfgControls(tpl, p=>this.patchTpl(p), 'tp');
+    tplCtl.weightsOpen = !!S.tplWeightsOpen;
+    tplCtl.toggleWeights = ()=>this.setState(s=>({tplWeightsOpen:!s.tplWeightsOpen}));
+    tplCtl.weightsChevStyle = 'display:flex;color:#8a8175;transition:transform .2s;transform:rotate('+(S.tplWeightsOpen?180:0)+'deg)';
+    const tplControlsW = S.isMobile? '100%' : '330px';
     const templatesWrapStyle = S.isMobile? 'display:flex;flex-direction:column;gap:14px' : 'display:flex;gap:16px';
-    const logoToggleStyle=`width:42px;height:24px;border-radius:14px;border:none;cursor:pointer;position:relative;background:${tpl.logo?'#1f6feb':'#d8cfc2'};transition:.2s`;
-    const logoKnobStyle=`position:absolute;top:3px;left:${tpl.logo?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)`;
     // shared live preview (sample bill)
     const pv = this.makeInvoiceView(this._sampleBill(), tpl, {shadow:true});
-    const fontPct = Math.round((tpl.fontScale||1)*100)+'%';
-    const mkToggle=(on)=>({ wrap:`width:42px;height:24px;border-radius:14px;border:none;cursor:pointer;position:relative;background:${on?'#1f6feb':'#d8cfc2'};transition:.2s;flex:none`, knob:`position:absolute;top:3px;left:${on?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)` });
-    const tgComments=mkToggle(tpl.showComments), tgTerms=mkToggle(tpl.showTerms), tgPay=mkToggle(tpl.showPayInfo), tgRepeat=mkToggle(tpl.repeatHeader!==false), tgBizInfo=mkToggle(tpl.showBizInfo!==false);
     const recentIdForPrint = sorted.length? sorted[0].id : null;
+    // preset manager
+    const _activePreset = S.printPresets.find(p=>p.id===S.activePresetId) || null;
+    const _prBtn='padding:6px 10px;border-radius:9px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid';
+    const presetMgr = {
+      empty: !S.printPresets.length,
+      isCustom: !S.activePresetId,
+      activeName: _activePreset? _activePreset.name : 'Custom — unsaved',
+      canUpdate: !!S.activePresetId,
+      onUpdate:()=>this.updateActivePreset(),
+      naming:S.presetNaming, nameDraft:S.presetNameDraft,
+      onNew:()=>this.startNewPreset(), onNameDraft:ev=>this.onPresetNameDraft(ev.target.value), onCommitNew:()=>this.commitNewPreset(), onCancelNew:()=>this.cancelNewPreset(),
+      items: S.printPresets.map(p=>{ const on=p.id===S.activePresetId; const renaming=!!(S.presetRename&&S.presetRename.id===p.id);
+        return { id:p.id, name:p.name, rk:'pr'+p.id+(on?'-on':'-off')+(renaming?'-r':''), active:on, renaming, notRenaming:!renaming,
+          renameDraft: renaming? S.presetRename.name : '',
+          onApply:()=>this.applyPrintPreset(p.id), onRename:(ev)=>{ if(ev&&ev.stopPropagation)ev.stopPropagation(); this.startRenamePreset(p.id); }, onDelete:(ev)=>{ if(ev&&ev.stopPropagation)ev.stopPropagation(); this.deletePreset(p.id); },
+          onRenameDraft:ev=>this.onRenameDraft(ev.target.value), onCommitRename:()=>this.commitRename(), onCancelRename:()=>this.cancelRename(),
+          rowStyle:`display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:11px;margin-bottom:6px;border:1.5px solid ${on?'#1f6feb':'#ece4d7'};background:${on?'#eef4ff':'#fff'}`,
+          nameStyle:`flex:1;min-width:0;font-size:13px;font-weight:${on?700:600};color:#1a1d24;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis`,
+          iconBtn:`width:28px;height:28px;flex:none;border-radius:8px;border:1px solid #ece4d7;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#8a8175` }; }),
+    };
 
     // admin
     const roleColors={Admin:'#5b3df5',Manager:'#1f6feb',Cashier:'#0f7a52',Viewer:'#8a8175',Custom:'#b8740a'};
@@ -4242,32 +4780,30 @@ class Component extends DCLogic {
     }
 
     // print modal
-    let printView=null, printPv=null, printControls=null;
+    let printView=null, printPv=null, printControls=null, printPresetSel=null;
     if(S.printBill && S.printCfg){
       const pb=this._bill(S.printBill);
       if(pb){
         const cfg=S.printCfg;
         printPv=this.makeInvoiceView(pb, cfg, {printArea:true, shadow:true});
         printView={ no:pb.no, name:pb.name };
-        const sizeDefs2=[['A4','A4'],['A5','A5'],['Letter','Letter'],['80mm','80mm'],['58mm','58mm']];
-        const pcBtn='padding:8px 4px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid';
-        const mkPT=(on)=>({ wrap:`width:40px;height:23px;border-radius:13px;border:none;cursor:pointer;position:relative;background:${on?'#1f6feb':'#d8cfc2'};transition:.2s;flex:none`, knob:`position:absolute;top:3px;left:${on?'20px':'3px'};width:17px;height:17px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)` });
-        const colDefs2=[['qty','Quantity'],['price','Unit price'],['total','Line total']];
-        printControls={
-          sizes: sizeDefs2.map(([k,label])=>({ key:k, rk:'pz'+k+(cfg.size===k?'1':'0'), label, onClick:()=>this.setPrintCfg({size:k}), style: cfg.size===k?`${pcBtn} #1f6feb;background:#eef4ff;color:#1f6feb`:`${pcBtn} #ece4d7;background:#fff;color:#3f4753` })),
-          fontVal:String(cfg.fontScale||1), fontPct:Math.round((cfg.fontScale||1)*100)+'%', onFont:ev=>this.setPrintCfg({fontScale:Number(ev.target.value)}),
-          cols: colDefs2.map(([k,label])=>{ const on=cfg.cols[k]; const t=mkPT(on); return { key:k, rk:'pc'+k+(on?'1':'0'), label, onClick:()=>this.setPrintCfg({cols:{...cfg.cols,[k]:!cfg.cols[k]}}), wrap:t.wrap, knob:t.knob }; }),
-          logo:mkPT(cfg.logo), onLogo:()=>this.setPrintCfg({logo:!cfg.logo}),
-          comments:mkPT(cfg.showComments), onComments:()=>this.setPrintCfg({showComments:!cfg.showComments}),
-          bizInfo:mkPT(cfg.showBizInfo!==false), onBizInfo:()=>this.setPrintCfg({showBizInfo:!(cfg.showBizInfo!==false)}),
-          terms:mkPT(cfg.showTerms), onTerms:()=>this.setPrintCfg({showTerms:!cfg.showTerms}),
-          pay:mkPT(cfg.showPayInfo), onPay:()=>this.setPrintCfg({showPayInfo:!cfg.showPayInfo}),
-          blackM:mkPT(!!cfg.blackMode), onBlack:()=>this.setPrintCfg({blackMode:!cfg.blackMode}),
-          itemWVal:String(cfg.itemWeight||400), onItemW:ev=>this.setPrintCfg({itemWeight:Number(ev.target.value)}),
-          headWVal:String(cfg.headWeight||700), onHeadW:ev=>this.setPrintCfg({headWeight:Number(ev.target.value)}),
-          moreOpen:!!S.printMore, toggleMore:()=>this.setState(s=>({printMore:!s.printMore})),
-          moreChevStyle:'display:flex;color:#8a8175;transition:transform .2s;transform:rotate('+(S.printMore?180:0)+'deg)',
-          repeatHeader:mkPT(cfg.repeatHeader!==false), onRepeatHeader:()=>this.setPrintCfg({repeatHeader:!(cfg.repeatHeader!==false)}), repeatHeaderHint:(cfg.repeatHeader!==false)?'Header & customer details repeat on pages 2, 3...':'Only the first page shows the header; later pages start with the items.',
+        // full control set — SAME builder as the Template page, so every setting matches
+        printControls = this._printCfgControls(cfg, p=>this.setPrintCfg(p), 'pv');
+        printControls.moreOpen = !!S.printMore;
+        printControls.toggleMore = ()=>this.setState(s=>({printMore:!s.printMore}));
+        printControls.moreChevStyle = 'display:flex;color:#8a8175;transition:transform .2s;transform:rotate('+(S.printMore?180:0)+'deg)';
+        printControls.weightsOpen = !!S.printWeightsOpen;
+        printControls.toggleWeights = ()=>this.setState(s=>({printWeightsOpen:!s.printWeightsOpen}));
+        printControls.weightsChevStyle = 'display:flex;color:#8a8175;transition:transform .2s;transform:rotate('+(S.printWeightsOpen?180:0)+'deg)';
+        // preset picker (apply only; CRUD lives on the Template page)
+        const _ap = S.printPresets.find(p=>p.id===S.activePresetId) || null;
+        printPresetSel = {
+          empty: !S.printPresets.length,
+          isCustom: !S.activePresetId,
+          label: _ap ? _ap.name : 'Custom',
+          value: S.activePresetId || '__custom',
+          onChange: ev=>{ const v=ev.target.value; if(v && v!=='__custom') this.applyPrintPreset(v); },
+          options: S.printPresets.map(p=>({ id:p.id, name:p.name, rk:'pps'+p.id, selected:p.id===S.activePresetId })),
         };
       }
     }
@@ -4332,7 +4868,7 @@ class Component extends DCLogic {
       showMenuBtn, viewAnimStyle, routeKey, showMobileBack:(S.isMobile && isView), showDesktopClose:(!S.isMobile && isView),
       showSecondaryBack:(S.isMobile && ROUTE==='bills' && S.billsSecondary), showDesktopCloseSecondary:(!S.isMobile && ROUTE==='bills' && S.billsSecondary), onCloseSecondary:()=>this.closeSecondaryBills(),
       footerOpen:S.footerOpen, toggleFooter:()=>this.setState(s=>({footerOpen:!s.footerOpen})),
-      icons:{ sort:this.ic('sort',16), checkSm:this.ic('check',14), blockBig:this.ic('x',30), menu:this.ic('menu',20), clock:this.ic('clock',16), plus:this.ic('plus',17), privacy:this.ic(S.privacy?'eyeOff':'eye',18), privacySm:this.ic(S.privacy?'eyeOff':'eye',13), search:this.ic('search',18), x:this.ic('x',18), history:this.ic('history',16), check:this.ic('check',16), carSm:this.ic('car',13), chevron:this.ic('chevron',16), trashSm:this.ic('trash',15), plusSm:this.ic('plus',15), xSm:this.ic('x',12), boxSm:this.ic('box',16), printerSm:this.ic('printer',15), infoSm:this.ic('info',14), phone:this.ic('phone',16), reactIcon:this.ic('gear',20), dbIcon:this.ic('box',20), calendar:this.ic('calendar',16), lock:this.ic('lock',13), back:this.ic('back',18), chevL:this.ic('chevL',20), chevR:this.ic('chevron',20), edit:this.ic('edit',16), cashSm:this.ic('cash',16), dots:this.ic('dots',18), filter:this.ic('filter',16), activity:this.ic('activity',16), archive:this.ic('archive',16), restore:this.ic('restore',15), logout:this.ic('back',16) },
+      icons:{ tplList:this.ic('menu',15), gearSm:this.ic('gear',15), plusSm:this.ic('plus',15), closeX:this.ic('x',18), miniTrash:this.ic('trash',15), miniEdit:this.ic('edit',14), sort:this.ic('sort',16), checkSm:this.ic('check',14), blockBig:this.ic('x',30), menu:this.ic('menu',20), clock:this.ic('clock',16), plus:this.ic('plus',17), privacy:this.ic(S.privacy?'eyeOff':'eye',18), privacySm:this.ic(S.privacy?'eyeOff':'eye',13), search:this.ic('search',18), x:this.ic('x',18), history:this.ic('history',16), check:this.ic('check',16), carSm:this.ic('car',13), chevron:this.ic('chevron',16), trashSm:this.ic('trash',15), plusSm:this.ic('plus',15), xSm:this.ic('x',12), boxSm:this.ic('box',16), printerSm:this.ic('printer',15), infoSm:this.ic('info',14), phone:this.ic('phone',16), reactIcon:this.ic('gear',20), dbIcon:this.ic('box',20), calendar:this.ic('calendar',16), lock:this.ic('lock',13), back:this.ic('back',18), chevL:this.ic('chevL',20), chevR:this.ic('chevron',20), edit:this.ic('edit',16), cashSm:this.ic('cash',16), dots:this.ic('dots',18), filter:this.ic('filter',16), activity:this.ic('activity',16), archive:this.ic('archive',16), restore:this.ic('restore',15), logout:this.ic('back',16) },
       appVersion:'1.0.0',
       togglePrivacy:()=>this.togglePrivacy(), openDrawer:()=>this.go('menu'), closeDrawer:()=>this.setState({navOpen:false}),
       onNewBill:()=>this.go('new'), goBills:()=>this.go('bills'), stop:(e)=>e.stopPropagation(),
@@ -4369,17 +4905,16 @@ class Component extends DCLogic {
       // reports
       report, recalc, recalcOpen, reportLoading:repLoading,
       // templates
-      tpl, tplSizes, tplSizeNote, tplColors, tplCols, tplControlsW, templatesWrapStyle, logoToggleStyle, logoKnobStyle, pv, fontPct, businessName:S.settings.businessName, appName:S.appMeta.appName, appSubtitle:S.appMeta.subtitle,
+      tpl, tplCtl, presetMgr, tplControlsW, templatesWrapStyle, pv, businessName:S.settings.businessName, appName:S.appMeta.appName, appSubtitle:S.appMeta.subtitle,
       aboutTagline:((S.appMeta.about&&S.appMeta.about.tagline))||'Crafted for car workshops - fast billing, clear payments, beautiful prints.',
       aboutDevName:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.name))||'Hamza Javed',
       aboutDevRole:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.role))||'App developer and designer',
       aboutDevInitials:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.initials))||'HJ',
       aboutDevPhone:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.phoneDisplay))||'0307-2924105',
       aboutDevPhoneHref:((S.appMeta.about&&S.appMeta.about.developer&&S.appMeta.about.developer.phoneHref))||'tel:03072924105',
-      tgCommentsWrap:tgComments.wrap, tgCommentsKnob:tgComments.knob, tgBizInfoWrap:tgBizInfo.wrap, tgBizInfoKnob:tgBizInfo.knob, tgTermsWrap:tgTerms.wrap, tgTermsKnob:tgTerms.knob, tgPayWrap:tgPay.wrap, tgPayKnob:tgPay.knob, tgRepeatWrap:tgRepeat.wrap, tgRepeatKnob:tgRepeat.knob,
-      toggleComments:()=>this.setState({tpl:{...tpl,showComments:!tpl.showComments}}), toggleBizInfo:()=>this.setState({tpl:{...tpl,showBizInfo:!(tpl.showBizInfo!==false)}}), toggleTerms:()=>this.setState({tpl:{...tpl,showTerms:!tpl.showTerms}}), togglePayInfo:()=>this.setState({tpl:{...tpl,showPayInfo:!tpl.showPayInfo}}), toggleRepeatHeader:()=>this.setState(s=>({tpl:{...s.tpl,repeatHeader:!(s.tpl.repeatHeader!==false)}})),
-      onFontScale:ev=>this.setState({tpl:{...tpl,fontScale:Number(ev.target.value)}}), fontScaleVal:String(tpl.fontScale||1),
-      toggleLogo:()=>this.setState({tpl:{...tpl,logo:!tpl.logo}}), onTplHeader:ev=>this.setState({tpl:{...tpl,header:ev.target.value}}), onTplFooter:ev=>this.setState({tpl:{...tpl,footer:ev.target.value}}), onPrint:()=> recentIdForPrint? this.openPrint(recentIdForPrint) : this.toastMsg('No saved bills to print yet','warn'),
+      printPresetSel,
+      onPrint:(()=> recentIdForPrint? ()=>this.openPrint(recentIdForPrint) : ()=>this.toastMsg('No saved bills to print yet','warn'))(),
+      // admin
       // admin
       usersView, selUser, hasSelUser, canManageUsers:iCanManage, usersListLoading:(S.usersLoading && !S.usersLoaded), rolePresets, permCats, permsLockStyle, adminWrapStyle, adminListW,
       addUser:()=>this.openAddUser(), editUser:()=>this.openEditUser(selUserObj&&selUserObj.id), resetPwd:()=>this.openPwModal(selUserObj&&selUserObj.id), toggleDisable:()=>this.toggleDisable(selUserObj&&selUserObj.id), deleteUser:()=>this.confirmDeleteUser(selUserObj&&selUserObj.id),
@@ -4404,6 +4939,20 @@ class Component extends DCLogic {
       binView, binCount, binEmpty, emptyBin:()=>this.emptyBin(), binHasMore, binRemaining, loadMoreBin:()=>this.loadMoreBin(), binListLoading,
       changesView, closeChanges:()=>this.closeChanges(),
       confirmView:S.confirm, closeConfirm:()=>this.closeConfirm(), runConfirm:()=>this.runConfirm(), confirmBtnStyle:(S.confirm&&S.confirm.danger)?'flex:1;padding:11px;background:#c0392b;border:none;border-radius:11px;font-size:13.5px;font-weight:700;color:#fff;cursor:pointer':'flex:1;padding:11px;background:#1f6feb;border:none;border-radius:11px;font-size:13.5px;font-weight:700;color:#fff;cursor:pointer', selStyle:'padding:9px 12px;background:#faf7f1;border:1.5px solid #ece4d7;border-radius:10px;font-size:13px;font-weight:600;color:#1a1d24;cursor:pointer',
+      tplMgrView: S.tplMgr ? (()=>{ const k=S.tplMgr.kind; const list=(S.msgTpls[k]||[]); const hasPrev=!!(S.tplMgr.md && S.tplMgr.md.trim());
+        return {
+          kind:k,
+          title: k==='comment' ? 'Printed note templates' : 'Internal note templates',
+          subtitle: k==='comment' ? 'Bill par print hone wale Comment me insert hote hain.' : 'Sirf staff ke Internal note me insert hote hain — kabhi print nahi hote.',
+          name:S.tplMgr.name||'', md:S.tplMgr.md||'',
+          saveLabel: S.tplMgr.editId ? 'Update template' : 'Save template',
+          hasPreview:hasPrev, noPreview:!hasPrev,
+          previewEl: hasPrev ? this._noteMdEl(S.tplMgr.md, {fontSize:'13px', color:'#3f4753', fontWeight:500, lineHeight:1.5}) : null,
+          empty: !list.length,
+          items: list.map(t=>{ const on=t.id===S.tplMgr.editId; return { rk:t.id, name:t.name, snippet:(t.md||'').replace(/\s+/g,' ').trim().slice(0,64) || '(khaali)', onPick:()=>this.tplMgrPick(t.id), onDelete:(ev)=>{ if(ev&&ev.stopPropagation) ev.stopPropagation(); this.tplMgrDelete(t.id); }, rowStyle:'display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:9px 10px; border-radius:10px; margin-bottom:6px; cursor:pointer; border:1.5px solid '+(on?'#1f6feb':'#ece4d7')+'; background:'+(on?'#eef4ff':'#fff') }; }),
+          onName:ev=>this.tplMgrSetName(ev.target.value), onMd:ev=>this.tplMgrSetMd(ev.target.value),
+          onSave:()=>this.tplMgrSave(), onNew:()=>this.tplMgrNew(), onClose:()=>this.closeTplMgr(),
+        }; })() : null,
       myPwModal:S.myPwModal, myPwDraft:S.myPwDraft||{cur:'',nw:'',nw2:''}, openMyPw:()=>this.openMyPw(), closeMyPw:()=>this.closeMyPw(), submitMyPw:()=>this.submitMyPw(),
       onMyPwCur:ev=>this.setMyPwDraft({cur:ev.target.value}), onMyPwNw:ev=>this.setMyPwDraft({nw:ev.target.value}), onMyPwNw2:ev=>this.setMyPwDraft({nw2:ev.target.value}),
       // print modal

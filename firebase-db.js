@@ -511,6 +511,19 @@ function makeDB(A) {
     /* ---------- settings ---------- */
     async getSettings() { return (await A.get("app/settings")) || null; },
     async saveSettings(s) { await A.set("app/settings", s); },
+    /* ---------- note templates (printed Comment + Internal note) ----------
+       Kept in their OWN doc (app/noteTemplates), NOT app/settings, so anyone
+       who can create a bill may add/edit/delete them without the settings
+       permission. Shape: { comment:[{id,name,md}], note:[{id,name,md}] }. */
+    async getNoteTemplates() { return (await A.get("app/noteTemplates")) || null; },
+    async saveNoteTemplates(d) { await A.set("app/noteTemplates", d); },
+    /* ---------- print presets (named full print-appearance bundles) ----------
+       Own doc (app/printPresets), shop-wide + synced. Read by any known user (so the
+       print dialog can list & apply them); writes gated to the settings permission by
+       the existing app/{doc} rule (preset CRUD lives on the settings-gated Template page).
+       Shape: { presets:[{id,name,cfg}], activeId }. */
+    async getPrintPresets() { return (await A.get("app/printPresets")) || null; },
+    async savePrintPresets(d) { await A.set("app/printPresets", d); },
     async getAccessStatus() { return A.getAccessStatus(); },
 
     /* ---------- counter (atomic bill number) ---------- */
