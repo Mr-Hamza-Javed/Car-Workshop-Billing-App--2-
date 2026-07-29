@@ -711,9 +711,25 @@ function makeDB(A) {
     },
 
     /* ---------- products ---------- */
-    // Autocomplete pool: only the top `limit` products by usage (most-used first) so we never
-    // pull the whole catalogue. Single-field orderBy — needs no composite index.
-    async listProducts(limit) { const res = await A.query("products", { orderBy: ["count", "desc"], limit: limit || 200 }); return res.rows.map((r) => ({ name: r.name, count: r.count || 0, createdAtMs: r.createdAtMs || 0 })); },
+    // Autocomplete pool: at most `limit` products, ordered most-used first (count desc) and then
+    // newest-first among equal counts — so a big block of once-used products surfaces the newest
+    // ones. A compound orderBy (count desc, createdAtMs desc) would need a composite index, so we
+    // instead run two index-free single-field queries and merge client-side:
+    //   A = products used more than once (few), ordered by count then newest
+    //   B = newest products overall — fills the rest after A, up to `limit`.
+    async listProducts(limit) {
+      limit = limit || 200;
+      const [aRes, bRes] = await Promise.all([
+        A.query("products", { where: [["count", ">", 1]], orderBy: ["count", "desc"], limit }),
+        A.query("products", { orderBy: ["createdAtMs", "desc"], limit }),
+      ]);
+      const aSorted = aRes.rows.slice().sort((x, y) => (y.count || 0) - (x.count || 0) || (y.createdAtMs || 0) - (x.createdAtMs || 0));
+      const seen = {}, out = [];
+      const push = (r) => { if (!seen[r.id] && out.length < limit) { seen[r.id] = 1; out.push({ name: r.name, count: r.count || 0, createdAtMs: r.createdAtMs || 0 }); } };
+      aSorted.forEach(push);
+      bRes.rows.forEach(push);
+      return out;
+    },
     // Products page: newest-first, cursor-paginated (infinite scroll). createdAtMs desc — single
     // field, needs no composite index; cursor is the last row's createdAtMs (like loadBillsPage).
     async loadProductsPage({ batch, startAfter }) {
