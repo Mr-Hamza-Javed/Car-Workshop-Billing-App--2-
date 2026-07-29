@@ -2887,7 +2887,7 @@ class Component extends DCLogic {
   }
   // Reports & the dashboard read cheap aggregate docs. After ANY bill/payment mutation, refresh
   // whichever the user is looking at so the numbers are always the latest — never a stale snapshot.
-  _refreshDerived(){ this._loadDash(); if(this.state.route==='reports') this._loadReport(); }
+  _refreshDerived(){ if(this.state.route==='dashboard') this._loadDash(); if(this.state.route==='reports') this._loadReport(); }
   async _loadReport(){
     this.setState({ reportLoading:true });
     const r=this.state.report; const view=r.view; const a=new Date(r.anchor);
