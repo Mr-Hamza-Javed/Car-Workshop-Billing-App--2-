@@ -1364,6 +1364,12 @@
             </div>
             <input type="range" min="20" max="100" step="5" value="{{ listBatchVal }}" onChange="{{ onListBatch }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
             <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:7px; line-height:1.4">Har baar itne bills/records load honge (20–100). Kam value = Firestore reads kam.</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; margin-top:16px; padding-top:14px; border-top:1px solid #f4efe7">
+              <span style="font-size:13px; font-weight:600; color:#3f4753">Products in dropdown</span>
+              <span class="tnum" style="font-size:13px; font-weight:700; color:#1f6feb">{{ productPoolVal }}</span>
+            </div>
+            <input type="range" min="50" max="500" step="50" value="{{ productPoolVal }}" onChange="{{ onProductPool }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+            <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:7px; line-height:1.4">Bill me product dropdown ke liye itne products load honge — most-used + newest (50–500). Kam value = tez load.</div>
             <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-top:16px; padding-top:14px; border-top:1px solid #f4efe7">
               <span style="min-width:0"><span style="display:block; font-size:13px; font-weight:600; color:#3f4753">Auto-load on scroll</span><span style="display:block; font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:2px">Off = end par “Load more” button dabana hoga</span></span>
               <button onClick="{{ toggleAutoLoad }}" style="{{ autoToggleWrap }}"><span style="{{ autoToggleKnob }}"></span></button>
@@ -2291,7 +2297,7 @@ class Component extends DCLogic {
     busy:{},            // {key:true} -> per-action in-flight guard (disables buttons, anti double-submit)
     headerSaving:0,     // >0 -> small header spinner (silent background saves)
     // ---- settings / counter ----
-    settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', bizInfo:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owners risk.', listBatch:25, autoLoad:true, animSpeed:1 },
+    settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', bizInfo:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owners risk.', listBatch:25, autoLoad:true, animSpeed:1, productPool:100 },
     counter: null,
     // ---- note templates (printed Comment + Internal note) — shop-wide, synced, own doc ----
     msgTpls: { comment: [], note: [] },   // each: { id, name, md }
@@ -2864,9 +2870,10 @@ class Component extends DCLogic {
     catch(e){ console.warn('loadActivity', e); this.setState({ actLoading:false, actLoaded:true }); }
   }
   loadMoreAct(){ if(this.state.actHasMore && !this.state.actLoading) this._loadActivity(false); }
-  // Autocomplete pool — top 200 products by usage (most-used first). Loaded once at startup for
-  // the New Bill dropdown; the line-item listbox searches ONLY this loaded set.
-  async _loadProducts(){ this.setState({ productsLoading:true }); try{ const p=await this.db.listProducts(200); this.setState({ products:p, productsLoading:false, productsLoaded:true }); }catch(e){ console.warn('loadProducts',e); this.setState({ productsLoading:false, productsLoaded:true }); } }
+  // Autocomplete pool — top N products (N = Settings "Products in dropdown", default 100) by usage
+  // (most-used first, then newest). Loaded at startup for the New Bill dropdown; the line-item
+  // listbox searches ONLY this loaded set (plus anything _addToPool injects after a save).
+  async _loadProducts(){ const pool=(this.state.settings.productPool)||100; this.setState({ productsLoading:true }); try{ const p=await this.db.listProducts(pool); this.setState({ products:p, productsLoading:false, productsLoaded:true }); }catch(e){ console.warn('loadProducts',e); this.setState({ productsLoading:false, productsLoaded:true }); } }
   _mergeProducts(a, b){ const seen={}; const out=[]; a.concat(b).forEach(x=>{ if(!seen[x.name]){ seen[x.name]=1; out.push(x); } }); return out; }
   // Products page — newest-first, cursor-paginated. reset=true loads the first page; false appends
   // the next batch (size = the Settings "list batch" slider) as the user scrolls to the bottom.
@@ -2879,6 +2886,10 @@ class Component extends DCLogic {
     }catch(e){ console.warn('loadProductsPage', e); this.setState({ productsPageLoading:false, productsPageLoaded:true }); }
   }
   loadMoreProducts(){ if(this.state.productsPageHasMore && !this.state.productsPageLoading) this._loadProductsPage(false); }
+  // After a save, inject any brand-new product name straight into the loaded pool so it shows in
+  // the New Bill dropdown immediately this session (no reload). Re-sorted into the same
+  // count-desc-then-newest order the pool uses.
+  _addToPool(names){ this.setState(s=>{ const have={}; s.products.forEach(p=>have[(p.name||'').toLowerCase()]=1); const add=[]; (names||[]).forEach(n=>{ const nm=(n||'').trim(); const k=nm.toLowerCase(); if(nm && !have[k]){ have[k]=1; add.push({ name:nm, count:1, createdAtMs:Date.now() }); } }); if(!add.length) return {}; const merged=[...s.products, ...add].sort((x,y)=>(y.count||0)-(x.count||0)||(y.createdAtMs||0)-(x.createdAtMs||0)); return { products:merged }; }); }
   async _loadUsers(){ this.setState({ usersLoading:true }); try{ const u=await this.db.listUsers(); this.setState(s=>({ users:u, usersLoading:false, usersLoaded:true, selUserId: s.selUserId||(u[0]&&u[0].id) })); }catch(e){ console.warn('loadUsers',e); this.setState({ usersLoading:false, usersLoaded:true }); } }
   _periodDays(p){ return ({ '24h':1, '7d':7, '28d':28, '90d':90 })[p]||28; }
   _dayKeyOf(y,m,dd){ const p=n=>String(n).padStart(2,'0'); return y+'-'+p(m+1)+'-'+p(dd); }
@@ -4295,6 +4306,7 @@ class Component extends DCLogic {
         this.toastMsg('Bill '+nb.no+' save ho gaya','ok');
       }
       this._refreshDerived();
+      this._addToPool(lines.map(l=>l.name));
       this.setState({ productsLoaded:false, productsPageLoaded:false });
     }, { block: ed.id?'Saving changes...':'Creating bill...', errMsg:'Bill save nahi hua - internet check karein' });
   }
@@ -5086,6 +5098,7 @@ class Component extends DCLogic {
       onBizName:ev=>this.setSetting('businessName',ev.target.value,'Business name'), onBizInfo:ev=>this.setSetting('bizInfo',ev.target.value,'Business info'), onTerms:ev=>this.setSetting('terms',ev.target.value,'Invoice custom section'), onLogoFile:ev=>this.onLogoUpload(ev.target.files&&ev.target.files[0]), removeLogo:()=>{ this.setState(s=>({settings:{...s.settings,logoData:''}})); this.logActivity({action:'settings',entity:'settings',entityId:'settings',entityLabel:'Settings',summary:'Removed business logo'}); }, hasLogo:!!S.settings.logoData, noLogo:!S.settings.logoData,
       logoPreview: S.settings.logoData ? React.createElement('img',{src:S.settings.logoData,alt:'logo',style:{width:'100%',height:'100%',objectFit:'contain'}}) : React.createElement('span',{style:{color:'#c3b9a8'}}, this.ic('box',16)),
       listBatchVal:String(S.settings.listBatch), onListBatch:ev=>this.setListPref({listBatch:Math.max(20,Math.min(100,Number(ev.target.value)||25))}), autoLoad:S.settings.autoLoad, setAutoLoad:(v)=>this.setListPref({autoLoad:v}), toggleAutoLoad:()=>this.setListPref({autoLoad:!S.settings.autoLoad}),
+      productPoolVal:String(S.settings.productPool==null?100:S.settings.productPool), onProductPool:ev=>{ const v=Math.max(50,Math.min(500,Number(ev.target.value)||100)); this.setState(s=>({ settings:{...s.settings, productPool:v} }), ()=>this._loadProducts()); },
       autoToggleWrap:`width:42px;height:24px;border-radius:14px;border:none;cursor:pointer;position:relative;background:${S.settings.autoLoad?'#1f6feb':'#d8cfc2'};transition:.2s;flex:none`, autoToggleKnob:`position:absolute;top:3px;left:${S.settings.autoLoad?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)`,
       animSpeedVal:String(S.settings.animSpeed==null?1:S.settings.animSpeed), animSpeedLabel:(()=>{ const v=S.settings.animSpeed==null?1:S.settings.animSpeed; return v===0?'Off':(v===1?'Standard':(v<1?'Slow':'Fast')+' - '+v+'x'); })(), onAnimSpeed:ev=>this.setSetting('animSpeed', Number(ev.target.value), 'Animation speed'),
       // activity + recycle bin + changes + confirm
