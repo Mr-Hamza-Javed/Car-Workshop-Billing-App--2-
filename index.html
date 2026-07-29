@@ -1364,6 +1364,12 @@
             </div>
             <input type="range" min="20" max="100" step="5" value="{{ listBatchVal }}" onChange="{{ onListBatch }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
             <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:7px; line-height:1.4">Har baar itne bills/records load honge (20–100). Kam value = Firestore reads kam.</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; margin-top:16px; padding-top:14px; border-top:1px solid #f4efe7">
+              <span style="font-size:13px; font-weight:600; color:#3f4753">Products in dropdown</span>
+              <span class="tnum" style="font-size:13px; font-weight:700; color:#1f6feb">{{ productPoolVal }}</span>
+            </div>
+            <input type="range" min="50" max="500" step="50" value="{{ productPoolVal }}" onChange="{{ onProductPool }}" style="width:100%; accent-color:#1f6feb; cursor:pointer">
+            <div style="font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:7px; line-height:1.4">Bill me product dropdown ke liye itne products load honge — most-used + newest (50–500). Kam value = tez load.</div>
             <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-top:16px; padding-top:14px; border-top:1px solid #f4efe7">
               <span style="min-width:0"><span style="display:block; font-size:13px; font-weight:600; color:#3f4753">Auto-load on scroll</span><span style="display:block; font-size:11.5px; color:#a59c8c; font-weight:500; margin-top:2px">Off = end par “Load more” button dabana hoga</span></span>
               <button onClick="{{ toggleAutoLoad }}" style="{{ autoToggleWrap }}"><span style="{{ autoToggleKnob }}"></span></button>
@@ -2291,7 +2297,7 @@ class Component extends DCLogic {
     busy:{},            // {key:true} -> per-action in-flight guard (disables buttons, anti double-submit)
     headerSaving:0,     // >0 -> small header spinner (silent background saves)
     // ---- settings / counter ----
-    settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', bizInfo:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owners risk.', listBatch:25, autoLoad:true, animSpeed:1 },
+    settings: { currency:'Rs.', region:'Asia/Karachi', prefix:'MSA', startNo:'1000', businessName:'MSA Auto Workshop', logoData:'', bizInfo:'', terms:'Goods once sold are not returnable. Parts carry manufacturer warranty only. Vehicle parked at owners risk.', listBatch:25, autoLoad:true, animSpeed:1, productPool:100 },
     counter: null,
     // ---- note templates (printed Comment + Internal note) — shop-wide, synced, own doc ----
     msgTpls: { comment: [], note: [] },   // each: { id, name, md }
@@ -2318,6 +2324,7 @@ class Component extends DCLogic {
     pendingBills: [], pendingCursor:null, pendingHasMore:false, pendingLoading:false, pendingLoaded:false, pendingTotal:0,
     activity: [], actCursor:null, actHasMore:false, actLoading:false, actLoaded:false,
     products: [], productsLoading:false, productsLoaded:false,
+    productsPage: [], productsPageCursor:null, productsPageHasMore:false, productsPageLoading:false, productsPageLoaded:false,
     users: [], usersLoading:false, usersLoaded:false,
     dashStats:null, dashLoading:false,
     // global branding text loaded from settings.json (single source of truth); ASCII defaults
@@ -2545,7 +2552,7 @@ class Component extends DCLogic {
     if(!user){
       this.setState({ authReady:true, authUser:null, userMenuOpen:false, route:'dashboard',
         bills:[], billsLoaded:false, billsLoading:false, binBills:[], binLoaded:false, pendingBills:[], pendingLoaded:false,
-        activity:[], actLoaded:false, products:[], productsLoaded:false, users:[], usersLoaded:false,
+        activity:[], actLoaded:false, products:[], productsLoaded:false, productsPage:[], productsPageCursor:null, productsPageHasMore:false, productsPageLoaded:false, users:[], usersLoaded:false,
         dashStats:null, reportData:null, counter:null, editor:null, viewId:null, historyModal:null, printBill:null });
       return;
     }
@@ -2817,7 +2824,7 @@ class Component extends DCLogic {
     else if(route==='bin') this._loadBin(true);
     else if(route==='pending') this._loadPending(true);
     else if(route==='activity') this._loadActivity(true);
-    else if(route==='products' && !this.state.productsLoaded) this._loadProducts();
+    else if(route==='products' && !this.state.productsPageLoaded) this._loadProductsPage(true);
     else if(route==='admin') this._loadUsers();
     else if(route==='reports') this._loadReport();
     else if(route==='dashboard'){ if(!this.state.billsLoaded) this._loadBills(true); this._loadDash(); }
@@ -2863,7 +2870,26 @@ class Component extends DCLogic {
     catch(e){ console.warn('loadActivity', e); this.setState({ actLoading:false, actLoaded:true }); }
   }
   loadMoreAct(){ if(this.state.actHasMore && !this.state.actLoading) this._loadActivity(false); }
-  async _loadProducts(){ this.setState({ productsLoading:true }); try{ const p=await this.db.listProducts(); this.setState({ products:p, productsLoading:false, productsLoaded:true }); }catch(e){ console.warn('loadProducts',e); this.setState({ productsLoading:false, productsLoaded:true }); } }
+  // Autocomplete pool — top N products (N = Settings "Products in dropdown", default 100) by usage
+  // (most-used first, then newest). Loaded at startup for the New Bill dropdown; the line-item
+  // listbox searches ONLY this loaded set (plus anything _addToPool injects after a save).
+  async _loadProducts(){ const pool=(this.state.settings.productPool)||100; this.setState({ productsLoading:true }); try{ const p=await this.db.listProducts(pool); this.setState({ products:p, productsLoading:false, productsLoaded:true }); }catch(e){ console.warn('loadProducts',e); this.setState({ productsLoading:false, productsLoaded:true }); } }
+  _mergeProducts(a, b){ const seen={}; const out=[]; a.concat(b).forEach(x=>{ if(!seen[x.name]){ seen[x.name]=1; out.push(x); } }); return out; }
+  // Products page — newest-first, cursor-paginated. reset=true loads the first page; false appends
+  // the next batch (size = the Settings "list batch" slider) as the user scrolls to the bottom.
+  async _loadProductsPage(reset){
+    if(this.state.productsPageLoading && !reset) return;
+    this.setState({ productsPageLoading:true });
+    try{
+      const r=await this.db.loadProductsPage({ batch:this._batch(), startAfter: reset? null : this.state.productsPageCursor });
+      this.setState(s=>({ productsPage: reset? r.products : this._mergeProducts(s.productsPage, r.products), productsPageCursor:r.cursor, productsPageHasMore:r.hasMore, productsPageLoading:false, productsPageLoaded:true }));
+    }catch(e){ console.warn('loadProductsPage', e); this.setState({ productsPageLoading:false, productsPageLoaded:true }); }
+  }
+  loadMoreProducts(){ if(this.state.productsPageHasMore && !this.state.productsPageLoading) this._loadProductsPage(false); }
+  // After a save, inject any brand-new product name straight into the loaded pool so it shows in
+  // the New Bill dropdown immediately this session (no reload). Re-sorted into the same
+  // count-desc-then-newest order the pool uses.
+  _addToPool(names){ this.setState(s=>{ const have={}; s.products.forEach(p=>have[(p.name||'').toLowerCase()]=1); const add=[]; (names||[]).forEach(n=>{ const nm=(n||'').trim(); const k=nm.toLowerCase(); if(nm && !have[k]){ have[k]=1; add.push({ name:nm, count:1, createdAtMs:Date.now() }); } }); if(!add.length) return {}; const merged=[...s.products, ...add].sort((x,y)=>(y.count||0)-(x.count||0)||(y.createdAtMs||0)-(x.createdAtMs||0)); return { products:merged }; }); }
   async _loadUsers(){ this.setState({ usersLoading:true }); try{ const u=await this.db.listUsers(); this.setState(s=>({ users:u, usersLoading:false, usersLoaded:true, selUserId: s.selUserId||(u[0]&&u[0].id) })); }catch(e){ console.warn('loadUsers',e); this.setState({ usersLoading:false, usersLoaded:true }); } }
   _periodDays(p){ return ({ '24h':1, '7d':7, '28d':28, '90d':90 })[p]||28; }
   _dayKeyOf(y,m,dd){ const p=n=>String(n).padStart(2,'0'); return y+'-'+p(m+1)+'-'+p(dd); }
@@ -3764,6 +3790,7 @@ class Component extends DCLogic {
     else if(r==='bin') this.loadMoreBin();
     else if(r==='activity') this.loadMoreAct();
     else if(r==='pending') this.loadMorePending();
+    else if(r==='products') this.loadMoreProducts();
   }
   setListPref(patch){ this.setState(s=>({ settings:{...s.settings, ...patch} })); }
 
@@ -4158,7 +4185,7 @@ class Component extends DCLogic {
   permanentDelete(id){ const b=this._bill(id); if(!b) return; if(!this.guard('recycle','purge',{ ts:b.ts, ownerId:b.createdById })) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this._purgeBillEverywhere(id); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._refreshDerived(); }, { block:'Deleting...' }) }); }
   emptyBin(){ if(!this.guard('recycle','purge')) return; if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; const purged=[]; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); purged.push(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this._purgeBillEverywhere(purged); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin - '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); this._refreshDerived(); }, { block:'Emptying bin...' }) }); }
   _afterRemoveFromView(id){ if(this.state.route!=='view') return; const oldIds=this.state.viewIds||[]; const oldIdx=oldIds.indexOf(id); const ids=oldIds.filter(x=>x!==id); if(!ids.length){ this.viewBack(); return; } const nextId=ids[Math.min(Math.max(0,oldIdx), ids.length-1)]; this.setState({ viewIds:ids, viewId:nextId }); }
-  deleteProduct(name){ if(!this.guard('products','delete')) return; this.askConfirm({ title:'Delete product?', message:'"'+name+'" catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product - '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting...' }) }); }
+  deleteProduct(name){ if(!this.guard('products','delete')) return; this.askConfirm({ title:'Delete product?', message:'"'+name+'" catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name), productsPage:s.productsPage.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product - '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting...' }) }); }
   // ---------- activity visibility ab perms.activity.view.scope ka hissa hai (Users page ka structured editor) ----------
   // ---------- settings (debounced single log entry) ----------
   setSetting(field, val, label){ this.setState(s=>({ settings:{...s.settings, [field]:val} })); this._dirty=this._dirty||new Set(); this._dirty.add(label); clearTimeout(this._setT); this._setT=setTimeout(()=>{ const fields=[...(this._dirty||[])]; this._dirty=new Set(); if(fields.length) this.logActivity({ action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated settings - '+fields.join(', ') }); }, 1500); if(field==='startNo' && this.db){ const n=Number(val); if(n>0) this.db.bumpCounterIfHigher(n).then(()=>this.db.peekCounter()).then(c=>{ if(c!=null) this.setState({ counter:c }); }).catch(()=>{}); } }
@@ -4279,7 +4306,8 @@ class Component extends DCLogic {
         this.toastMsg('Bill '+nb.no+' save ho gaya','ok');
       }
       this._refreshDerived();
-      this.setState({ productsLoaded:false });
+      this._addToPool(lines.map(l=>l.name));
+      this.setState({ productsLoaded:false, productsPageLoaded:false });
     }, { block: ed.id?'Saving changes...':'Creating bill...', errMsg:'Bill save nahi hua - internet check karein' });
   }
   cancelBill(){ this.setState(s=>{ const backToView = s.editFrom==='view' && s.editor && s.editor.id; return backToView? { route:'view', editor:null, viewId:s.editor.id } : { route:'dashboard', editor:null }; }); }
@@ -4610,9 +4638,9 @@ class Component extends DCLogic {
     const pendingHasMore=S.pendingHasMore; const pendingListLoading=S.pendingLoading && !S.pendingLoaded;
 
     // products
-    const productRows=[...S.products].sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)).map(p=>({ name:p.name, count:p.count, onDelete:()=>this.deleteProduct(p.name) }));
+    const productRows=[...S.productsPage].sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)).map(p=>({ name:p.name, count:p.count, onDelete:()=>this.deleteProduct(p.name) }));
     const productNames=S.products.map(p=>p.name);
-    const productCountLabel=`${S.products.length} products`;
+    const productCountLabel=`${S.productsPage.length}${S.productsPageHasMore?'+':''} products`;
 
     // ===== reports (single-bar chart; built from cheap aggregate docs) =====
     const repB=S.reportData||{ buckets:[], view:S.report.view, firstYear:new Date().getFullYear() };
@@ -5042,7 +5070,7 @@ class Component extends DCLogic {
       // pending
       pendingBills, pendingTotalDisp, pendingCountLabel, pendingHasMore, pendingListLoading, pendingEmpty:(pendingBills.length===0 && !pendingListLoading && S.pendingLoaded), loadMorePending:()=>this.loadMorePending(),
       // products
-      productRows, productCountLabel, productsListLoading:(S.productsLoading && !S.productsLoaded), productsEmpty:(S.products.length===0 && S.productsLoaded),
+      productRows, productCountLabel, productsListLoading:(S.productsPageLoading && !S.productsPageLoaded), productsEmpty:(S.productsPage.length===0 && S.productsPageLoaded),
       // reports
       report, recalc, recalcOpen, reportLoading:repLoading,
       // templates
@@ -5070,6 +5098,7 @@ class Component extends DCLogic {
       onBizName:ev=>this.setSetting('businessName',ev.target.value,'Business name'), onBizInfo:ev=>this.setSetting('bizInfo',ev.target.value,'Business info'), onTerms:ev=>this.setSetting('terms',ev.target.value,'Invoice custom section'), onLogoFile:ev=>this.onLogoUpload(ev.target.files&&ev.target.files[0]), removeLogo:()=>{ this.setState(s=>({settings:{...s.settings,logoData:''}})); this.logActivity({action:'settings',entity:'settings',entityId:'settings',entityLabel:'Settings',summary:'Removed business logo'}); }, hasLogo:!!S.settings.logoData, noLogo:!S.settings.logoData,
       logoPreview: S.settings.logoData ? React.createElement('img',{src:S.settings.logoData,alt:'logo',style:{width:'100%',height:'100%',objectFit:'contain'}}) : React.createElement('span',{style:{color:'#c3b9a8'}}, this.ic('box',16)),
       listBatchVal:String(S.settings.listBatch), onListBatch:ev=>this.setListPref({listBatch:Math.max(20,Math.min(100,Number(ev.target.value)||25))}), autoLoad:S.settings.autoLoad, setAutoLoad:(v)=>this.setListPref({autoLoad:v}), toggleAutoLoad:()=>this.setListPref({autoLoad:!S.settings.autoLoad}),
+      productPoolVal:String(S.settings.productPool==null?100:S.settings.productPool), onProductPool:ev=>{ const v=Math.max(50,Math.min(500,Number(ev.target.value)||100)); this.setState(s=>({ settings:{...s.settings, productPool:v} }), ()=>this._loadProducts()); },
       autoToggleWrap:`width:42px;height:24px;border-radius:14px;border:none;cursor:pointer;position:relative;background:${S.settings.autoLoad?'#1f6feb':'#d8cfc2'};transition:.2s;flex:none`, autoToggleKnob:`position:absolute;top:3px;left:${S.settings.autoLoad?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)`,
       animSpeedVal:String(S.settings.animSpeed==null?1:S.settings.animSpeed), animSpeedLabel:(()=>{ const v=S.settings.animSpeed==null?1:S.settings.animSpeed; return v===0?'Off':(v===1?'Standard':(v<1?'Slow':'Fast')+' - '+v+'x'); })(), onAnimSpeed:ev=>this.setSetting('animSpeed', Number(ev.target.value), 'Animation speed'),
       // activity + recycle bin + changes + confirm
