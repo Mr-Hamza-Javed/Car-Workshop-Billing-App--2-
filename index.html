@@ -411,7 +411,7 @@
             <div style="{{ custGridStyle }}">
               <label style="display:flex; flex-direction:column; gap:6px">
                 <span style="font-size:12.5px; font-weight:600; color:#3f4753">Customer name</span>
-                <input value="{{ ed.name }}" onChange="{{ ed.onName }}" placeholder="e.g. Bilal Ahmed" style="{{ inputStyle }}">
+                <input value="{{ ed.name }}" onChange="{{ ed.onName }}" onBlur="{{ ed.onNameCommit }}" placeholder="e.g. Bilal Ahmed" style="{{ inputStyle }}">
               </label>
               <label style="display:flex; flex-direction:column; gap:6px">
                 <span style="font-size:12.5px; font-weight:600; color:#3f4753">Phone number</span>
@@ -2078,7 +2078,7 @@
         <div style="padding:18px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:14px">
           <label style="display:flex; flex-direction:column; gap:6px">
             <span style="font-size:12.5px; font-weight:600; color:#3f4753">Full name</span>
-            <input value="{{ newUser.name }}" onChange="{{ onNuName }}" placeholder="e.g. Hina Javed" style="{{ inputStyle }}">
+            <input value="{{ newUser.name }}" onChange="{{ onNuName }}" onBlur="{{ onNuNameCommit }}" placeholder="e.g. Hina Javed" style="{{ inputStyle }}">
           </label>
           <label style="display:flex; flex-direction:column; gap:6px">
             <span style="font-size:12.5px; font-weight:600; color:#3f4753">Email</span>
@@ -2122,7 +2122,7 @@
         <div style="padding:18px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:14px">
           <label style="display:flex; flex-direction:column; gap:6px">
             <span style="font-size:12.5px; font-weight:600; color:#3f4753">Full name</span>
-            <input value="{{ editDraft.fullName }}" onChange="{{ onEdName }}" placeholder="e.g. Hina Javed" style="{{ inputStyle }}">
+            <input value="{{ editDraft.fullName }}" onChange="{{ onEdName }}" onBlur="{{ onEdNameCommit }}" placeholder="e.g. Hina Javed" style="{{ inputStyle }}">
           </label>
           <label style="display:flex; flex-direction:column; gap:6px; opacity:.7">
             <span style="font-size:12.5px; font-weight:600; color:#3f4753">Email (locked)</span>
@@ -3816,6 +3816,18 @@ class Component extends DCLogic {
   carMatch(billCar, query){ const q=this.carCore(query); if(!q) return false; return this.carCore(billCar).indexOf(q)>=0; }
   commitPhone(){ this.setState(s=>{ const e=s.editor; if(!e) return {}; const v=this.validatePhone(e.phone); const phone=(v.ok&&v.type!=='none')?this.fmtPhone(e.phone):e.phone; return { editor:{...e, phone, phoneCommitted:true, phoneErr: v.ok?'':'Phone number sahi format me nahi (e.g. 0307-2924105 ya 042-35761234)'} }; }, ()=>this._fetchPhoneHist()); }
   commitCar(){ this.setState(s=>{ const e=s.editor; if(!e) return {}; const v=this.validateCar(e.car); const car=v.ok&&e.car?this.canonCar(e.car):e.car; return { editor:{...e, car, carCommitted:true, carErr: v.ok?'':'Car number sahi nahi lag raha - sirf letters/numbers (e.g. LEA-1234)'} }; }, ()=>this._fetchCarHist()); }
+  // Proper-Case a person/product name: "haMza javed" -> "Hamza Javed". ONLY ever called from a
+  // field's onBlur (i.e. when the user actually touches that field) — never on load or on save —
+  // so opening or saving an old bill leaves its stored name untouched unless the user goes into
+  // the name box. Non-Latin scripts (Urdu etc.) have no case, so they pass through unchanged.
+  titleName(s){ return String(s==null?'':s).replace(/\s+/g,' ').trim().toLowerCase().replace(/(^|[\s\-'.])([\p{L}])/gu, (_,b,c)=>b+c.toUpperCase()); }
+  // Product/line-item variant: title-case normal words but leave a token the user typed in ALL
+  // CAPS untouched, so workshop abbreviations & codes survive (AC, PSI, ABS, LED, 5W-30, R134A).
+  // A token is "an abbreviation" only if it has NO lowercase letter; anything with a lowercase
+  // letter is treated as a normal word and title-cased.
+  titleNameKeepAbbr(s){ return String(s==null?'':s).replace(/\s+/g,' ').trim().split(' ').map(w=> /\p{Ll}/u.test(w) ? this.titleName(w) : w).join(' '); }
+  commitEditorName(){ this.setState(s=>{ const e=s.editor; if(!e) return {}; const name=this.titleName(e.name); return name===e.name? {} : { editor: this._syncEd({...e, name}) }; }); }
+  commitLineName(i){ this.setState(s=>{ const e=s.editor; if(!e||!e.lines[i]) return {}; const nm=this.titleNameKeepAbbr(e.lines[i].name); if(nm===e.lines[i].name) return {}; const lines=e.lines.map((l,k)=>k===i?{...l, name:nm}:l); return { editor: this._syncEd({...e, lines}) }; }); }
   async _fetchPhoneHist(){ const e=this.state.editor; if(!e||!this.db) return; const v=this.validatePhone(e.phone); if(!(v.ok && v.type!=='none')){ this.setState(s=> s.editor?({editor:{...s.editor, phoneInfoData:null}}):{}); return; } try{ const agg=await this.db.customerHistoryByPhone(e.phone, e.id); this.setState(s=> (s.editor && this.canonPhone(s.editor.phone)===this.canonPhone(e.phone))? ({editor:{...s.editor, phoneInfoData:agg}}):{}); }catch(err){} }
   async _fetchCarHist(){ const e=this.state.editor; if(!e||!this.db) return; const v=this.validateCar(e.car); if(!(v.ok && this.carCore(e.car))){ this.setState(s=> s.editor?({editor:{...s.editor, carInfoData:null}}):{}); return; } try{ const agg=await this.db.customerHistoryByCar(e.car, e.id); this.setState(s=> (s.editor && this.carCore(s.editor.car)===this.carCore(e.car))? ({editor:{...s.editor, carInfoData:agg}}):{}); }catch(err){} }
 
@@ -4480,7 +4492,7 @@ class Component extends DCLogic {
         const exact=S.products.some(p=>p.name.toLowerCase()===qn);
         return { name:l.name, qty:l.qty, price:this.fmtAmtStr(l.price), lineTotal:this.fmt(lt), num:String(i+1),
           onName:ev=>this.onLineName(i,ev.target.value), onQty:ev=>this.lineChange(i,'qty',ev.target.value), onPrice:ev=>this.amtInput(ev, v=>this.lineChange(i,'price',v)), onRemove:()=>this.removeLine(i),
-          onFocus:()=>this.openDrop(i), onBlur:()=>{ setTimeout(()=>this.closeDrop(),180); },
+          onFocus:()=>this.openDrop(i), onBlur:()=>{ setTimeout(()=>{ this.closeDrop(); this.commitLineName(i); },180); },
           dropdownOpen: S.dropOpen===i, options:opts, hasOptions:opts.length>0, showAddNew: !!qn && !exact, addNewLabel:l.name.trim(), onAddNew:(ev)=>{ if(ev&&ev.preventDefault) ev.preventDefault(); this.closeDrop(); },
           canRemove: e.lines.length>1 };
       });
@@ -4500,7 +4512,7 @@ class Component extends DCLogic {
         subtotalDisp:this.fmt(sub), pendingDisp:this.fmt(pending), totalDisp:this.fmt(total),
         pendingBg: pending>0?'#fdf2e0':'#e7f5ee', pendingInk: pending>0?'#b8740a':'#0f7a52',
         payNote: e.lockedPaid>0?('Pehle se '+this.fmt(e.lockedPaid)+' paid - total isse kam nahi ho sakta.'):'Paid 0 se shuru hota hai - jo amount customer ne diya wo type karein, baqi pending rahega.',
-        onName:ev=>this.setEd({name:ev.target.value}), onPhone:ev=>this.setEd({phone:ev.target.value, phoneCommitted:false, phoneErr:''}), onCar:ev=>this.setEd({car:ev.target.value, carCommitted:false, carErr:''}), onModel:ev=>this.setEd({model:ev.target.value}),
+        onName:ev=>this.setEd({name:ev.target.value}), onNameCommit:()=>this.commitEditorName(), onPhone:ev=>this.setEd({phone:ev.target.value, phoneCommitted:false, phoneErr:''}), onCar:ev=>this.setEd({car:ev.target.value, carCommitted:false, carErr:''}), onModel:ev=>this.setEd({model:ev.target.value}),
         onPhoneCommit:()=>this.commitPhone(), onPhoneKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitPhone(); } },
         onCarCommit:()=>this.commitCar(), onCarKey:ev=>{ if(ev.key==='Enter'){ if(ev.preventDefault)ev.preventDefault(); this.commitCar(); } },
         onComment:ev=>this.setEd({comment:ev.target.value}), onNote:ev=>this.setEd({note:ev.target.value}),
@@ -5048,9 +5060,9 @@ class Component extends DCLogic {
       usersView, selUser, hasSelUser, canManageUsers:iCanManage, usersListLoading:(S.usersLoading && !S.usersLoaded), rolePresets, permCats, permsLockStyle, adminWrapStyle, adminListW,
       addUser:()=>this.openAddUser(), editUser:()=>this.openEditUser(selUserObj&&selUserObj.id), resetPwd:()=>this.openPwModal(selUserObj&&selUserObj.id), toggleDisable:()=>this.toggleDisable(selUserObj&&selUserObj.id), deleteUser:()=>this.confirmDeleteUser(selUserObj&&selUserObj.id),
       addUserModal:S.addUserModal, newUser:nu, nuRoleBtns, closeAddUser:()=>this.closeAddUser(), createUser:()=>this.createUser(),
-      onNuName:ev=>this.setNewUser({name:ev.target.value}), onNuEmail:ev=>this.setNewUser({email:ev.target.value}), onNuPassword:ev=>this.setNewUser({password:ev.target.value}),
+      onNuName:ev=>this.setNewUser({name:ev.target.value}), onNuNameCommit:()=>this.setState(s=>({ newUser:{...s.newUser, name:this.titleName(s.newUser.name)} })), onNuEmail:ev=>this.setNewUser({email:ev.target.value}), onNuPassword:ev=>this.setNewUser({password:ev.target.value}),
       editUserModal:S.editUserModal, editDraft:S.editDraft||{fullName:'',email:'',editRole:false}, edRoleBtns:(S.editDraft?presets.map(r=>({ rk:'edr'+r+(S.editDraft.role===r?'1':'0'), label:r, onClick:()=> (r==='Admin'&&me&&me.role!=='Admin')?this.toastMsg('Sirf admin kisi ko Admin bana sakta hai','warn'):this.setEditDraft({role:r}), style: S.editDraft.role===r?`${pbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${pbase} #ece4d7;background:#fff;color:#3f4753` })):[]),
-      onEdName:ev=>this.setEditDraft({fullName:ev.target.value}), closeEditUser:()=>this.closeEditUser(), saveEditUser:()=>this.saveEditUser(),
+      onEdName:ev=>this.setEditDraft({fullName:ev.target.value}), onEdNameCommit:()=>this.setState(s=> s.editDraft?({ editDraft:{...s.editDraft, fullName:this.titleName(s.editDraft.fullName)} }):{}), closeEditUser:()=>this.closeEditUser(), saveEditUser:()=>this.saveEditUser(),
       pwModalView: S.pwModal ? (()=>{ const u=S.users.find(x=>x.id===S.pwModal); return u?{name:u.fullName||u.email, email:u.email}:null; })() : null, pwDraft:S.pwDraft, onPwDraft:ev=>this.setState({pwDraft:ev.target.value}), closePwModal:()=>this.setState({pwModal:null,pwDraft:''}), submitPw:()=>this.submitPw(),
       addUserModalStyle:this._modal(),
       // settings
