@@ -2318,6 +2318,7 @@ class Component extends DCLogic {
     pendingBills: [], pendingCursor:null, pendingHasMore:false, pendingLoading:false, pendingLoaded:false, pendingTotal:0,
     activity: [], actCursor:null, actHasMore:false, actLoading:false, actLoaded:false,
     products: [], productsLoading:false, productsLoaded:false,
+    productsPage: [], productsPageCursor:null, productsPageHasMore:false, productsPageLoading:false, productsPageLoaded:false,
     users: [], usersLoading:false, usersLoaded:false,
     dashStats:null, dashLoading:false,
     // global branding text loaded from settings.json (single source of truth); ASCII defaults
@@ -2545,7 +2546,7 @@ class Component extends DCLogic {
     if(!user){
       this.setState({ authReady:true, authUser:null, userMenuOpen:false, route:'dashboard',
         bills:[], billsLoaded:false, billsLoading:false, binBills:[], binLoaded:false, pendingBills:[], pendingLoaded:false,
-        activity:[], actLoaded:false, products:[], productsLoaded:false, users:[], usersLoaded:false,
+        activity:[], actLoaded:false, products:[], productsLoaded:false, productsPage:[], productsPageCursor:null, productsPageHasMore:false, productsPageLoaded:false, users:[], usersLoaded:false,
         dashStats:null, reportData:null, counter:null, editor:null, viewId:null, historyModal:null, printBill:null });
       return;
     }
@@ -2817,7 +2818,7 @@ class Component extends DCLogic {
     else if(route==='bin') this._loadBin(true);
     else if(route==='pending') this._loadPending(true);
     else if(route==='activity') this._loadActivity(true);
-    else if(route==='products' && !this.state.productsLoaded) this._loadProducts();
+    else if(route==='products' && !this.state.productsPageLoaded) this._loadProductsPage(true);
     else if(route==='admin') this._loadUsers();
     else if(route==='reports') this._loadReport();
     else if(route==='dashboard'){ if(!this.state.billsLoaded) this._loadBills(true); this._loadDash(); }
@@ -2863,7 +2864,21 @@ class Component extends DCLogic {
     catch(e){ console.warn('loadActivity', e); this.setState({ actLoading:false, actLoaded:true }); }
   }
   loadMoreAct(){ if(this.state.actHasMore && !this.state.actLoading) this._loadActivity(false); }
-  async _loadProducts(){ this.setState({ productsLoading:true }); try{ const p=await this.db.listProducts(); this.setState({ products:p, productsLoading:false, productsLoaded:true }); }catch(e){ console.warn('loadProducts',e); this.setState({ productsLoading:false, productsLoaded:true }); } }
+  // Autocomplete pool — top 200 products by usage (most-used first). Loaded once at startup for
+  // the New Bill dropdown; the line-item listbox searches ONLY this loaded set.
+  async _loadProducts(){ this.setState({ productsLoading:true }); try{ const p=await this.db.listProducts(200); this.setState({ products:p, productsLoading:false, productsLoaded:true }); }catch(e){ console.warn('loadProducts',e); this.setState({ productsLoading:false, productsLoaded:true }); } }
+  _mergeProducts(a, b){ const seen={}; const out=[]; a.concat(b).forEach(x=>{ if(!seen[x.name]){ seen[x.name]=1; out.push(x); } }); return out; }
+  // Products page — newest-first, cursor-paginated. reset=true loads the first page; false appends
+  // the next batch (size = the Settings "list batch" slider) as the user scrolls to the bottom.
+  async _loadProductsPage(reset){
+    if(this.state.productsPageLoading && !reset) return;
+    this.setState({ productsPageLoading:true });
+    try{
+      const r=await this.db.loadProductsPage({ batch:this._batch(), startAfter: reset? null : this.state.productsPageCursor });
+      this.setState(s=>({ productsPage: reset? r.products : this._mergeProducts(s.productsPage, r.products), productsPageCursor:r.cursor, productsPageHasMore:r.hasMore, productsPageLoading:false, productsPageLoaded:true }));
+    }catch(e){ console.warn('loadProductsPage', e); this.setState({ productsPageLoading:false, productsPageLoaded:true }); }
+  }
+  loadMoreProducts(){ if(this.state.productsPageHasMore && !this.state.productsPageLoading) this._loadProductsPage(false); }
   async _loadUsers(){ this.setState({ usersLoading:true }); try{ const u=await this.db.listUsers(); this.setState(s=>({ users:u, usersLoading:false, usersLoaded:true, selUserId: s.selUserId||(u[0]&&u[0].id) })); }catch(e){ console.warn('loadUsers',e); this.setState({ usersLoading:false, usersLoaded:true }); } }
   _periodDays(p){ return ({ '24h':1, '7d':7, '28d':28, '90d':90 })[p]||28; }
   _dayKeyOf(y,m,dd){ const p=n=>String(n).padStart(2,'0'); return y+'-'+p(m+1)+'-'+p(dd); }
@@ -3764,6 +3779,7 @@ class Component extends DCLogic {
     else if(r==='bin') this.loadMoreBin();
     else if(r==='activity') this.loadMoreAct();
     else if(r==='pending') this.loadMorePending();
+    else if(r==='products') this.loadMoreProducts();
   }
   setListPref(patch){ this.setState(s=>({ settings:{...s.settings, ...patch} })); }
 
@@ -4158,7 +4174,7 @@ class Component extends DCLogic {
   permanentDelete(id){ const b=this._bill(id); if(!b) return; if(!this.guard('recycle','purge',{ ts:b.ts, ownerId:b.createdById })) return; this.askConfirm({ title:'Delete permanently?', message:b.no+' hamesha ke liye delete ho jayega. Ye wapas nahi aa sakta.', confirmLabel:'Delete forever', danger:true, onConfirm:()=> this.runAction('purge-'+id, async()=>{ await this.db.permanentDelete(id); this._purgeBillEverywhere(id); this.logActivity({ action:'permanent_delete', entity:'bill', entityId:id, entityLabel:b.no, summary:'Permanently deleted bill' }); this.toastMsg('Bill hamesha ke liye delete ho gaya','ok'); this._refreshDerived(); }, { block:'Deleting...' }) }); }
   emptyBin(){ if(!this.guard('recycle','purge')) return; if(!this.state.binBills.length && !this.state.binHasMore){ this.toastMsg('Recycle bin pehle se khali hai','warn'); return; } this.askConfirm({ title:'Empty Recycle bin?', message:'Saare deleted bills hamesha ke liye remove ho jayenge. Ye wapas nahi aa sakta.', confirmLabel:'Empty bin', danger:true, onConfirm:()=> this.runAction('emptybin', async()=>{ let n=0, guard=0; const purged=[]; while(guard++<400){ const page=await this.db.loadBillsPage({ mode:'bin', batch:50, startAfter:null }); if(!page.bills.length) break; for(const x of page.bills){ await this.db.permanentDelete(x.id); purged.push(x.id); n++; } if(!page.hasMore) break; } this.setState({ binBills:[], binCursor:null, binHasMore:false, binLoaded:true }); this._purgeBillEverywhere(purged); this.logActivity({ action:'empty_bin', entity:'bill', entityId:'bin', entityLabel:'Recycle bin', summary:'Emptied Recycle bin - '+n+' bill'+(n===1?'':'s') }); this.toastMsg('Recycle bin khali ho gaya','ok'); this._refreshDerived(); }, { block:'Emptying bin...' }) }); }
   _afterRemoveFromView(id){ if(this.state.route!=='view') return; const oldIds=this.state.viewIds||[]; const oldIdx=oldIds.indexOf(id); const ids=oldIds.filter(x=>x!==id); if(!ids.length){ this.viewBack(); return; } const nextId=ids[Math.min(Math.max(0,oldIdx), ids.length-1)]; this.setState({ viewIds:ids, viewId:nextId }); }
-  deleteProduct(name){ if(!this.guard('products','delete')) return; this.askConfirm({ title:'Delete product?', message:'"'+name+'" catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product - '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting...' }) }); }
+  deleteProduct(name){ if(!this.guard('products','delete')) return; this.askConfirm({ title:'Delete product?', message:'"'+name+'" catalogue se hat jayega.', confirmLabel:'Delete', danger:true, onConfirm:()=> this.runAction('delprod-'+name, async()=>{ await this.db.deleteProduct(name); this.setState(s=>({ products:s.products.filter(p=>p.name!==name), productsPage:s.productsPage.filter(p=>p.name!==name) })); this.logActivity({ action:'delete', entity:'product', entityId:'prod_'+name, entityLabel:name, summary:'Deleted product - '+name }); this.toastMsg('Product delete ho gaya','ok'); }, { block:'Deleting...' }) }); }
   // ---------- activity visibility ab perms.activity.view.scope ka hissa hai (Users page ka structured editor) ----------
   // ---------- settings (debounced single log entry) ----------
   setSetting(field, val, label){ this.setState(s=>({ settings:{...s.settings, [field]:val} })); this._dirty=this._dirty||new Set(); this._dirty.add(label); clearTimeout(this._setT); this._setT=setTimeout(()=>{ const fields=[...(this._dirty||[])]; this._dirty=new Set(); if(fields.length) this.logActivity({ action:'settings', entity:'settings', entityId:'settings', entityLabel:'Settings', summary:'Updated settings - '+fields.join(', ') }); }, 1500); if(field==='startNo' && this.db){ const n=Number(val); if(n>0) this.db.bumpCounterIfHigher(n).then(()=>this.db.peekCounter()).then(c=>{ if(c!=null) this.setState({ counter:c }); }).catch(()=>{}); } }
@@ -4279,7 +4295,7 @@ class Component extends DCLogic {
         this.toastMsg('Bill '+nb.no+' save ho gaya','ok');
       }
       this._refreshDerived();
-      this.setState({ productsLoaded:false });
+      this.setState({ productsLoaded:false, productsPageLoaded:false });
     }, { block: ed.id?'Saving changes...':'Creating bill...', errMsg:'Bill save nahi hua - internet check karein' });
   }
   cancelBill(){ this.setState(s=>{ const backToView = s.editFrom==='view' && s.editor && s.editor.id; return backToView? { route:'view', editor:null, viewId:s.editor.id } : { route:'dashboard', editor:null }; }); }
@@ -4610,9 +4626,9 @@ class Component extends DCLogic {
     const pendingHasMore=S.pendingHasMore; const pendingListLoading=S.pendingLoading && !S.pendingLoaded;
 
     // products
-    const productRows=[...S.products].sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)).map(p=>({ name:p.name, count:p.count, onDelete:()=>this.deleteProduct(p.name) }));
+    const productRows=[...S.productsPage].sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)).map(p=>({ name:p.name, count:p.count, onDelete:()=>this.deleteProduct(p.name) }));
     const productNames=S.products.map(p=>p.name);
-    const productCountLabel=`${S.products.length} products`;
+    const productCountLabel=`${S.productsPage.length}${S.productsPageHasMore?'+':''} products`;
 
     // ===== reports (single-bar chart; built from cheap aggregate docs) =====
     const repB=S.reportData||{ buckets:[], view:S.report.view, firstYear:new Date().getFullYear() };
@@ -5042,7 +5058,7 @@ class Component extends DCLogic {
       // pending
       pendingBills, pendingTotalDisp, pendingCountLabel, pendingHasMore, pendingListLoading, pendingEmpty:(pendingBills.length===0 && !pendingListLoading && S.pendingLoaded), loadMorePending:()=>this.loadMorePending(),
       // products
-      productRows, productCountLabel, productsListLoading:(S.productsLoading && !S.productsLoaded), productsEmpty:(S.products.length===0 && S.productsLoaded),
+      productRows, productCountLabel, productsListLoading:(S.productsPageLoading && !S.productsPageLoaded), productsEmpty:(S.productsPage.length===0 && S.productsPageLoaded),
       // reports
       report, recalc, recalcOpen, reportLoading:repLoading,
       // templates

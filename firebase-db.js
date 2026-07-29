@@ -711,7 +711,15 @@ function makeDB(A) {
     },
 
     /* ---------- products ---------- */
-    async listProducts() { const res = await A.query("products", { orderBy: ["nameLower", "asc"] }); return res.rows.map((r) => ({ name: r.name, count: r.count || 0, createdAtMs: r.createdAtMs || 0 })); },
+    // Autocomplete pool: only the top `limit` products by usage (most-used first) so we never
+    // pull the whole catalogue. Single-field orderBy — needs no composite index.
+    async listProducts(limit) { const res = await A.query("products", { orderBy: ["count", "desc"], limit: limit || 200 }); return res.rows.map((r) => ({ name: r.name, count: r.count || 0, createdAtMs: r.createdAtMs || 0 })); },
+    // Products page: newest-first, cursor-paginated (infinite scroll). createdAtMs desc — single
+    // field, needs no composite index; cursor is the last row's createdAtMs (like loadBillsPage).
+    async loadProductsPage({ batch, startAfter }) {
+      const { rows, hasMore } = await A.query("products", { orderBy: ["createdAtMs", "desc"], limit: batch, startAfter });
+      return { products: rows.map((r) => ({ name: r.name, count: r.count || 0, createdAtMs: r.createdAtMs || 0 })), cursor: rows.length ? rows[rows.length - 1].createdAtMs : null, hasMore };
+    },
     async deleteProduct(name) { const id = "p_" + (await sha256Hex(lower(name))).slice(0, 16); await A.del("products/" + id); return { ok: true }; },
 
     /* ---------- activity ---------- */
