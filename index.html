@@ -2558,7 +2558,15 @@ class Component extends DCLogic {
     this._ensureGeo();   // session-resume case (page refresh) - warms the cache for later activity entries
   }
   async _loadShell(){
-    const st = await this.db.getSettings();
+    // These three docs are independent of each other, so fetch them together instead of
+    // one serial round-trip after another. Each read keeps its OWN failure handling (resolves
+    // to null on error) so a single failing/permission-denied read never breaks the others —
+    // exactly like the previous per-read try/catch blocks did.
+    const [st, nt, pp] = await Promise.all([
+      this.db.getSettings().catch(e=>{ console.warn('getSettings', e); return null; }),
+      this.db.getNoteTemplates().catch(e=>{ console.warn('noteTemplates', e); return null; }),
+      this.db.getPrintPresets().catch(e=>{ console.warn('printPresets', e); return null; }),
+    ]);
     if(st){ const { tpl, ...rest } = st; this.setState(s=>({ settings:{ ...s.settings, ...rest }, tpl:{ ...s.tpl, ...(tpl||{}) } })); }
     else { try{ if(this.canAct('settings','manage')) await this.db.saveSettings(this._settingsDoc()); }catch(e){} }
     // migrate business identity (info / custom section / logo) INTO the print config so every
@@ -2573,11 +2581,13 @@ class Component extends DCLogic {
     // one-time migration: old plain custom-section text becomes an open markdown section, keeping
     // its familiar heading. Idempotent (skips anything already containing markdown bold markers).
     this.setState(s=>{ const t=s.tpl.terms; return (t && !/\*\*/.test(t))? { tpl:{ ...s.tpl, terms:'**Terms & Conditions**\n'+t } } : {}; });
+    // note templates + print presets were fetched in parallel above; apply them now.
+    if(nt) this.setState({ msgTpls:{ comment: Array.isArray(nt.comment)?nt.comment:[], note: Array.isArray(nt.note)?nt.note:[] } });
+    if(pp){ this.setState({ printPresets: Array.isArray(pp.presets)?pp.presets:[], activePresetId: pp.activeId||null, defaultPresetId: pp.defaultId||null }); }
+    // counter needs startNo from settings, so it stays after the settings read is resolved.
     const startNo = Number((st&&st.startNo) || this.state.settings.startNo) || 1000;
     try{ await this.db.initCounter(startNo); }catch(e){}
     try{ const c = await this.db.peekCounter(); this.setState({ counter: c==null? startNo : c }); }catch(e){ this.setState({ counter:startNo }); }
-    try{ const nt = await this.db.getNoteTemplates(); if(nt) this.setState({ msgTpls:{ comment: Array.isArray(nt.comment)?nt.comment:[], note: Array.isArray(nt.note)?nt.note:[] } }); }catch(e){ console.warn('noteTemplates', e); }
-    try{ const pp = await this.db.getPrintPresets(); if(pp){ this.setState({ printPresets: Array.isArray(pp.presets)?pp.presets:[], activePresetId: pp.activeId||null, defaultPresetId: pp.defaultId||null }); } }catch(e){ console.warn('printPresets', e); }
     this._settingsJSON = JSON.stringify(this._settingsDoc());
   }
   _settingsDoc(){ return { ...this.state.settings, tpl:this.state.tpl }; }
@@ -2591,7 +2601,11 @@ class Component extends DCLogic {
     try{ r = await this.db.login(email, pw); }catch(e){ r={ ok:false, error:'Login nahi ho saka - internet check karein' }; }
     if(!r || !r.ok){ this.setState({ loggingIn:false, loginErr:(r&&r.error)||'Login nahi hua' }); return; }
     try{ await this.db.bootstrap(); }catch(e){}
-    await this._ensureGeo();   // resolve once before the first activity entry so login carries IP/location
+    // Warm the geo cache so the login entry can carry IP/location, but never let a slow or
+    // cold-starting lookup hang the login. If it resolves within the cap the entry gets the
+    // stamp (unchanged behaviour on a healthy network); otherwise login proceeds and later
+    // activities pick up the cached geo once it lands.
+    await Promise.race([ this._ensureGeo(), new Promise(res=>setTimeout(res, 2500)) ]);
     this.logActivity({ action:'login', entity:'auth', entityId:r.user.id, entityLabel:r.user.fullName, summary:'Signed in', userId:r.user.id, userName:r.user.fullName });
     this.setState({ loggingIn:false, loginPw:'' });
   }
