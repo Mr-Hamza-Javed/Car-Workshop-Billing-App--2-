@@ -3360,7 +3360,7 @@ class Component extends DCLogic {
   }
 
   // ---------- print modal ----------
-  openPrint(id){ const b=this.state.bills.find(x=>x.id===id); if(!b){ this.toastMsg('Open a saved bill first','warn'); return; }
+  openPrint(id){ const b=this._bill(id); if(!b){ this.toastMsg('Open a saved bill first','warn'); return; }
     // pre-select the DEFAULT preset if one is set; else start from the saved tpl as "Custom".
     const dp=this.state.defaultPresetId? this.state.printPresets.find(p=>p.id===this.state.defaultPresetId) : null;
     const base=JSON.parse(JSON.stringify(this.state.tpl));
