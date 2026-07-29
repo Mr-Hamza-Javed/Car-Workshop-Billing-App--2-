@@ -476,12 +476,16 @@ function makeDB(A) {
 
   async function ensureProducts(names) {
     if (!names || !names.length) return;
-    for (const nm of names) {
-      if (!nm || !nm.trim()) continue;
+    // Ensure every line-item name exists in the products catalog. Names are independent, so
+    // run them in parallel instead of one sequential round-trip each. This only feeds the
+    // New Bill autocomplete — it is never part of the bill-save transaction (callers run it
+    // AFTER the bill is already committed), so nothing here affects whether a bill is saved.
+    await Promise.all(names.map(async (nm) => {
+      if (!nm || !nm.trim()) return;
       const id = "p_" + (await sha256Hex(lower(nm))).slice(0, 16);
       const existing = await A.get("products/" + id);
       if (!existing) await A.set("products/" + id, { name: nm.trim(), nameLower: lower(nm), count: 1, createdAtMs: nowMs() });
-    }
+    }));
   }
 
   return {
@@ -610,7 +614,9 @@ function makeDB(A) {
         await writeStats(t, buckets, cur);
         return { id, store };
       });
-      await ensureProducts((bill.lines || []).map((l) => l.name));
+      // Bill is already committed above. Building the products catalog is a best-effort
+      // background side-effect — do not block the caller (or fail the save) on it.
+      ensureProducts((bill.lines || []).map((l) => l.name)).catch((e) => { try { console.warn("ensureProducts", e); } catch (_) {} });
       return billFromStore(result.id, result.store);
     },
     async updateBill(id, bill, oldBill) {
@@ -638,7 +644,9 @@ function makeDB(A) {
         await t.set("bills/" + id, store);
         await writeStats(t, buckets, cur);
       });
-      await ensureProducts((bill.lines || []).map((l) => l.name));
+      // Bill is already committed above. Building the products catalog is a best-effort
+      // background side-effect — do not block the caller (or fail the save) on it.
+      ensureProducts((bill.lines || []).map((l) => l.name)).catch((e) => { try { console.warn("ensureProducts", e); } catch (_) {} });
       return billFromStore(id, store);
     },
     async _flagBill(id, oldBill, patch) {
