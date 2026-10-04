@@ -2318,7 +2318,7 @@ class Component extends DCLogic {
     presetNameDraft: '',
     printBill: null, printCfg: null, invMeasure: {}, printZoom:1, printTab:'preview', printMore:false, printWeightsOpen:false, tplWeightsOpen:false,
     // ---- data caches (progressively loaded; NOT the full DB) ----
-    bills: [], billsCursor:null, billsHasMore:false, billsLoading:true, billsLoaded:false,
+    bills: [], billsCursor:null, billsHasMore:false, billsLoading:true, billsLoaded:false, billsShow:0, binShow:0, pendingShow:0,
     archivedBills: [], archivedCursor:null, archivedHasMore:false, archivedLoading:false, archivedLoaded:false,
     binBills: [], binCursor:null, binHasMore:false, binLoading:false, binLoaded:false,
     pendingBills: [], pendingCursor:null, pendingHasMore:false, pendingLoading:false, pendingLoaded:false, pendingTotal:0,
@@ -2550,9 +2550,9 @@ class Component extends DCLogic {
   }
   async _onAuth(user){
     if(!user){
-      this._actGen=(this._actGen||0)+1; this._actSyncAgain=false;
+      this._actGen=(this._actGen||0)+1; this._actSyncAgain=false; this._billsSyncAgain=false; this._billsFull=false;
       this.setState({ authReady:true, authUser:null, userMenuOpen:false, route:'dashboard',
-        bills:[], billsLoaded:false, billsLoading:false, binBills:[], binLoaded:false, pendingBills:[], pendingLoaded:false,
+        bills:[], billsLoaded:false, billsLoading:false, billsShow:0, binShow:0, pendingShow:0, binBills:[], binLoaded:false, pendingBills:[], pendingLoaded:false,
         activity:[], actLoaded:false, products:[], productsLoaded:false, productsPage:[], productsPageCursor:null, productsPageHasMore:false, productsPageLoaded:false, users:[], usersLoaded:false,
         dashStats:null, reportData:null, counter:null, editor:null, viewId:null, historyModal:null, printBill:null });
       return;
@@ -2823,8 +2823,8 @@ class Component extends DCLogic {
   _batch(){ return (this.state.settings.listBatch)||25; }
   _enterRoute(route){
     if(route==='bills' && !this.state.billsLoaded) this._loadBills(true);
-    else if(route==='bin') this._loadBin(true);
-    else if(route==='pending') this._loadPending(true);
+    else if(route==='bin') this._loadBin(true);           // no-op once a full bills sync has landed
+    else if(route==='pending') this._loadPending(true);   // (lists are then complete + re-synced on every bill change)
     else if(route==='activity'){ if(!this.state.actLoaded && !this._actSyncing) this._syncActivity(); }
     else if(route==='products' && !this.state.productsPageLoaded) this._loadProductsPage(true);
     else if(route==='admin') this._loadUsers();
@@ -2832,39 +2832,47 @@ class Component extends DCLogic {
     else if(route==='dashboard'){ if(!this.state.billsLoaded) this._loadBills(true); this._loadDash(); }
   }
   _mergeById(a, b){ const seen={}; const out=[]; a.concat(b).forEach(x=>{ if(!seen[x.id]){ seen[x.id]=1; out.push(x); } }); return out; }
+  // Server-paged loaders (used until the first full bills sync lands). Once everything has been
+  // downloaded (_billsFull) they stand down, and a page that arrives after the full sync is dropped.
   async _loadBills(reset){
+    if(this._billsFull){ if(!this.state.billsLoaded) this.setState({ billsLoading:false, billsLoaded:true }); return; }
     if(this.state.billsLoading && !reset) return;
     this.setState({ billsLoading:true });
     try{
       const r = await this.db.loadBillsPage({ mode:'active', batch:this._batch(), startAfter: reset? null : this.state.billsCursor });
+      if(this._billsFull){ this.setState({ billsLoading:false, billsLoaded:true }); return; }
       this.setState(s=>({ bills: reset? r.bills : this._mergeById(s.bills, r.bills), billsCursor:r.cursor, billsHasMore:r.hasMore, billsLoading:false, billsLoaded:true }));
     }catch(e){ console.warn('loadBills', e); this.setState({ billsLoading:false, billsLoaded:true }); }
   }
-  loadMoreBills(){ if(this.state.billFlt.status==='archived'){ if(this.state.archivedHasMore && !this.state.archivedLoading) this._loadArchived(false); return; } if(this.state.billsHasMore && !this.state.billsLoading) this._loadBills(false); }
+  loadMoreBills(){ this.setState(s=>({ billsShow:(s.billsShow||this._batch())+this._batch() })); if(this.state.billFlt.status==='archived'){ if(this.state.archivedHasMore && !this.state.archivedLoading) this._loadArchived(false); return; } if(this.state.billsHasMore && !this.state.billsLoading) this._loadBills(false); }
   async _loadArchived(reset){
+    if(this._billsFull){ if(!this.state.archivedLoaded) this.setState({ archivedLoading:false, archivedLoaded:true }); return; }
     if(this.state.archivedLoading) return;
     this.setState({ archivedLoading:true });
-    try{ const r=await this.db.loadBillsPage({ mode:'archived', batch:this._batch(), startAfter: reset? null : this.state.archivedCursor }); this.setState(s=>({ archivedBills: reset? r.bills : this._mergeById(s.archivedBills, r.bills), archivedCursor:r.cursor, archivedHasMore:r.hasMore, archivedLoading:false, archivedLoaded:true })); }
+    try{ const r=await this.db.loadBillsPage({ mode:'archived', batch:this._batch(), startAfter: reset? null : this.state.archivedCursor }); if(this._billsFull){ this.setState({ archivedLoading:false, archivedLoaded:true }); return; } this.setState(s=>({ archivedBills: reset? r.bills : this._mergeById(s.archivedBills, r.bills), archivedCursor:r.cursor, archivedHasMore:r.hasMore, archivedLoading:false, archivedLoaded:true })); }
     catch(e){ console.warn('loadArchived', e); this.setState({ archivedLoading:false, archivedLoaded:true }); }
   }
   async _loadBin(reset){
+    if(this._billsFull){ if(!this.state.binLoaded) this.setState({ binLoading:false, binLoaded:true }); return; }
     if(this.state.binLoading) return;
     this.setState({ binLoading:true });
-    try{ const r=await this.db.loadBillsPage({ mode:'bin', batch:this._batch(), startAfter: reset? null : this.state.binCursor }); this.setState(s=>({ binBills: reset? r.bills : this._mergeById(s.binBills, r.bills), binCursor:r.cursor, binHasMore:r.hasMore, binLoading:false, binLoaded:true })); }
+    try{ const r=await this.db.loadBillsPage({ mode:'bin', batch:this._batch(), startAfter: reset? null : this.state.binCursor }); if(this._billsFull){ this.setState({ binLoading:false, binLoaded:true }); return; } this.setState(s=>({ binBills: reset? r.bills : this._mergeById(s.binBills, r.bills), binCursor:r.cursor, binHasMore:r.hasMore, binLoading:false, binLoaded:true })); }
     catch(e){ console.warn('loadBin', e); this.setState({ binLoading:false, binLoaded:true }); }
   }
-  loadMoreBin(){ if(this.state.binHasMore && !this.state.binLoading) this._loadBin(false); }
+  loadMoreBin(){ this.setState(s=>({ binShow:(s.binShow||this._batch())+this._batch() })); if(this.state.binHasMore && !this.state.binLoading) this._loadBin(false); }
   async _loadPending(reset){
+    if(this._billsFull){ if(!this.state.pendingLoaded) this.setState({ pendingLoading:false, pendingLoaded:true }); return; }
     if(this.state.pendingLoading) return;
     this.setState({ pendingLoading:true });
     try{
       const r=await this.db.loadPendingPage({ batch:this._batch(), startAfter: reset? null : this.state.pendingCursor });
+      if(this._billsFull){ this.setState({ pendingLoading:false, pendingLoaded:true }); return; }
       let total=this.state.pendingTotal;
       if(reset){ try{ const ms=await this.db.allMonthStats(); total=Object.values(ms).reduce((a,v)=>a+(v.pending||0),0); }catch(e){} }
       this.setState(s=>({ pendingBills: reset? r.bills : this._mergeById(s.pendingBills, r.bills), pendingCursor:r.cursor, pendingHasMore:r.hasMore, pendingLoading:false, pendingLoaded:true, pendingTotal:total }));
     }catch(e){ console.warn('loadPending', e); this.setState({ pendingLoading:false, pendingLoaded:true }); }
   }
-  loadMorePending(){ if(this.state.pendingHasMore && !this.state.pendingLoading) this._loadPending(false); }
+  loadMorePending(){ this.setState(s=>({ pendingShow:(s.pendingShow||this._batch())+this._batch() })); if(this.state.pendingHasMore && !this.state.pendingLoading) this._loadPending(false); }
   // FULL activity sync — runs SILENTLY in the background right after login and again after every
   // bill change (create / edit / payment / archive / delete / restore). EVERY activity document
   // is downloaded fresh from the server (no pagination, no cap) and the old local copy is
@@ -2881,13 +2889,55 @@ class Component extends DCLogic {
     (async()=>{
       try{
         const items=await this.db.loadAllActivity();
-        if(gen===(this._actGen||0) && this.state.authUser) this.setState({ activity:items||[], actCursor:null, actHasMore:false, actLoading:false, actLoaded:true });
+        // a newer change arrived while downloading -> this copy may be stale; the re-run replaces it
+        if(gen===(this._actGen||0) && this.state.authUser && !this._actSyncAgain) this.setState({ activity:items||[], actCursor:null, actHasMore:false, actLoading:false, actLoaded:true });
       }catch(e){
         if(gen===(this._actGen||0) && !this.state.actLoaded) this.setState({ actLoading:false, actLoaded:true });
       }
       this._actSyncing=false;
       if(this._actSyncAgain){ this._actSyncAgain=false; this._syncActivity(); }
     })();
+  }
+  // FULL bills sync — runs SILENTLY in the background after every bill change (create / edit /
+  // payment / archive / delete / restore / permanent delete). EVERY bill document — active,
+  // archived and recycle bin, with all fields and the complete nested lines + payment history —
+  // is downloaded fresh (API first, direct Firestore if the API fails). The old local copies
+  // (all bill lists, open-bill cache, search results) are then REPLACED in one step: nothing
+  // stale survives, and there's no loader, toast or console output. Overlapping requests
+  // collapse into one re-run, and a download a newer change made stale is discarded.
+  _syncBills(){
+    if(!this.db || !this.db.loadAllBills || !this.state.authUser) return;
+    if(this._billsSyncing){ this._billsSyncAgain=true; return; }
+    this._billsSyncing=true; const gen=this._actGen||0;
+    (async()=>{
+      try{
+        const all=await this.db.loadAllBills();
+        if(gen===(this._actGen||0) && this.state.authUser && !this._billsSyncAgain) this._applyAllBills(all||[]);
+      }catch(e){ /* silent: keep the current lists */ }
+      this._billsSyncing=false;
+      if(this._billsSyncAgain){ this._billsSyncAgain=false; this._syncBills(); }
+    })();
+  }
+  // Split the complete download into the app's bill lists exactly the way the server pages
+  // them (active / archived / bin / pending) and drop everything held before.
+  _applyAllBills(all){
+    const byId={}; all.forEach(b=>{ byId[b.id]=b; });
+    const live=all.filter(b=>!b.deleted);
+    const tsDesc=(a,b)=>b.ts-a.ts;
+    const pend=live.filter(b=>this.derive(b).pending>0);
+    const pendingTotal=pend.reduce((t,b)=>t+this.derive(b).pending,0);
+    this._billsFull=true;
+    this.setState(s=>{
+      const vc={}; Object.keys(s.viewCache||{}).forEach(id=>{ if(byId[id]) vc[id]=byId[id]; });
+      return {
+        bills: live.filter(b=>!b.archived).sort(tsDesc), billsCursor:null, billsHasMore:false, billsLoading:false, billsLoaded:true,
+        archivedBills: live.filter(b=>b.archived).sort(tsDesc), archivedCursor:null, archivedHasMore:false, archivedLoading:false, archivedLoaded:true,
+        binBills: all.filter(b=>b.deleted).sort((a,b)=>(b.deletedAt||b.ts)-(a.deletedAt||a.ts)), binCursor:null, binHasMore:false, binLoading:false, binLoaded:true,
+        pendingBills: pend.sort((a,b)=>this.derive(b).pending-this.derive(a).pending), pendingCursor:null, pendingHasMore:false, pendingLoading:false, pendingLoaded:true, pendingTotal,
+        searchResults: s.searchResults? s.searchResults.filter(x=>byId[x.id]).map(x=>byId[x.id]) : s.searchResults,
+        viewCache: vc,
+      };
+    });
   }
   // The WHOLE log is already downloaded; the page just renders it in batch-sized chunks so a
   // long history stays fast. "Load more" / auto-scroll reveals the next chunk — no network call.
@@ -3818,10 +3868,10 @@ class Component extends DCLogic {
 
   // ---------- bills search + filters + shared presets ----------
   setBillSearch(v){ this.setState(s=>({ billSearch:{...s.billSearch, q:v} })); }
-  applyBillSearch(){ const q=(this.state.billSearch.q||'').trim(); this.setState(s=>({ billSearch:{...s.billSearch, applied:q} })); this._runSearch(q); }
+  applyBillSearch(){ const q=(this.state.billSearch.q||'').trim(); this.setState(s=>({ billSearch:{...s.billSearch, applied:q}, billsShow:0 })); this._runSearch(q); }
   async _runSearch(q){ if(!q){ this.setState({ searchResults:null, searching:false }); return; } this.setState({ searching:true }); try{ const r=await this.db.searchBills(q); if((this.state.billSearch.applied||'')===q) this.setState({ searchResults:r, searching:false }); }catch(e){ this.setState({ searching:false }); this.toastMsg('Search nahi ho saki','warn'); } }
   clearBillSearch(){ this.setState({ billSearch:{q:'',applied:''}, searchResults:null, searching:false }); }
-  setFlt(patch){ this.setState(s=>({ billFlt:{...s.billFlt, ...patch} })); if(patch.status==='archived' && !this.state.archivedLoaded && !this.state.archivedLoading) this._loadArchived(true); }
+  setFlt(patch){ this.setState(s=>({ billFlt:{...s.billFlt, ...patch}, billsShow:0 })); if(patch.status==='archived' && !this.state.archivedLoaded && !this.state.archivedLoading) this._loadArchived(true); }
   clearFlt(){ this.setState({ billFlt:{ status:'all', from:'', to:'', amtOp:'any', amtVal:'', penOp:'any', penVal:'', hasComment:false, hasNote:false }, billSearch:{q:'',applied:''}, searchResults:null }); }
   toggleFltPanel(){ this.setState(s=>({ fltOpen:!s.fltOpen })); }
   // ---- list sorting (client-side over loaded items; default = creation time, newest first) ----
@@ -4137,10 +4187,13 @@ class Component extends DCLogic {
     const u=this.state.authUser; const geo=this._geo;
     const entry={ ts:new Date(), userId:o.userId||(u&&u.id)||'', userName:o.userName||(u&&u.fullName)||'', action:o.action, entity:o.entity, entityId:o.entityId||'', entityLabel:o.entityLabel||'', summary:o.summary||'', changes:o.changes||[], ip:(geo&&geo.ip)||null, location:(geo&&geo.location)||null };
     this.setState(s=> s.actLoaded ? ({ activity:[{ id:'tmp_'+Date.now()+'_'+Math.floor(Math.random()*1e6), ...entry }, ...s.activity] }) : {});
+    // A bill changed: any full download already in flight started BEFORE this change, so mark
+    // it stale right now (its result gets discarded and it re-runs).
+    if(o.entity==='bill'){ if(this._actSyncing) this._actSyncAgain=true; if(this._billsSyncing) this._billsSyncAgain=true; }
     if(this.db) this.db.logActivity(entry)
-      // a bill changed (or the user just signed in): discard the local activity and re-download
-      // all of it, including this new entry
-      .then(()=>{ if(o.entity==='bill' || o.entity==='auth') this._syncActivity(); })
+      // once this entry is saved: a bill change re-downloads ALL bills + ALL activity in the
+      // background (old local copies replaced); a sign-in re-downloads all activity
+      .then(()=>{ if(o.entity==='bill'){ this._syncActivity(); this._syncBills(); } else if(o.entity==='auth') this._syncActivity(); })
       .catch(e=>console.warn('logActivity', e));
   }
   _billDiff(o, nv){
@@ -4489,12 +4542,16 @@ class Component extends DCLogic {
     const baseList = searchActive ? S.searchResults.slice().sort((a,b)=>b.ts-a.ts) : (useArchived ? S.archivedBills.slice().sort((a,b)=>b.ts-a.ts) : sorted);
     const filtered = this._sortBills(baseList.filter(b=> this._canSeeBill(b) && (searchActive? !b.deleted : true) && inRange(b) && passFlt(b) && (useArchived? b.archived : !b.archived)), S.billSort);
     const fullIds = filtered.map(b=>b.id);
-    const allBillsView = withCtx(filtered.map(mkCard), fullIds, S.billsSecondary?'secondary':'bills');
-    const billsHasMore = S.billsSecondary? false : (searchActive? false : (useArchived? S.archivedHasMore : S.billsHasMore));
-    const billsRemaining = 0;
+    // render in batch-sized chunks (the full list may be thousands once everything is synced);
+    // viewer next/prev still walks the FULL filtered list via fullIds
+    const billsShowN = S.billsShow||this._batch();
+    const allBillsView = withCtx(filtered.slice(0, billsShowN).map(mkCard), fullIds, S.billsSecondary?'secondary':'bills');
+    const billsServerMore = S.billsSecondary? false : (searchActive? false : (useArchived? S.archivedHasMore : S.billsHasMore));
+    const billsHasMore = billsServerMore || filtered.length>billsShowN;
+    const billsRemaining = filtered.length>billsShowN ? Math.min(this._batch(), filtered.length-billsShowN) : 0;
     const billsLoadingMore = useArchived? (S.archivedLoading && S.archivedLoaded) : (S.billsLoading && S.billsLoaded);
     const billsListLoading = useArchived? (S.archivedLoading && !S.archivedLoaded) : ((S.billsLoading && !S.billsLoaded) || (searchActive && S.searching));
-    const billsCountLabel = `${filtered.length}${billsHasMore?'+':''} ${useArchived?'archived ':''}bill${filtered.length===1?'':'s'}`;
+    const billsCountLabel = `${filtered.length}${billsServerMore?'+':''} ${useArchived?'archived ':''}bill${filtered.length===1?'':'s'}`;
     const billsShownLabel = '';
     // active filter chips
     const chips=[];
@@ -4525,10 +4582,11 @@ class Component extends DCLogic {
     // recycle bin (server-paginated)
     const deletedSorted=S.binBills.filter(b=>this._canSeeBill(b)).sort((a,b)=> (b.deletedAt||b.ts)-(a.deletedAt||a.ts));
     const binIds=deletedSorted.map(b=>b.id);
-    const binView=deletedSorted.map(b=>{ const d=this.derive(b); const m=this.statusMeta(d.status); return { rk:b.id, id:b.id, no:b.no, name:b.name||'Walk-in customer', car:b.car||'-', phone:b.phone||'', metaBin:[b.name||'Walk-in customer', b.car].filter(p=>p&&String(p).trim()).join(' · '), total:this.money(d.total), statusLabel:m.label, badge:this.badgeStyle(d.status), deletedStr:b.deletedAt?('Deleted '+this.dateStr(b.deletedAt)):'Deleted', onOpen:()=>this.openView(b.id, binIds, binIds), onRestore:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.restoreBill(b.id); }, onPurge:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.permanentDelete(b.id); } }; });
+    const binShowN=S.binShow||this._batch();
+    const binView=deletedSorted.slice(0, binShowN).map(b=>{ const d=this.derive(b); const m=this.statusMeta(d.status); return { rk:b.id, id:b.id, no:b.no, name:b.name||'Walk-in customer', car:b.car||'-', phone:b.phone||'', metaBin:[b.name||'Walk-in customer', b.car].filter(p=>p&&String(p).trim()).join(' · '), total:this.money(d.total), statusLabel:m.label, badge:this.badgeStyle(d.status), deletedStr:b.deletedAt?('Deleted '+this.dateStr(b.deletedAt)):'Deleted', onOpen:()=>this.openView(b.id, binIds, binIds), onRestore:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.restoreBill(b.id); }, onPurge:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.permanentDelete(b.id); } }; });
     const binCount=deletedSorted.length;
     const binEmpty=binCount===0 && !S.binHasMore && S.binLoaded;
-    const binHasMore=S.binHasMore; const binRemaining=0;
+    const binHasMore=S.binHasMore || binCount>binShowN; const binRemaining=binCount>binShowN? Math.min(this._batch(), binCount-binShowN) : 0;
     const binListLoading=S.binLoading && !S.binLoaded;
 
     // editor view
@@ -4658,10 +4716,11 @@ class Component extends DCLogic {
     // pending page (server-paginated by pending desc)
     // pending page — default: newest created first (sortable via the sort menu)
     const pendSorted=this._sortBills(S.pendingBills.slice().filter(b=> this._canSeeBill(b) && this.derive(b).pending>0), S.pendSort);
-    const pendingBills=withCtx(pendSorted.map(mkCard), null, 'pending');
+    const pendingShowN=S.pendingShow||this._batch();
+    const pendingBills=withCtx(pendSorted.slice(0, pendingShowN).map(mkCard), pendSorted.map(b=>b.id), 'pending');
     const pendingTotalDisp=this.money(S.pendingTotal||pendSorted.reduce((s,b)=>s+this.derive(b).pending,0));
     const pendingCountLabel=`${pendSorted.length}${S.pendingHasMore?'+':''} bills awaiting payment`;
-    const pendingHasMore=S.pendingHasMore; const pendingListLoading=S.pendingLoading && !S.pendingLoaded;
+    const pendingHasMore=S.pendingHasMore || pendSorted.length>pendingShowN; const pendingListLoading=S.pendingLoading && !S.pendingLoaded;
 
     // products
     const productRows=[...S.productsPage].sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)).map(p=>({ name:p.name, count:p.count, onDelete:()=>this.deleteProduct(p.name) }));

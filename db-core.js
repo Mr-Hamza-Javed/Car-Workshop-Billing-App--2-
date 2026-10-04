@@ -97,6 +97,18 @@ export function billFromStore(id, d) {
 export function actToStore(a) {
   return { tsMs: (a.ts instanceof Date ? a.ts : new Date()).getTime(), userId: a.userId || "", userName: a.userName || "", action: a.action || "", entity: a.entity || "", entityId: a.entityId || "", entityLabel: a.entityLabel || "", summary: a.summary || "", changes: a.changes || [], ip: a.ip || null, location: a.location || null };
 }
+/* FULL variants for the "download everything" syncs: the app-shaped object PLUS every other
+   field stored on the document (and on each nested line / history entry), so nothing the
+   database holds is ever dropped on the way to the app. App-shaped fields win on name clashes. */
+export function billFromStoreFull(id, d) {
+  const app = billFromStore(id, d);
+  const lines = (d.lines || []).map((l, i) => ({ ...l, ...app.lines[i] }));
+  const history = (d.history || []).map((h, i) => ({ ...h, ...app.history[i] }));
+  return { ...d, ...app, lines, history };
+}
+export function actFromStoreFull(id, d) {
+  return { ...d, ...actFromStore(id, d), changes: Array.isArray(d.changes) ? d.changes : [] };
+}
 export function actFromStore(id, d) {
   // normalize against any legacy/inconsistent field name a record may have been written with —
   // current code always WRITES under "location" (see actToStore), but old/foreign records may not.
@@ -442,6 +454,20 @@ export function makeDB(A) {
       const { rows, hasMore } = await A.query("activity", { orderBy: ["tsMs", "desc"], limit: batch, startAfter });
       return { items: rows.map((r) => actFromStore(r.id, r)), cursor: rows.length ? rows[rows.length - 1].tsMs : null, hasMore };
     },
+    // EVERY bill document (no cap) — active, archived AND recycle-bin bills, with every field and
+    // the complete nested lines + payment history. Paged by document id like loadAllActivity.
+    async loadAllBills() {
+      const out = [];
+      let startAfter = null, guard = 0;
+      while (guard++ < 100000) {
+        const { rows, hasMore } = await A.query("bills", { orderBy: ["__name__", "asc"], limit: 1000, startAfter });
+        rows.forEach((r) => { const { id, ...d } = r; out.push(billFromStoreFull(id, d)); });
+        if (!hasMore || !rows.length) break;
+        startAfter = rows[rows.length - 1].id;
+      }
+      out.sort((a, b) => b.ts - a.ts);
+      return out;
+    },
     // EVERY activity document (no cap). Paged internally by document id — a unique key, so no
     // entry is ever skipped or repeated between pages (tsMs can tie) and no composite index is
     // needed — then sorted newest-first for the Activity page.
@@ -450,7 +476,7 @@ export function makeDB(A) {
       let startAfter = null, guard = 0;
       while (guard++ < 100000) {
         const { rows, hasMore } = await A.query("activity", { orderBy: ["__name__", "asc"], limit: 1000, startAfter });
-        rows.forEach((r) => out.push(actFromStore(r.id, r)));
+        rows.forEach((r) => { const { id, ...d } = r; out.push(actFromStoreFull(id, d)); });
         if (!hasMore || !rows.length) break;
         startAfter = rows[rows.length - 1].id;
       }

@@ -16,10 +16,10 @@ The web app (`index.html` + `firebase-db.js`) calls this REST API instead of Fir
 - The server **verifies the token**, loads `users/{uid}`, checks the permission for that action,
   then runs the shared business logic in [`../db-core.js`](../db-core.js) (the same code the
   browser demo mode uses — bill numbers, stats aggregates, transactions).
-- **One exception — activity log fallback:** the app reads the activity log from
-  `GET /api/activity/all`; if that call fails (server down, timeout, error) it silently reads the
-  `activity` collection **directly from Firestore** instead (read-only). Keep the `/activity` read
-  rule in `firestore.rules` (`allow read: if isKnownUser()`) for this to work.
+- **One exception — full-sync fallback:** the app downloads ALL bills and ALL activity from
+  `GET /api/bills/all` and `GET /api/activity/all`; if a call fails (server down, timeout, error)
+  it silently reads that collection **directly from Firestore** instead (read-only). Keep the
+  `/bills` and `/activity` read rules in `firestore.rules` (`allow read: if isKnownUser()`).
 - It also replaces the old Cloud Functions: user admin, IP/geo lookup for the activity log, and the
   background "Recalculate reports" job (progress is polled by the app).
 
@@ -112,6 +112,7 @@ All routes are under `/api`. Bodies and responses are JSON; `Date` values travel
 | GET | `/bills?mode=active\|archived\|bin&batch=&startAfter=` | known user |
 | GET | `/bills/pending?batch=&startAfter=` | known user |
 | GET | `/bills/day?dayMs=` | known user |
+| GET | `/bills/all` | known user — EVERY bill (active, archived, recycle bin) with all fields + nested lines/history (the app syncs this after each bill change) |
 | GET | `/bills/search?q=` | known user |
 | GET | `/customers/history?phone=\|car=&exId=` | known user |
 | GET | `/bills/:id` | known user |

@@ -45,7 +45,7 @@ const SESSION_KEY = "msa_session_v1";          // local-adapter session
 import { APP_CONFIG } from "./app-config.js";
 import {
   FULL_PERMS, makeDB, encodeJSON, decodeJSON,
-  lower, nowMs, rid, sha256Hex, randomSalt, hashPassword, userPublic, actFromStore,
+  lower, nowMs, rid, sha256Hex, randomSalt, hashPassword, userPublic, actFromStoreFull, billFromStoreFull,
 } from "./db-core.js";
 export { FULL_PERMS };
 
@@ -279,11 +279,11 @@ async function makeApiDB() {
 
   const core = makeDB({ mode: "api" });   // only for derive() (pure); no storage behind it
 
-  /* ---- ACTIVITY FALLBACK: direct Firestore read ----
-     The activity log normally comes from the API. If the API is down / unreachable / errors, the
-     app reads the activity collection DIRECTLY from Firestore instead (read-only — the Firestore
-     rules allow any known user to read /activity). The Firestore SDK is only downloaded the first
-     time this fallback is actually needed. Silent: no logs. */
+  /* ---- FULL-SYNC FALLBACK: direct Firestore read ----
+     The complete bills + activity downloads normally come from the API. If the API is down /
+     unreachable / errors, the app reads those collections DIRECTLY from Firestore instead
+     (read-only — the Firestore rules allow any known user to read /bills and /activity). The
+     Firestore SDK is only downloaded the first time this fallback is actually needed. Silent. */
   let fsPromise = null;
   function directFirestore() {
     if (!fsPromise) {
@@ -297,7 +297,7 @@ async function makeApiDB() {
     }
     return fsPromise;
   }
-  async function allActivityFromFirestore() {
+  async function allFromFirestore(coll, mapDoc) {
     const { fs, fdb } = await directFirestore();
     const out = [];
     let last = null;
@@ -305,8 +305,8 @@ async function makeApiDB() {
       // paged by document id (unique, no composite index) — same as the server does
       const parts = [fs.orderBy(fs.documentId()), fs.limit(1000)];
       if (last) parts.splice(1, 0, fs.startAfter(last));
-      const snap = await fs.getDocs(fs.query(fs.collection(fdb, "activity"), ...parts));
-      snap.docs.forEach((d) => out.push(actFromStore(d.id, d.data())));
+      const snap = await fs.getDocs(fs.query(fs.collection(fdb, coll), ...parts));
+      snap.docs.forEach((d) => out.push(mapDoc(d.id, d.data())));
       if (snap.docs.length < 1000) break;
       last = snap.docs[snap.docs.length - 1];
     }
@@ -384,6 +384,11 @@ async function makeApiDB() {
     /* ---------- bills ---------- */
     loadBillsPage: ({ mode, batch, startAfter }) => api("GET", "/bills" + qs({ mode, batch, startAfter })),
     loadPendingPage: ({ batch, startAfter }) => api("GET", "/bills/pending" + qs({ batch, startAfter })),
+    // EVERY bill (active + archived + bin) with all nested data — API first, direct Firestore if it fails
+    async loadAllBills() {
+      try { return await api("GET", "/bills/all", undefined, { timeoutMs: 60000 }); }
+      catch (e) { return allFromFirestore("bills", billFromStoreFull); }
+    },
     billsForDay: (dayMs) => api("GET", "/bills/day" + qs({ dayMs: new Date(dayMs).getTime() })),
     async searchBills(q) { q = (q || "").trim(); if (!q) return []; return api("GET", "/bills/search" + qs({ q })); },
     async getBill(id) { try { return await api("GET", "/bills/" + enc(id)); } catch (e) { if (e.status === 404) return null; throw e; } },
@@ -408,7 +413,7 @@ async function makeApiDB() {
     // API first; if the API fails for any reason (down, timeout, server error) read Firestore directly
     async loadAllActivity() {
       try { return await api("GET", "/activity/all", undefined, { timeoutMs: 30000 }); }
-      catch (e) { return allActivityFromFirestore(); }
+      catch (e) { return allFromFirestore("activity", actFromStoreFull); }
     },
     billActivity: (billId) => api("GET", "/bills/" + enc(billId) + "/activity"),
 

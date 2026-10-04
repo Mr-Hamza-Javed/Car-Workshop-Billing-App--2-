@@ -17,6 +17,7 @@ import { PORT, SERVE_STATIC, ALLOWED_ORIGINS, WEB_ROOT, firestore } from "./lib/
 import path from "node:path";
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import { makeDB, encodeJSON, reviveDates, userPublic } from "../db-core.js";
 import { makeFirestoreAdapter } from "./lib/firestore-adapter.js";
 import { authenticate, requireKnownUser, requirePerm, requireAdmin, badRequest, notFound, loadProfile } from "./lib/auth.js";
@@ -63,7 +64,8 @@ app.use("/api", cors({
   allowedHeaders: ["Authorization", "Content-Type"],
   maxAge: 86400,
 }));
-app.use("/api", express.json({ limit: "10mb" }));   // settings may carry a base64 logo
+app.use("/api", express.json({ limit: "10mb" }));
+app.use(compression());   // gzip — the full bills / activity downloads shrink a lot   // settings may carry a base64 logo
 
 /* =====================================================================
    PUBLIC
@@ -124,6 +126,7 @@ api.get("/bills/day", P.read, async (req, res) => {
   if (!Number.isFinite(dayMs)) throw badRequest("dayMs chahiye");
   send(res, await core.billsForDay(dayMs));
 });
+api.get("/bills/all", P.read, async (req, res) => send(res, await core.loadAllBills()));
 api.get("/bills/search", P.read, async (req, res) => send(res, await core.searchBills(String(req.query.q || ""))));
 api.get("/customers/history", P.read, async (req, res) => {
   const exId = req.query.exId ? String(req.query.exId) : undefined;
