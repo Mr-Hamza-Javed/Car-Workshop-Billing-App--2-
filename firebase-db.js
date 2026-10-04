@@ -45,7 +45,7 @@ const SESSION_KEY = "msa_session_v1";          // local-adapter session
 import { APP_CONFIG } from "./app-config.js";
 import {
   FULL_PERMS, makeDB, encodeJSON, decodeJSON,
-  lower, nowMs, rid, sha256Hex, randomSalt, hashPassword, userPublic,
+  lower, nowMs, rid, sha256Hex, randomSalt, hashPassword, userPublic, actFromStore,
 } from "./db-core.js";
 export { FULL_PERMS };
 
@@ -224,8 +224,11 @@ async function makeApiDB() {
       headers.Authorization = "Bearer " + (await u.getIdToken());
     }
     let res;
-    try { res = await fetch(BASE + "/api" + path, { method, headers, body: body !== undefined ? encodeJSON(body) : undefined }); }
+    const ctl = opts.timeoutMs ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), opts.timeoutMs) : null;
+    try { res = await fetch(BASE + "/api" + path, { method, headers, body: body !== undefined ? encodeJSON(body) : undefined, signal: ctl ? ctl.signal : undefined }); }
     catch (e) { const er = new Error("Network problem — server tak rasai nahi ho saki"); er.code = "unavailable"; throw er; }
+    finally { if (timer) clearTimeout(timer); }
     const text = await res.text();
     let data = null;
     try { data = text ? decodeJSON(text) : null; } catch (e) { data = null; }
@@ -275,6 +278,41 @@ async function makeApiDB() {
   }
 
   const core = makeDB({ mode: "api" });   // only for derive() (pure); no storage behind it
+
+  /* ---- ACTIVITY FALLBACK: direct Firestore read ----
+     The activity log normally comes from the API. If the API is down / unreachable / errors, the
+     app reads the activity collection DIRECTLY from Firestore instead (read-only — the Firestore
+     rules allow any known user to read /activity). The Firestore SDK is only downloaded the first
+     time this fallback is actually needed. Silent: no logs. */
+  let fsPromise = null;
+  function directFirestore() {
+    if (!fsPromise) {
+      fsPromise = import(SDK + "firebase-firestore.js").then((fs) => {
+        const fdb = fs.getFirestore(app);
+        // local development against the Firestore emulator: localStorage.msa_firestore_emulator = '127.0.0.1:8080'
+        try { const emu = localStorage.getItem("msa_firestore_emulator"); if (emu) { const [h, p] = emu.split(":"); fs.connectFirestoreEmulator(fdb, h, Number(p)); } } catch (e) {}
+        return { fs, fdb };
+      });
+      fsPromise.catch(() => { fsPromise = null; });   // allow a retry after a failed SDK load
+    }
+    return fsPromise;
+  }
+  async function allActivityFromFirestore() {
+    const { fs, fdb } = await directFirestore();
+    const out = [];
+    let last = null;
+    for (let guard = 0; guard < 100000; guard++) {
+      // paged by document id (unique, no composite index) — same as the server does
+      const parts = [fs.orderBy(fs.documentId()), fs.limit(1000)];
+      if (last) parts.splice(1, 0, fs.startAfter(last));
+      const snap = await fs.getDocs(fs.query(fs.collection(fdb, "activity"), ...parts));
+      snap.docs.forEach((d) => out.push(actFromStore(d.id, d.data())));
+      if (snap.docs.length < 1000) break;
+      last = snap.docs[snap.docs.length - 1];
+    }
+    out.sort((a, b) => b.ts - a.ts);
+    return out;
+  }
 
   return {
     mode: "api",
@@ -367,7 +405,11 @@ async function makeApiDB() {
     /* ---------- activity ---------- */
     async logActivity(entry) { const r = await api("POST", "/activity", entry); return r && r.id; },
     loadActivityPage: ({ batch, startAfter }) => api("GET", "/activity" + qs({ batch, startAfter })),
-    loadAllActivity: () => api("GET", "/activity/all"),
+    // API first; if the API fails for any reason (down, timeout, server error) read Firestore directly
+    async loadAllActivity() {
+      try { return await api("GET", "/activity/all", undefined, { timeoutMs: 30000 }); }
+      catch (e) { return allActivityFromFirestore(); }
+    },
     billActivity: (billId) => api("GET", "/bills/" + enc(billId) + "/activity"),
 
     /* ---------- stats ---------- */

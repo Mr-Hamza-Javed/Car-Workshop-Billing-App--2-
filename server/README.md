@@ -16,6 +16,10 @@ The web app (`index.html` + `firebase-db.js`) calls this REST API instead of Fir
 - The server **verifies the token**, loads `users/{uid}`, checks the permission for that action,
   then runs the shared business logic in [`../db-core.js`](../db-core.js) (the same code the
   browser demo mode uses — bill numbers, stats aggregates, transactions).
+- **One exception — activity log fallback:** the app reads the activity log from
+  `GET /api/activity/all`; if that call fails (server down, timeout, error) it silently reads the
+  `activity` collection **directly from Firestore** instead (read-only). Keep the `/activity` read
+  rule in `firestore.rules` (`allow read: if isKnownUser()`) for this to work.
 - It also replaces the old Cloud Functions: user admin, IP/geo lookup for the activity log, and the
   background "Recalculate reports" job (progress is polled by the app).
 

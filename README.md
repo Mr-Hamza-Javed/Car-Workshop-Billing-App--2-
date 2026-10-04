@@ -72,6 +72,7 @@ Every action gives clear feedback and is protected against double-submit:
 |---|---|---|
 | **App** | Single `index.html` (Design Component) | UI + logic; static, hosts on GitHub Pages; installable PWA. |
 | **Data + auth (client)** | `firebase-db.js` | One async facade. **Login / logout / change-password = Firebase Auth in the browser.** Every data call = `fetch` to the Node API with the user's Firebase ID token. **localStorage demo fallback** so the design preview works without a backend. |
+| **Activity fallback** | `firebase-db.js` | The activity log comes from the API; if the API fails, the app silently reads the `activity` collection directly from Firestore (read-only, allowed by `firestore.rules`). |
 | **Business logic** | `db-core.js` | Shared by the server and the demo mode: bill numbering, stats aggregates, transactions, search. |
 | **API server** | `server/` | Node.js + Express + Firebase **Admin SDK** — the ONLY thing that reads/writes Firestore. Verifies the ID token and the caller's permissions on every request; also does user admin, geo lookup and background report recalculation (replaces the old Cloud Functions). See [`server/README.md`](server/README.md). |
 | **Security** | `server/lib/auth.js` (+ `firestore.rules`) | Per-action permission checks on the server. Firestore rules remain as a second line of defence. |
