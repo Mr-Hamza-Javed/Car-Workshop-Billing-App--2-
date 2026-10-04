@@ -2865,23 +2865,25 @@ class Component extends DCLogic {
     }catch(e){ console.warn('loadPending', e); this.setState({ pendingLoading:false, pendingLoaded:true }); }
   }
   loadMorePending(){ if(this.state.pendingHasMore && !this.state.pendingLoading) this._loadPending(false); }
-  // FULL activity sync — runs in the background right after login and again after every bill
-  // change (create / edit / payment / archive / delete / restore). The locally held activity is
-  // thrown away first, then EVERY activity document is downloaded fresh from the server (no
-  // pagination, no cap). Requests that arrive while a sync is running collapse into one re-run.
+  // FULL activity sync — runs SILENTLY in the background right after login and again after every
+  // bill change (create / edit / payment / archive / delete / restore). EVERY activity document
+  // is downloaded fresh from the server (no pagination, no cap) and the old local copy is
+  // replaced by it in one step — no toast, no console output, no loader or empty-list flash
+  // (only the very first load, before anything exists locally, lets the Activity page show its
+  // skeleton). On failure the current list simply stays. Requests that arrive while a sync is
+  // running collapse into one re-run.
   _syncActivity(){
     if(!this.db || !this.db.loadAllActivity || !this.state.authUser) return;
     if(!this.permOf('activity','view').on) return;
     if(this._actSyncing){ this._actSyncAgain=true; return; }
     this._actSyncing=true; const gen=this._actGen||0;
-    this.setState({ activity:[], actCursor:null, actHasMore:false, actLoading:true, actLoaded:false, actShow:0 });
+    if(!this.state.actLoaded) this.setState({ actLoading:true });
     (async()=>{
       try{
         const items=await this.db.loadAllActivity();
-        if(gen===(this._actGen||0) && this.state.authUser) this.setState({ activity:items||[], actLoading:false, actLoaded:true });
+        if(gen===(this._actGen||0) && this.state.authUser) this.setState({ activity:items||[], actCursor:null, actHasMore:false, actLoading:false, actLoaded:true });
       }catch(e){
-        console.warn('syncActivity', e);
-        if(gen===(this._actGen||0)) this.setState({ actLoading:false, actLoaded:true });
+        if(gen===(this._actGen||0) && !this.state.actLoaded) this.setState({ actLoading:false, actLoaded:true });
       }
       this._actSyncing=false;
       if(this._actSyncAgain){ this._actSyncAgain=false; this._syncActivity(); }
