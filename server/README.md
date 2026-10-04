@@ -123,6 +123,7 @@ All routes are under `/api`. Bodies and responses are JSON; `Date` values travel
 | GET | `/products?batch=&startAfter=` | known user |
 | DELETE | `/products?name=` | `products.delete` |
 | GET / POST | `/activity` | known user (the server stamps the user from the token) |
+| GET | `/activity/all` | known user — EVERY activity document (the app syncs this after login and after each bill change) |
 | GET | `/stats/days?keys=`, `/stats/months?keys=`, `/stats/months/all` | known user |
 | POST | `/stats/recompute`, `/stats/reconcile-day` | any bill-write permission |
 | POST | `/recalc` · GET `/recalc/:jobId` | known user |

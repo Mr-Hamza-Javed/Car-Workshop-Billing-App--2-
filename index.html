@@ -2322,7 +2322,7 @@ class Component extends DCLogic {
     archivedBills: [], archivedCursor:null, archivedHasMore:false, archivedLoading:false, archivedLoaded:false,
     binBills: [], binCursor:null, binHasMore:false, binLoading:false, binLoaded:false,
     pendingBills: [], pendingCursor:null, pendingHasMore:false, pendingLoading:false, pendingLoaded:false, pendingTotal:0,
-    activity: [], actCursor:null, actHasMore:false, actLoading:false, actLoaded:false,
+    activity: [], actCursor:null, actHasMore:false, actLoading:false, actLoaded:false, actShow:0,
     products: [], productsLoading:false, productsLoaded:false,
     productsPage: [], productsPageCursor:null, productsPageHasMore:false, productsPageLoading:false, productsPageLoaded:false,
     users: [], usersLoading:false, usersLoaded:false,
@@ -2550,6 +2550,7 @@ class Component extends DCLogic {
   }
   async _onAuth(user){
     if(!user){
+      this._actGen=(this._actGen||0)+1; this._actSyncAgain=false;
       this.setState({ authReady:true, authUser:null, userMenuOpen:false, route:'dashboard',
         bills:[], billsLoaded:false, billsLoading:false, binBills:[], binLoaded:false, pendingBills:[], pendingLoaded:false,
         activity:[], actLoaded:false, products:[], productsLoaded:false, productsPage:[], productsPageCursor:null, productsPageHasMore:false, productsPageLoaded:false, users:[], usersLoaded:false,
@@ -2563,6 +2564,7 @@ class Component extends DCLogic {
     this._loadDash();
     if(!this.state.productsLoaded) this._loadProducts();   // needed for the New Bill autocomplete dropdown right away, not just after visiting Products
     this._ensureGeo();   // session-resume case (page refresh) - warms the cache for later activity entries
+    this._syncActivity();   // download the WHOLE activity log in the background
   }
   async _loadShell(){
     // These three docs are independent of each other, so fetch them together instead of
@@ -2823,7 +2825,7 @@ class Component extends DCLogic {
     if(route==='bills' && !this.state.billsLoaded) this._loadBills(true);
     else if(route==='bin') this._loadBin(true);
     else if(route==='pending') this._loadPending(true);
-    else if(route==='activity') this._loadActivity(true);
+    else if(route==='activity'){ if(!this.state.actLoaded && !this._actSyncing) this._syncActivity(); }
     else if(route==='products' && !this.state.productsPageLoaded) this._loadProductsPage(true);
     else if(route==='admin') this._loadUsers();
     else if(route==='reports') this._loadReport();
@@ -2863,13 +2865,31 @@ class Component extends DCLogic {
     }catch(e){ console.warn('loadPending', e); this.setState({ pendingLoading:false, pendingLoaded:true }); }
   }
   loadMorePending(){ if(this.state.pendingHasMore && !this.state.pendingLoading) this._loadPending(false); }
-  async _loadActivity(reset){
-    if(this.state.actLoading) return;
-    this.setState({ actLoading:true });
-    try{ const r=await this.db.loadActivityPage({ batch:this._batch(), startAfter: reset? null : this.state.actCursor }); this.setState(s=>({ activity: reset? r.items : this._mergeById(s.activity, r.items), actCursor:r.cursor, actHasMore:r.hasMore, actLoading:false, actLoaded:true })); }
-    catch(e){ console.warn('loadActivity', e); this.setState({ actLoading:false, actLoaded:true }); }
+  // FULL activity sync — runs in the background right after login and again after every bill
+  // change (create / edit / payment / archive / delete / restore). The locally held activity is
+  // thrown away first, then EVERY activity document is downloaded fresh from the server (no
+  // pagination, no cap). Requests that arrive while a sync is running collapse into one re-run.
+  _syncActivity(){
+    if(!this.db || !this.db.loadAllActivity || !this.state.authUser) return;
+    if(!this.permOf('activity','view').on) return;
+    if(this._actSyncing){ this._actSyncAgain=true; return; }
+    this._actSyncing=true; const gen=this._actGen||0;
+    this.setState({ activity:[], actCursor:null, actHasMore:false, actLoading:true, actLoaded:false, actShow:0 });
+    (async()=>{
+      try{
+        const items=await this.db.loadAllActivity();
+        if(gen===(this._actGen||0) && this.state.authUser) this.setState({ activity:items||[], actLoading:false, actLoaded:true });
+      }catch(e){
+        console.warn('syncActivity', e);
+        if(gen===(this._actGen||0)) this.setState({ actLoading:false, actLoaded:true });
+      }
+      this._actSyncing=false;
+      if(this._actSyncAgain){ this._actSyncAgain=false; this._syncActivity(); }
+    })();
   }
-  loadMoreAct(){ if(this.state.actHasMore && !this.state.actLoading) this._loadActivity(false); }
+  // The WHOLE log is already downloaded; the page just renders it in batch-sized chunks so a
+  // long history stays fast. "Load more" / auto-scroll reveals the next chunk — no network call.
+  loadMoreAct(){ if(this.state.actLoaded) this.setState(s=>({ actShow:(s.actShow||this._batch())+this._batch() })); }
   // Autocomplete pool — top N products (N = Settings "Products in dropdown", default 100) by usage
   // (most-used first, then newest). Loaded at startup for the New Bill dropdown; the line-item
   // listbox searches ONLY this loaded set (plus anything _addToPool injects after a save).
@@ -4115,7 +4135,11 @@ class Component extends DCLogic {
     const u=this.state.authUser; const geo=this._geo;
     const entry={ ts:new Date(), userId:o.userId||(u&&u.id)||'', userName:o.userName||(u&&u.fullName)||'', action:o.action, entity:o.entity, entityId:o.entityId||'', entityLabel:o.entityLabel||'', summary:o.summary||'', changes:o.changes||[], ip:(geo&&geo.ip)||null, location:(geo&&geo.location)||null };
     this.setState(s=> s.actLoaded ? ({ activity:[{ id:'tmp_'+Date.now()+'_'+Math.floor(Math.random()*1e6), ...entry }, ...s.activity] }) : {});
-    if(this.db) this.db.logActivity(entry).catch(e=>console.warn('logActivity', e));
+    if(this.db) this.db.logActivity(entry)
+      // a bill changed (or the user just signed in): discard the local activity and re-download
+      // all of it, including this new entry
+      .then(()=>{ if(o.entity==='bill' || o.entity==='auth') this._syncActivity(); })
+      .catch(e=>console.warn('logActivity', e));
   }
   _billDiff(o, nv){
     const ch=[]; const cur=this.state.settings.currency; const money=v=> cur+' '+Math.round(Number(v)||0).toLocaleString('en-US');
@@ -4134,7 +4158,7 @@ class Component extends DCLogic {
     if(o.ts && nv.ts && o.ts.getTime && nv.ts.getTime && o.ts.getTime()!==nv.ts.getTime()) cmp('Date', this.dateStrFull(o.ts), this.dateStrFull(nv.ts));
     return ch;
   }
-  setActFilter(patch){ this.setState(s=>({ actFilter:{ ...s.actFilter, ...patch } })); }
+  setActFilter(patch){ this.setState(s=>({ actFilter:{ ...s.actFilter, ...patch }, actShow:0 })); }
   async openChanges(id){
     this.setState({ changesModal:id });
     // Fetch THIS bill's activity from the DB so the log shows even if the Activity tab was
@@ -4901,14 +4925,14 @@ class Component extends DCLogic {
       return true;
     });
     actList = actList.slice().sort((a,b)=> af.sort==='old'? (a.ts-b.ts):(b.ts-a.ts));
-    const actAll=actList; const actHasMore=S.actHasMore; const actRemaining=0; const actListLoading=S.actLoading && !S.actLoaded;
+    const actAll=actList; const actShowN=S.actShow||this._batch(); const actHasMore=actAll.length>actShowN; const actRemaining=Math.min(this._batch(), Math.max(0, actAll.length-actShowN)); const actListLoading=S.actLoading && !S.actLoaded;
     const rangeOpts=[['7d','7 days'],['28d','28 days'],['all','All time'],['custom','Custom']];
     const rgbase='padding:6px 11px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid';
     const actRangeBtns=rangeOpts.map(([k,label])=>({rk:k+(af.range===k?'1':'0'),label,onClick:()=>this.setActFilter({range:k}),style: af.range===k?`${rgbase} #1f6feb;background:#eef4ff;color:#1f6feb`:`${rgbase} #ece4d7;background:#fff;color:#3f4753`}));
     const actCustom = af.range==='custom';
     const actMeta=(action)=>{ const M={ create:['plus','#0f7a52','#e7f5ee'], update:['edit','#1f6feb','#eef4ff'], delete:['trash','#c0392b','#fdecea'], permanent_delete:['trash','#c0392b','#fdecea'], empty_bin:['trash','#c0392b','#fdecea'], archive:['archive','#b8740a','#fdf2e0'], unarchive:['archive','#b8740a','#fdf2e0'], restore:['restore','#0f7a52','#e7f5ee'], payment:['cash','#0f7a52','#e7f5ee'], adjustment:['refund','#c0392b','#fdecea'], login:['lock','#5b3df5','#f0ecff'], settings:['gear','#3f4753','#f0ece4'] }; return M[action]||['info','#8a8175','#f0ece4']; };
     const entLabel={ bill:'Bill', product:'Product', user:'User', settings:'Settings', auth:'Login' };
-    const activityView = actAll.map(e=>{
+    const activityView = actAll.slice(0, actShowN).map(e=>{
       const meta=actMeta(e.action); const ink=meta[1], bg=meta[2];
       const billLink = (e.entity==='bill' && e.entityId);
       return { rk:e.id, icon:this.ic(meta[0],16), iconWrap:`width:36px;height:36px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:${bg};color:${ink}`,

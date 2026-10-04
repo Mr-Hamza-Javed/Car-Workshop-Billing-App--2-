@@ -367,6 +367,7 @@ async function makeApiDB() {
     /* ---------- activity ---------- */
     async logActivity(entry) { const r = await api("POST", "/activity", entry); return r && r.id; },
     loadActivityPage: ({ batch, startAfter }) => api("GET", "/activity" + qs({ batch, startAfter })),
+    loadAllActivity: () => api("GET", "/activity/all"),
     billActivity: (billId) => api("GET", "/bills/" + enc(billId) + "/activity"),
 
     /* ---------- stats ---------- */

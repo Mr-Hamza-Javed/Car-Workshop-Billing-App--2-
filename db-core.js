@@ -442,6 +442,21 @@ export function makeDB(A) {
       const { rows, hasMore } = await A.query("activity", { orderBy: ["tsMs", "desc"], limit: batch, startAfter });
       return { items: rows.map((r) => actFromStore(r.id, r)), cursor: rows.length ? rows[rows.length - 1].tsMs : null, hasMore };
     },
+    // EVERY activity document (no cap). Paged internally by document id — a unique key, so no
+    // entry is ever skipped or repeated between pages (tsMs can tie) and no composite index is
+    // needed — then sorted newest-first for the Activity page.
+    async loadAllActivity() {
+      const out = [];
+      let startAfter = null, guard = 0;
+      while (guard++ < 100000) {
+        const { rows, hasMore } = await A.query("activity", { orderBy: ["__name__", "asc"], limit: 1000, startAfter });
+        rows.forEach((r) => out.push(actFromStore(r.id, r)));
+        if (!hasMore || !rows.length) break;
+        startAfter = rows[rows.length - 1].id;
+      }
+      out.sort((a, b) => b.ts - a.ts);
+      return out;
+    },
     // Activity for ONE bill (the bill-log modal). Single equality filter => needs NO composite
     // index and reads only this bill's handful of entries (cheap) — so the log works even when
     // the Activity tab was never opened, and never scans the whole activity collection.

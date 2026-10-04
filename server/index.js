@@ -162,6 +162,7 @@ api.post("/activity", P.read, async (req, res) => {
   const id = await core.logActivity({ ...e, ts: e.ts instanceof Date ? e.ts : new Date(), userId: req.user.uid, userName: (prof && prof.fullName) || e.userName || req.user.email });
   send(res, { id });
 });
+api.get("/activity/all", P.read, async (req, res) => send(res, await core.loadAllActivity()));
 api.get("/activity", P.read, async (req, res) => send(res, await core.loadActivityPage({ batch: batchOf(req), startAfter: cursor(req) })));
 
 /* ---------- stats (dashboard + reports) ---------- */
