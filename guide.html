@@ -77,6 +77,10 @@
     </div>
   </div>
 
+  <div class="card">
+    <div class="note"><span class="ico">ℹ️</span><div><b>Naya architecture:</b> app ab Firestore se <b>direct baat nahi karti</b>. Login Firebase Auth se app me hi hota hai, lekin saara data <b>Node.js API server</b> (<code>server/</code> folder) ke zariye aata/jata hai. Cloud Functions (steps 4–6 ka functions wala hissa) ki ab zaroorat nahi — unki jagah server chalayein: <code>cd server &amp;&amp; npm install &amp;&amp; npm start</code>. Poori tafseel: <code>server/README.md</code>.</div></div>
+  </div>
+
   <div class="card" id="s1">
     <div class="step"><div class="num">1</div><div>
       <h2>Cloud Firestore enable karein</h2>
@@ -237,8 +241,10 @@ cd ..</pre>
     <h2>Project ki files</h2>
     <div class="kv">
       <b>index.html</b><span>Poori app (UI + logic).</span>
-      <b>firebase-db.js</b><span>Data + auth layer (Firestore + Functions + offline).</span>
-      <b>functions/</b><span>Cloud Functions — secure user management.</span>
+      <b>firebase-db.js</b><span>Auth (Firebase) + data calls to the Node API + offline demo.</span>
+      <b>db-core.js</b><span>Shared business logic (server + demo mode).</span>
+      <b>server/</b><span>Node.js API server — the only part that talks to Firestore.</span>
+      <b>functions/</b><span>Purani Cloud Functions — ab app inhe call nahi karti.</span>
       <b>firestore.rules</b><span>Security rules.</span>
       <b>firestore.indexes.json</b><span>Query indexes.</span>
       <b>manifest.webmanifest</b> + <b>service-worker.js</b><span>PWA (installable + offline shell).</span>
@@ -257,17 +263,17 @@ cd ..</pre>
   </div>
 
   <div class="card">
-    <span class="pill">Admin-only</span>
-    <h2>Emergency access switch (kill switch)</h2>
-    <p>Aap kisi bhi waqt Firestore console se <b>saari app ki access band</b> kar sakte hain — koi bhi
-       user login screen tak nahi pohanch payega, sirf ek full-screen message dikhega jo skip nahi ho sakta.</p>
-    <ol>
-      <li><a href="https://console.firebase.google.com/project/mirza-bills/firestore/data/~2Fapp~2Faccess" target="_blank">Firestore → <code>app</code> collection → <code>access</code> document</a> kholein.</li>
-      <li><code>isBlocked</code> ko <code>1</code> kar dein — turant sab users is message par lock ho jayenge.</li>
-      <li><code>title</code> aur <code>message</code> fields edit karein (message <b>Markdown</b> support karta hai: <code># heading</code>, <code>**bold**</code>, <code>*italic*</code>, lists, links).</li>
-      <li>Wapas access dene ke liye <code>isBlocked</code> ko <code>0</code> kar dein.</li>
-    </ol>
-    <div class="note warn"><span class="ico">!</span><div>Yeh sirf Firestore console (ya Admin SDK) se badalta hai — app ke andar se koi bhi is value ko set nahi kar sakta, is liye galti se koi user khud ko lock/unlock nahi kar sakta.</div></div>
+    <span class="pill">Automatic</span>
+    <h2>Firebase error page</h2>
+    <p>Jab bhi Firebase khud fail ho (hosting/database ka <b>quota khatam</b>, service down, billing ya project ka masla),
+       har user ko foran ek full-screen page dikhta hai — login se pehle bhi aur app chalate hue bhi — jo skip nahi ho sakta:
+       <b>"Error 509: Hosting Quota Exceeded"</b>.</p>
+    <ul>
+      <li>Is page ka text <b>app me fixed</b> hai (<code>index.html</code> → <code>FIREBASE_DOWN_TITLE</code> / <code>FIREBASE_DOWN_MESSAGE</code>) — database se iska koi control nahi.</li>
+      <li>Aam ghaltiyan (ghalat password, permission na hona, internet band, API server band) par yeh page <b>nahi</b> aata.</li>
+      <li>Firebase theek hone ke baad app reload karein.</li>
+    </ul>
+    <div class="note"><span class="ico">ℹ️</span><div>Purana <code>app/access</code> → <code>isBlocked</code> switch ab app nahi parhti.</div></div>
   </div>
 
   <footer>MSA Billing · Setup Guide · Made for MSA Auto Workshop</footer>

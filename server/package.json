@@ -1,0 +1,21 @@
+{
+  "name": "msa-billing-server",
+  "version": "1.0.0",
+  "description": "MSA Billing — Node.js API server. The ONLY component that talks to Firestore; the web app calls this API.",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "compression": "^1.8.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "firebase-admin": "^13.0.0"
+  }
+}

@@ -1,9 +1,11 @@
 # MSA Billing — Car Workshop Billing App
 
 A complete, production-ready billing & management web app for **MSA Auto Workshop**. Staff create
-bills, take payments, manage products, view reports, and administer users — backed by **Firebase**
-(Auth + Firestore + Cloud Functions). Built as a single Design Component, served as `index.html`,
-that runs directly in the browser, hosts as a static site on GitHub Pages, and installs as a PWA.
+bills, take payments, manage products, view reports, and administer users — backed by a
+**Node.js API server** (`server/`) on top of **Firebase** (Auth + Firestore). Login happens in the
+web app with Firebase Auth; **all data goes through the Node API** — the browser never talks to
+Firestore directly. Built as a single Design Component, served as `index.html`, that runs directly
+in the browser, hosts as a static site (or from the Node server itself), and installs as a PWA.
 
 > **New here? Open [`guide.html`](guide.html) for the full step-by-step setup.**
 
@@ -38,10 +40,13 @@ that runs directly in the browser, hosts as a static site on GitHub Pages, and i
   logo for B&W printers — only the meta band & note keep a light gray background), long item
   names wrap to new lines, multi-page overflow, Print / Save-PDF.
 - **Products**, **Users & permissions**, **Settings** — see below.
-- **Emergency kill switch** — an admin can instantly lock the whole app for every user by flipping
-  `isBlocked` to `1` on the `app/access` Firestore document (console-only, never from the app UI). All
-  users are stopped before the login screen with a full-screen, un-dismissable message (title +
-  Markdown body) until it's switched back off.
+- **Firebase failure page** — whenever Firebase itself fails (quota exhausted, outage, billing /
+  project / key problem) every user gets a full-screen, un-dismissable page — before login or at any
+  moment while using the app. Its text ("Error 509: Hosting Quota Exceeded" …) is **fixed in the app**
+  (`FIREBASE_DOWN_TITLE` / `FIREBASE_DOWN_MESSAGE` in `index.html`) and is never read from the
+  database. Ordinary errors (wrong password, missing permission, device offline, API server down)
+  don't trigger it. Reload the app once Firebase is back. (Replaces the old `app/access` `isBlocked`
+  switch, which the app no longer reads.)
 
 ---
 
@@ -69,18 +74,23 @@ Every action gives clear feedback and is protected against double-submit:
 | Layer | Tech | Notes |
 |---|---|---|
 | **App** | Single `index.html` (Design Component) | UI + logic; static, hosts on GitHub Pages; installable PWA. |
-| **Data + auth** | `firebase-db.js` | One async facade over **Firestore** + **Firebase Auth** + **Cloud Functions**, with a **localStorage fallback** for offline/preview (so it's fully usable without internet, and the design preview works without a backend). |
-| **User admin** | `functions/` | Cloud Functions (Admin SDK) — create / update / set-password / disable / delete users, each **verifying the caller server-side**. Admin never gets logged out. |
-| **Security** | `firestore.rules` | Signed-in gating + permission-aware writes (UI permissions are mirrored in rules — the real security). |
+| **Data + auth (client)** | `firebase-db.js` | One async facade. **Login / logout / change-password = Firebase Auth in the browser.** Every data call = `fetch` to the Node API with the user's Firebase ID token. **localStorage demo fallback** so the design preview works without a backend. |
+| **Full sync** | `index.html`, `firebase-db.js` | After login the whole activity log, and after every bill change ALL bills + ALL activity (with nested data), are re-downloaded silently in the background and replace the local copies. From the API; if the API fails, read directly from Firestore (read-only, allowed by `firestore.rules`). |
+| **Business logic** | `db-core.js` | Shared by the server and the demo mode: bill numbering, stats aggregates, transactions, search. |
+| **API server** | `server/` | Node.js + Express + Firebase **Admin SDK** — the ONLY thing that reads/writes Firestore. Verifies the ID token and the caller's permissions on every request; also does user admin, geo lookup and background report recalculation (replaces the old Cloud Functions). See [`server/README.md`](server/README.md). |
+| **Security** | `server/lib/auth.js` (+ `firestore.rules`) | Per-action permission checks on the server. Firestore rules remain as a second line of defence. |
 | **Indexes** | `firestore.indexes.json` | Composite indexes for bills (active/archived/bin/pending) and search. |
-| **PWA** | `manifest.webmanifest`, `service-worker.js` | Installable; app-shell cached (Firestore handles its own offline sync). |
+| **PWA** | `manifest.webmanifest`, `service-worker.js` | Installable; app-shell cached. `/api/` responses are never cached. |
+| **Legacy** | `functions/` | Old Cloud Functions — **no longer called by the web app** (the Node server does their job). Kept only until the new setup is live. |
 
 **Mode selection:** controlled explicitly by **`app-config.js`** — set `MODE` to `"production"` (real
-Firebase, needed for any real deployment including a custom domain), `"demo"` (always offline demo
+backend: Firebase Auth + Node API, needed for any real deployment including a custom domain) and
+`API_URL` to the Node server's address (`""` when the Node server also serves the site), `"demo"` (always offline demo
 data), or `"auto"` (guesses from hostname — only recognizes `*.github.io` / `*.web.app` /
 `*.firebaseapp.com`, so it will silently stay in demo mode on a custom domain unless you set
 `"production"` explicitly). Override per-browser without editing the file via
-`localStorage.msa_mode = 'firebase' | 'local'` in the console.
+`localStorage.msa_mode = 'api' | 'local'` (and `localStorage.msa_api = 'http://localhost:8080'`) in
+the console.
 
 ### Efficiency (core requirement)
 - Bills are **paginated** (batch from Settings, default 25) and cached; opening a loaded bill is
@@ -112,17 +122,20 @@ See **[`guide.html`](guide.html)** for the complete walkthrough. In short:
 
 1. Enable **Firestore** and **Authentication (Email/Password)** in the Firebase console.
 2. Ensure the admin user exists: `admin@msa.com` / `123456`.
-3. Upgrade the project to the **Blaze** plan (free-tier covers small usage).
-4. `npm i -g firebase-tools` → `firebase login` → `firebase use mirza-bills`.
-5. `cd functions && npm install && cd ..`
-6. `firebase deploy --only firestore:rules,firestore:indexes,functions`
-7. Add your host (e.g. `your-username.github.io`) to **Auth → Authorized domains**.
-8. Host on **GitHub Pages** (or `firebase deploy --only hosting`).
-9. Log in, set a strong admin password, configure Settings, add your team.
+3. `npm i -g firebase-tools` → `firebase login` → `firebase use mirza-bills` →
+   `firebase deploy --only firestore:rules,firestore:indexes`.
+4. **Run the Node API server** — see [`server/README.md`](server/README.md)
+   (`cd server && npm install && npm start`, with a service-account key in `server/.env`).
+5. In `app-config.js` set `API_URL` to the server's public URL (or leave `""` if the Node server
+   also serves the site).
+6. Add your host (e.g. `your-username.github.io`) to **Auth → Authorized domains**.
+7. Host the site on **GitHub Pages** / `firebase deploy --only hosting` — or just let the Node server
+   serve it.
+8. Log in, set a strong admin password, configure Settings, add your team.
 
 ---
 
 ## Credits
 
-Built for **MSA Auto Workshop**. Firebase backend (Auth + Firestore + Cloud Functions), static
+Built for **MSA Auto Workshop**. Node.js API + Firebase backend (Auth + Firestore), static
 PWA frontend.
