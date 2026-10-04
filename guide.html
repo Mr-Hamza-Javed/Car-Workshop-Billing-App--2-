@@ -77,6 +77,10 @@
     </div>
   </div>
 
+  <div class="card">
+    <div class="note"><span class="ico">ℹ️</span><div><b>Naya architecture:</b> app ab Firestore se <b>direct baat nahi karti</b>. Login Firebase Auth se app me hi hota hai, lekin saara data <b>Node.js API server</b> (<code>server/</code> folder) ke zariye aata/jata hai. Cloud Functions (steps 4–6 ka functions wala hissa) ki ab zaroorat nahi — unki jagah server chalayein: <code>cd server &amp;&amp; npm install &amp;&amp; npm start</code>. Poori tafseel: <code>server/README.md</code>.</div></div>
+  </div>
+
   <div class="card" id="s1">
     <div class="step"><div class="num">1</div><div>
       <h2>Cloud Firestore enable karein</h2>
@@ -237,8 +241,10 @@ cd ..</pre>
     <h2>Project ki files</h2>
     <div class="kv">
       <b>index.html</b><span>Poori app (UI + logic).</span>
-      <b>firebase-db.js</b><span>Data + auth layer (Firestore + Functions + offline).</span>
-      <b>functions/</b><span>Cloud Functions — secure user management.</span>
+      <b>firebase-db.js</b><span>Auth (Firebase) + data calls to the Node API + offline demo.</span>
+      <b>db-core.js</b><span>Shared business logic (server + demo mode).</span>
+      <b>server/</b><span>Node.js API server — the only part that talks to Firestore.</span>
+      <b>functions/</b><span>Purani Cloud Functions — ab app inhe call nahi karti.</span>
       <b>firestore.rules</b><span>Security rules.</span>
       <b>firestore.indexes.json</b><span>Query indexes.</span>
       <b>manifest.webmanifest</b> + <b>service-worker.js</b><span>PWA (installable + offline shell).</span>

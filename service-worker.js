@@ -4,21 +4,21 @@
 
    Strategy
      • App CODE (HTML navigations, index.html, support.js, firebase-db.js,
-       app-config.js, settings.json)          → NETWORK-FIRST (cache fallback
+       db-core.js, app-config.js, settings.json)          → NETWORK-FIRST (cache fallback
        when offline). Guarantees users always run the LATEST deployed code —
        stale-while-revalidate here meant every deploy showed up one full
        reload late (users kept seeing the old app on first load).
      • Other same-origin assets (logos, etc.) → stale-while-revalidate
        (instant load from cache, refresh in background)
      • Google Fonts                           → cache-first
-     • Firebase SDK / Firestore / Auth / APIs → NEVER cached here
-       (Firestore has its own robust offline persistence; caching its
-        requests would corrupt sync). We simply pass them through.
+     • Firebase SDK / Auth / APIs             → NEVER cached here
+     • The Node API server (/api/...)         → NEVER cached here (live
+       business data must always come fresh from the server).
 
    Bump CACHE_VERSION whenever you ship new app code so clients update.
    ===================================================================== */
 
-const CACHE_VERSION = "msa-v2";
+const CACHE_VERSION = "msa-v3";
 const SHELL_CACHE = CACHE_VERSION + "-shell";
 const FONT_CACHE = CACHE_VERSION + "-fonts";
 
@@ -27,6 +27,7 @@ const SHELL_ASSETS = [
   "./index.html",
   "./support.js",
   "./firebase-db.js",
+  "./db-core.js",
   "./manifest.webmanifest",
   "./assets/logo-256.png",
   "./assets/logo-1000.png",
@@ -60,7 +61,7 @@ function isFont(url) {
 function isAppCode(req, url) {
   if (req.mode === "navigate") return true;
   const p = new URL(url).pathname;
-  return /\.html$|\/support\.js$|\/firebase-db\.js$|\/app-config\.js$|\/sw-register\.js$|\/settings\.json$|\/$/.test(p);
+  return /\.html$|\/support\.js$|\/firebase-db\.js$|\/db-core\.js$|\/app-config\.js$|\/sw-register\.js$|\/settings\.json$|\/$/.test(p);
 }
 
 self.addEventListener("fetch", (event) => {
@@ -70,6 +71,8 @@ self.addEventListener("fetch", (event) => {
 
   // 1) Firebase & analytics — always go to network (their SDK handles offline)
   if (isFirebase(url)) return;
+  // 1b) API server (same-origin deployments) — always live, never cached
+  if (/^\/api\//.test(new URL(url).pathname)) return;
 
   // 2) Google Fonts — cache-first
   if (isFont(url)) {

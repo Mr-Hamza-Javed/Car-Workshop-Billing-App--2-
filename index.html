@@ -3914,16 +3914,16 @@ class Component extends DCLogic {
       const jobId=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
       this._recalcJobId=jobId; this._recalcNotified=false;
       try{ localStorage.setItem(this._recalcJobIdKey(), jobId); }catch(e){}
-      this._recalcLog('info','Cloud job shuru ho raha hai (app band ho jaye to bhi chalta rahega)...');
+      this._recalcLog('info','Server job shuru ho raha hai (app band ho jaye to bhi chalta rahega)...');
       this._recalcUnsub=this.db.subscribeRecalcJob(jobId,(job)=>this._applyCloudJob(job));
       this.db.startRecalcJob({ from, to, jobId })
         .then(()=>{ this._loadDash(); if(this.state.route==='reports') this._loadReport(); })
         .catch(e=>{
           const cur=this.state.recalc; if(!cur || cur.phase!=='running') return;
           const msg=(e&&e.message)||String(e);
-          this._recalcLog('error','ERROR: Cloud function call fail — '+msg);
+          this._recalcLog('error','ERROR: Server job start nahi hui — '+msg);
           if(/internal|cors|failed to fetch|network/i.test(msg)){
-            this._recalcLog('error','Mumkina wajah: function deploy nahi hui ya purani version deployed hai (CORS). Fix: `firebase deploy --only functions` chala kar dobara try karein.');
+            this._recalcLog('error','Mumkina wajah: API server band hai ya app-config.js me API_URL ghalat hai. Server chala kar dobara try karein.');
           }
           if(this._recalcUnsub){ try{ this._recalcUnsub(); }catch(_){} this._recalcUnsub=null; }
           this._recalcJobId=null;
