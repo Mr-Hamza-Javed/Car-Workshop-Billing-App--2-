@@ -95,12 +95,14 @@ itself (`SERVE_STATIC=true`, the default), so one service hosts both.
 
 All routes are under `/api`. Bodies and responses are JSON; `Date` values travel as
 `{ "$date": <ms> }`. Errors look like `{ "error": { "code", "message", "userMessage?" } }`
-(`401 unauthenticated`, `403 permission-denied`, `404 not-found`, `409` business-rule errors).
+(`401 unauthenticated`, `403 permission-denied`, `404 not-found`, `409` business-rule errors,
+`503 firebase-unavailable` whenever Firebase itself fails — quota exhausted, outage, billing,
+credentials).
 
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/health` | public |
-| GET | `/access` | public (kill switch) |
+| GET | `/status` | public — one tiny Firestore read; `503 firebase-unavailable` when Firebase fails (the app then shows its fixed error page) |
 | GET | `/me` | signed in (creates the primary admin's profile on first login) |
 | POST | `/bootstrap` | primary admin only |
 | GET | `/geo` | known user |

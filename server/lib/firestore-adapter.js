@@ -1,7 +1,7 @@
 /* =====================================================================
    Firestore storage adapter (Admin SDK) for the shared makeDB() core.
    Same interface as the browser's local adapter:
-     get · set · update · del · query · txn · getAccessStatus
+     get · set · update · del · query · txn
    The Admin SDK bypasses security rules — every permission check
    happens in the API routes before these are called.
    ===================================================================== */
@@ -30,13 +30,6 @@ export function makeFirestoreAdapter(db) {
     async set(p, data) { await ref(p).set(data); },
     async update(p, patch) { await ref(p).set(patch, { merge: true }); },
     async del(p) { await ref(p).delete(); },
-    async getAccessStatus() {
-      const s = await ref("app/access").get();
-      if (s.exists) return s.data();
-      const def = { isBlocked: 0, title: "Your title", message: "Your message" };
-      try { await ref("app/access").create(def); } catch (e) { /* created concurrently — fine */ }
-      return def;
-    },
     async query(coll, opts) {
       opts = opts || {};
       const snap = await buildQuery(coll, opts).get();

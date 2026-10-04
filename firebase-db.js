@@ -92,11 +92,6 @@ function makeLocalAdapter() {
     async set(path, data) { const [coll, id] = path.split("/"); if (id) { const ids = idx(coll); if (!ids.includes(id)) { ids.push(id); setIdx(coll, ids); } } write(path, data); },
     async update(path, patch) { const cur = read(path) || {}; write(path, { ...cur, ...patch }); },
     async del(path) { const [coll, id] = path.split("/"); if (id) setIdx(coll, idx(coll).filter((x) => x !== id)); remove(path); },
-    async getAccessStatus() {
-      let doc = read("app/access");
-      if (!doc) { doc = { isBlocked: 0, title: "Your title", message: "Your message" }; write("app/access", doc); }
-      return doc;
-    },
     async query(coll, opts) {
       opts = opts || {};
       let rows = idx(coll).map((id) => ({ id, ...(read(coll + "/" + id) || {}) }));
@@ -199,6 +194,42 @@ function makeLocalAdapter() {
   return A;
 }
 /* =====================================================================
+   FIREBASE FAILURE DETECTION
+   Whenever Firebase itself fails — quota exhausted, service down, project / billing / key
+   problem — the app shows its FIXED "service unavailable" page (see index.html). The page and its
+   text are never controlled from the database. Sources:
+     • the API answers 503 { code: "firebase-unavailable" } (server-side Firestore/Auth failure)
+     • a Firebase Auth call in the browser fails with a service/quota/config error
+     • the direct-Firestore fallback read fails with a service/quota error
+   Normal mistakes (wrong password, missing permission, offline device, API server down) do NOT
+   trigger it.
+   ===================================================================== */
+const AUTH_OUTAGE = new Set([
+  "auth/quota-exceeded", "auth/internal-error", "auth/operation-not-allowed", "auth/project-not-found",
+  "auth/invalid-api-key", "auth/app-not-authorized", "auth/unauthorized-domain", "auth/configuration-not-found",
+  "auth/admin-restricted-operation", "auth/app-deleted",
+]);
+const FIRESTORE_OUTAGE = new Set(["resource-exhausted", "unavailable", "internal", "deadline-exceeded", "unknown", "data-loss", "unauthenticated"]);
+function isFirebaseOutage(e) {
+  if (!e) return false;
+  const code = String(e.code || "");
+  if (code === "firebase-unavailable") return true;
+  try { if (typeof navigator !== "undefined" && navigator.onLine === false) return false; } catch (x) {}   // the device is offline, not Firebase
+  if (AUTH_OUTAGE.has(code) || code.startsWith("auth/api-key")) return true;
+  return FIRESTORE_OUTAGE.has(code) || FIRESTORE_OUTAGE.has(code.replace(/^firestore\//, ""));
+}
+const firebaseDown = { fired: false, listeners: [] };
+function reportIfFirebaseDown(e) {
+  if (!isFirebaseOutage(e) || firebaseDown.fired) return;
+  firebaseDown.fired = true;
+  firebaseDown.listeners.forEach((fn) => { try { fn(); } catch (x) {} });
+}
+function onFirebaseDown(fn) {
+  if (firebaseDown.fired) { try { fn(); } catch (x) {} return; }
+  firebaseDown.listeners.push(fn);
+}
+
+/* =====================================================================
    API ADAPTER  — Firebase Auth (login only) + Node API server (all data)
    ===================================================================== */
 async function makeApiDB() {
@@ -221,13 +252,16 @@ async function makeApiDB() {
     if (opts.auth !== false) {
       const u = auth.currentUser;
       if (!u) { const e = new Error("Login zaroori hai"); e.code = "unauthenticated"; throw e; }
-      headers.Authorization = "Bearer " + (await u.getIdToken());
+      let token;
+      try { token = await u.getIdToken(); } catch (e) { reportIfFirebaseDown(e); throw e; }
+      headers.Authorization = "Bearer " + token;
     }
     let res;
     const ctl = opts.timeoutMs ? new AbortController() : null;
     const timer = ctl ? setTimeout(() => ctl.abort(), opts.timeoutMs) : null;
     try { res = await fetch(BASE + "/api" + path, { method, headers, body: body !== undefined ? encodeJSON(body) : undefined, signal: ctl ? ctl.signal : undefined }); }
-    catch (e) { const er = new Error("Network problem — server tak rasai nahi ho saki"); er.code = "unavailable"; throw er; }
+    // the API server itself is unreachable — NOT a Firebase failure, so its own code
+    catch (e) { const er = new Error("Network problem — server tak rasai nahi ho saki"); er.code = "api-unreachable"; throw er; }
     finally { if (timer) clearTimeout(timer); }
     const text = await res.text();
     let data = null;
@@ -238,6 +272,7 @@ async function makeApiDB() {
       er.code = info.code || (res.status === 403 ? "permission-denied" : res.status === 401 ? "unauthenticated" : "internal");
       er.status = res.status;
       if (info.userMessage) er.userMessage = info.userMessage;
+      reportIfFirebaseDown(er);
       throw er;
     }
     return data;
@@ -305,7 +340,9 @@ async function makeApiDB() {
       // paged by document id (unique, no composite index) — same as the server does
       const parts = [fs.orderBy(fs.documentId()), fs.limit(1000)];
       if (last) parts.splice(1, 0, fs.startAfter(last));
-      const snap = await fs.getDocs(fs.query(fs.collection(fdb, coll), ...parts));
+      let snap;
+      try { snap = await fs.getDocs(fs.query(fs.collection(fdb, coll), ...parts)); }
+      catch (e) { reportIfFirebaseDown(e); throw e; }
       snap.docs.forEach((d) => out.push(mapDoc(d.id, d.data())));
       if (snap.docs.length < 1000) break;
       last = snap.docs[snap.docs.length - 1];
@@ -326,7 +363,7 @@ async function makeApiDB() {
         const prof = await fetchProfile(user);
         if (prof && prof.disabled) { await authMod.signOut(auth); cb(null); return; }
         cb(prof);
-      });
+      }, (e) => reportIfFirebaseDown(e));
     },
     async bootstrap() { try { return await api("POST", "/bootstrap", {}); } catch (e) { return { ok: false, error: e.message }; } },
     async login(email, password) {
@@ -336,13 +373,14 @@ async function makeApiDB() {
         if (prof && prof.disabled) { await authMod.signOut(auth); return { ok: false, error: "Yeh account band kar diya gaya hai" }; }
         return { ok: true, user: prof };
       } catch (e) {
+        reportIfFirebaseDown(e);
         const map = { "auth/invalid-credential": "Email ya password ghalat hai", "auth/wrong-password": "Password ghalat hai", "auth/user-not-found": "Is email se koi account nahi mila", "auth/invalid-email": "Email theek nahi", "auth/user-disabled": "Yeh account band kar diya gaya hai", "auth/too-many-requests": "Bohat zyada koshishein — thodi der baad try karein", "auth/network-request-failed": "Network problem — internet check karein" };
         return { ok: false, error: map[e.code] || ("Login nahi ho saka: " + (e.code || e.message)) };
       }
     },
     async logout() { meMemo = null; await authMod.signOut(auth); },
     // fresh ID token + re-read profile (called by the app after a permission-denied)
-    async refreshAuthToken() { meMemo = null; try { if (auth.currentUser) await auth.currentUser.getIdToken(true); } catch (e) {} },
+    async refreshAuthToken() { meMemo = null; try { if (auth.currentUser) await auth.currentUser.getIdToken(true); } catch (e) { reportIfFirebaseDown(e); } },
     /* apna password khud change karna — Firebase Auth reauthenticate + updatePassword */
     async changeMyPassword(currentPw, newPw) {
       const user = auth.currentUser;
@@ -353,6 +391,7 @@ async function makeApiDB() {
         await authMod.updatePassword(user, newPw);
         return { ok: true };
       } catch (e) {
+        reportIfFirebaseDown(e);
         const map = { "auth/invalid-credential": "Mojooda password ghalat hai", "auth/wrong-password": "Mojooda password ghalat hai", "auth/weak-password": "Naya password kamzor hai", "auth/too-many-requests": "Bohat zyada koshishein — thodi der baad try karein", "auth/network-request-failed": "Network problem — internet check karein" };
         return { ok: false, error: map[e.code] || ("Password change nahi hua: " + (e.code || e.message)) };
       }
@@ -367,8 +406,11 @@ async function makeApiDB() {
     deleteUser: (id) => okOrErr(() => api("DELETE", "/users/" + enc(id))),
     async getClientGeo() { try { return await api("GET", "/geo"); } catch (e) { return null; } },
 
-    /* ---------- kill switch (public — checked before login) ---------- */
-    getAccessStatus: () => api("GET", "/access", undefined, { auth: false }),
+    /* ---------- Firebase status (public — checked before login) ----------
+       The server does one tiny Firestore read; a Firebase failure comes back as 503
+       firebase-unavailable and fires onFirebaseDown (the fixed error page). */
+    checkFirebase: () => api("GET", "/status", undefined, { auth: false, timeoutMs: 20000 }),
+    onFirebaseDown,
 
     /* ---------- settings / templates / presets / counter ---------- */
     getSettings: () => api("GET", "/settings"),
@@ -457,7 +499,9 @@ function makeLocalDB() {
   const A = makeLocalAdapter();
   const db = makeDB(A);
   return Object.assign(db, {
-    getAccessStatus: () => A.getAccessStatus(),
+    // demo mode has no Firebase — it can never be "down"
+    checkFirebase: async () => ({ ok: true }),
+    onFirebaseDown: () => {},
     // no cloud recalc in demo mode — the frontend uses its local engine
     startRecalcJob: null, cancelRecalcJob: null, subscribeRecalcJob: null,
     initAuth: (cb) => A.initAuth(cb),

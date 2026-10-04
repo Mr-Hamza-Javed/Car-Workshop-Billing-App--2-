@@ -40,10 +40,13 @@ in the browser, hosts as a static site (or from the Node server itself), and ins
   logo for B&W printers — only the meta band & note keep a light gray background), long item
   names wrap to new lines, multi-page overflow, Print / Save-PDF.
 - **Products**, **Users & permissions**, **Settings** — see below.
-- **Emergency kill switch** — an admin can instantly lock the whole app for every user by flipping
-  `isBlocked` to `1` on the `app/access` Firestore document (console-only, never from the app UI). All
-  users are stopped before the login screen with a full-screen, un-dismissable message (title +
-  Markdown body) until it's switched back off.
+- **Firebase failure page** — whenever Firebase itself fails (quota exhausted, outage, billing /
+  project / key problem) every user gets a full-screen, un-dismissable page — before login or at any
+  moment while using the app. Its text ("Error 509: Hosting Quota Exceeded" …) is **fixed in the app**
+  (`FIREBASE_DOWN_TITLE` / `FIREBASE_DOWN_MESSAGE` in `index.html`) and is never read from the
+  database. Ordinary errors (wrong password, missing permission, device offline, API server down)
+  don't trigger it. Reload the app once Firebase is back. (Replaces the old `app/access` `isBlocked`
+  switch, which the app no longer reads.)
 
 ---
 

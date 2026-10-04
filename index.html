@@ -114,7 +114,8 @@
     </div>
   </sc-if>
 
-  <!-- ====== ACCESS BLOCKED (kill switch) — checked before login, cannot be bypassed ====== -->
+  <!-- ====== FIREBASE FAILURE PAGE — shown whenever Firebase fails (quota exhausted, outage, ...);
+       fixed text (FIREBASE_DOWN_TITLE / FIREBASE_DOWN_MESSAGE), never controlled from the database ====== -->
   <sc-if value="{{ accessBlocked }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; z-index:200; background:radial-gradient(circle at 50% 0%, #2b1616, #170e0e 72%); display:flex; align-items:center; justify-content:center; padding:24px; overflow:auto">
       <div style="position:absolute; inset:0; opacity:.5; background:radial-gradient(circle at 18% 22%, rgba(220,60,50,.24), transparent 38%), radial-gradient(circle at 82% 78%, rgba(180,40,40,.18), transparent 42%); pointer-events:none"></div>
@@ -2279,11 +2280,16 @@
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;}}">
+// Fixed text of the Firebase failure page (shown whenever Firebase fails — quota exhausted,
+// outage, ...). Hard-coded on purpose: nothing about this page is controlled from the database.
+const FIREBASE_DOWN_TITLE = 'Error 509: Hosting Quota Exceeded';
+const FIREBASE_DOWN_MESSAGE = 'You have exceeded your allocated hosting quota. Database authentication and login services are currently disabled. Reduce your usage or upgrade your server package to regain database functionality.\n\n**Or, give it some time for the limits to reset.**';
+
 class Component extends DCLogic {
   state = {
     // ---- auth / shell ----
     authReady:false, authUser:null, dbMode:'local',
-    accessBlocked:false, accessTitle:'', accessMessage:'',
+    accessBlocked:false,
     loginEmail:'', loginPw:'', loginErr:'', loggingIn:false, showPw:false, userMenuOpen:false,
     myPwModal:false, myPwDraft:{cur:'',nw:'',nw2:''},
     route: 'dashboard', period: '28d', privacy: false, now: new Date(),
@@ -2413,20 +2419,21 @@ class Component extends DCLogic {
       const db = await mod.getDB();
       this.db = db;
       this.setState({ dbMode: db.mode });
-      // ---- kill switch: checked BEFORE anything else, even before auth is touched ----
-      try{
-        const access = await db.getAccessStatus();
-        if(access && Number(access.isBlocked)===1){
-          this.setState({ authReady:true, accessBlocked:true, accessTitle:access.title||'Access blocked', accessMessage:access.message||'' });
-          return;   // hard stop - never proceeds to login/auth, nothing can bypass this
-        }
-      }catch(e){ console.warn('access-status check failed', e); }
+      // ---- Firebase failure page: whenever Firebase itself fails (quota exhausted, outage, ...)
+      // the fixed "service unavailable" page covers the whole app — before login AND at any
+      // moment later. Its text is fixed in the app; nothing about it comes from the database.
+      if(db.onFirebaseDown) db.onFirebaseDown(()=> this._showFirebaseDown());
+      try{ if(db.checkFirebase) await db.checkFirebase(); }catch(e){ /* a Firebase failure already fired the page */ }
+      if(this.state.accessBlocked) return;   // hard stop - never proceeds to login/auth
       if(db.mode==='local'){ try{ await db.bootstrap({ email:'admin@msa.com', fullName:'Asif Shakoor', password:'123456' }); }catch(e){} }
       this._unsub = db.initAuth((user)=> this._onAuth(user));
     }catch(e){
       console.error('init failed', e);
       this.setState({ authReady:true, loginErr:'App load nahi ho saki - page refresh karein.' });
     }
+  }
+  _showFirebaseDown(){
+    this.setState({ authReady:true, accessBlocked:true, blocking:null, confirm:null });
   }
   // ---- tiny, safe markdown -> HTML (escapes first, then applies a narrow whitelist of tags) ----
   _mdToHtml(md){
@@ -5104,7 +5111,7 @@ class Component extends DCLogic {
     return {
       // shell / auth
       splash:!S.authReady, showLogin:S.authReady && !S.accessBlocked && !S.authUser, blocking:S.blocking, authed:!!S.authUser, headerSaving:S.headerSaving>0,
-      accessBlocked:S.accessBlocked, accessTitle:S.accessTitle, accessMessageEl: React.createElement('div',{dangerouslySetInnerHTML:{__html: this._mdToHtml(S.accessMessage)}}),
+      accessBlocked:S.accessBlocked, accessTitle:FIREBASE_DOWN_TITLE, accessMessageEl: React.createElement('div',{dangerouslySetInnerHTML:{__html: this._mdToHtml(FIREBASE_DOWN_MESSAGE)}}),
       loginEmail:S.loginEmail, loginPw:S.loginPw, loginErr:S.loginErr, loggingIn:S.loggingIn,
       loginPwType:S.showPw?'text':'password', loginPwIcon:this.ic(S.showPw?'eyeOff':'eye',17), toggleShowPw:()=>this.setState(s=>({showPw:!s.showPw})),
       loginInputStyle:'width:100%; padding:12px 13px; background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.13); border-radius:12px; font-size:14px; font-weight:500; color:#fff; outline:none',

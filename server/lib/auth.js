@@ -7,6 +7,7 @@
    permissions — the job Firestore security rules used to do.
    ===================================================================== */
 import { adminAuth, firestore, ADMIN_EMAIL } from "./config.js";
+import { isFirebaseOutage } from "./firebase-errors.js";
 
 export class ApiError extends Error {
   constructor(status, code, message, userMessage) {
@@ -42,7 +43,7 @@ export async function authenticate(req, res, next) {
   if (!m) return next(unauthenticated());
   let decoded;
   try { decoded = await adminAuth.verifyIdToken(m[1]); }
-  catch (e) { return next(unauthenticated("Session khatam ho gaya - dobara login karein")); }
+  catch (e) { return next(isFirebaseOutage(e) ? e : unauthenticated("Session khatam ho gaya - dobara login karein")); }
   const email = String(decoded.email || "").toLowerCase();
   const profile = await loadProfile(decoded.uid);
   req.user = {

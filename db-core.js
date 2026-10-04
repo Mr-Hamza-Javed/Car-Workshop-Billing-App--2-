@@ -238,7 +238,6 @@ export function makeDB(A) {
        Shape: { presets:[{id,name,cfg}], activeId }. */
     async getPrintPresets() { return (await A.get("app/printPresets")) || null; },
     async savePrintPresets(d) { await A.set("app/printPresets", d); },
-    async getAccessStatus() { return A.getAccessStatus(); },
 
     /* ---------- counter (atomic bill number) ---------- */
     async peekCounter() { const c = await A.get("app/counter"); return c ? c.value : null; },

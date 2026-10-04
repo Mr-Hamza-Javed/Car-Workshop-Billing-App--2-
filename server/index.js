@@ -23,6 +23,7 @@ import { makeFirestoreAdapter } from "./lib/firestore-adapter.js";
 import { authenticate, requireKnownUser, requirePerm, requireAdmin, badRequest, notFound, loadProfile } from "./lib/auth.js";
 import * as users from "./lib/users.js";
 import * as recalc from "./lib/recalc.js";
+import { isFirebaseOutage } from "./lib/firebase-errors.js";
 
 const core = makeDB(makeFirestoreAdapter(firestore));
 const app = express();
@@ -71,8 +72,15 @@ app.use(compression());   // gzip — the full bills / activity downloads shrink
    PUBLIC
    ===================================================================== */
 app.get("/api/health", (req, res) => send(res, { ok: true, time: Date.now() }));
-// kill switch — must be readable by everyone, even signed-out
-app.get("/api/access", async (req, res) => send(res, await core.getAccessStatus()));
+// Firebase status — public, checked by the app before login. One tiny Firestore read: if Firebase
+// fails (quota exhausted, outage, billing, credentials) the error handler answers 503
+// firebase-unavailable and the app shows its fixed "service unavailable" page.
+app.get("/api/status", async (req, res) => {
+  // a dead/unreachable Firestore can make the SDK retry for ~40s — answer within 10s instead
+  const deadline = new Promise((_, rej) => setTimeout(() => { const e = new Error("Firestore status check timed out"); e.code = 4; rej(e); }, 10000).unref());
+  await Promise.race([firestore.doc("app/status").get(), deadline]);
+  send(res, { ok: true });
+});
 
 /* =====================================================================
    AUTHENTICATED (valid Firebase ID token)
@@ -219,6 +227,11 @@ if (SERVE_STATIC) {
 /* ---------- errors ---------- */
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
+  // Firebase itself failed (quota / outage / billing / credentials) -> 503 firebase-unavailable
+  if (isFirebaseOutage(err)) {
+    console.error("[firebase]", req.method, req.originalUrl, err.code, err.message);
+    return res.status(503).json({ error: { code: "firebase-unavailable", message: "Firebase service unavailable" } });
+  }
   // business-rule errors from db-core (e.g. "bill permanently delete ho chuka hai") carry a userMessage
   const status = err.status || (err.userMessage ? 409 : err.type === "entity.too.large" ? 413 : 500);
   if (status >= 500) console.error("[api]", req.method, req.originalUrl, err);
